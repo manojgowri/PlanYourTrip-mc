@@ -1,10 +1,10 @@
-import Image from "next/image"
 import Link from "next/link"
 import { Calendar, Star } from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
 interface TravelCardProps {
+  id: string
   destination: string
   image: string
   description: string
@@ -19,6 +19,7 @@ interface TravelCardProps {
 }
 
 export function TravelCard({
+  id,
   destination,
   image,
   description,
@@ -46,11 +47,10 @@ export function TravelCard({
 
       <CardHeader className="p-0">
         <div className="relative h-48 w-full overflow-hidden">
-          <Image
+          <img
             src={image || "/placeholder.svg"}
             alt={`${destination} travel image`}
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
           <h3 className="absolute bottom-4 left-4 text-xl font-bold text-white">{destination}</h3>
@@ -93,7 +93,7 @@ export function TravelCard({
           )}
         </div>
         <Link
-          href={`/itinerary/${destination.toLowerCase()}`}
+          href={`/itinerary/${id}`}
           className="mt-2 w-full rounded-md bg-emerald-600 px-4 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-emerald-700"
         >
           View Itinerary

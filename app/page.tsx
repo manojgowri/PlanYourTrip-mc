@@ -1,16 +1,26 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Compass, MapPin } from "lucide-react"
 import { TravelCard } from "@/components/travel-card"
 import { Footer } from "@/components/footer"
+import { getItineraries, type Itinerary } from "@/lib/data"
 
 export default function HomePage() {
+  const [itineraries, setItineraries] = useState<Itinerary[]>([])
+
+  useEffect(() => {
+    setItineraries(getItineraries())
+  }, [])
+
   return (
     <div className="flex min-h-screen flex-col">
       <div className="container mx-auto flex-1 px-4 py-8">
         <header className="mb-10 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Compass className="h-8 w-8 text-emerald-600" />
-            <h1 className="text-3xl font-bold">PlanYourTrip</h1>
+            <h1 className="text-3xl font-bold">Plan Your Trip</h1>
           </div>
           <div className="flex items-center gap-4">
             <Link href="/companions" className="text-sm font-medium text-emerald-600 hover:text-emerald-700">
@@ -30,45 +40,43 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <TravelCard
-              destination="Vietnam"
-              image="/placeholder.svg?height=300&width=400"
-              description="Exploring the beauty of Vietnam - from bustling cities to serene landscapes."
-              startDate="May 15, 2023"
-              endDate="May 30, 2023"
-              locations={["Hanoi", "Ha Long Bay", "Hoi An", "Ho Chi Minh City"]}
-              status="online"
-              season="Spring"
-              days={15}
-              rating={4.7}
-              reviewCount={24}
-            />
-            <TravelCard
-              destination="Thailand"
-              image="/placeholder.svg?height=300&width=400"
-              description="Discovering the rich culture and stunning beaches of Thailand."
-              startDate="December 10, 2022"
-              endDate="December 25, 2022"
-              locations={["Bangkok", "Chiang Mai", "Phuket"]}
-              status="completed"
-              season="Winter"
-              days={15}
-              rating={4.9}
-              reviewCount={32}
-            />
-            <TravelCard
-              destination="Japan"
-              image="/placeholder.svg?height=300&width=400"
-              description="Experiencing the perfect blend of tradition and modernity in Japan."
-              startDate="March 5, 2022"
-              endDate="March 20, 2022"
-              locations={["Tokyo", "Kyoto", "Osaka", "Hiroshima"]}
-              status="completed"
-              season="Spring"
-              days={15}
-              rating={4.8}
-              reviewCount={18}
-            />
+            {itineraries.map((itinerary) => (
+              <TravelCard
+                key={itinerary.id}
+                destination={itinerary.destination}
+                image={itinerary.image}
+                description={itinerary.description}
+                startDate={new Date(itinerary.startDate).toLocaleDateString("en-US", {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+                endDate={new Date(itinerary.endDate).toLocaleDateString("en-US", {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+                locations={itinerary.locations}
+                status={itinerary.status}
+                season={itinerary.season}
+                days={Math.ceil(
+                  (new Date(itinerary.endDate).getTime() - new Date(itinerary.startDate).getTime()) /
+                    (1000 * 60 * 60 * 24),
+                )}
+                rating={itinerary.rating}
+                reviewCount={itinerary.reviewCount}
+                id={itinerary.id}
+              />
+            ))}
+
+            {itineraries.length === 0 && (
+              <div className="col-span-full rounded-lg border p-8 text-center">
+                <p className="text-muted-foreground">No travel plans have been added yet.</p>
+                <Link href="/admin" className="mt-4 inline-block text-emerald-600 hover:underline">
+                  Add your first trip
+                </Link>
+              </div>
+            )}
           </div>
         </section>
 

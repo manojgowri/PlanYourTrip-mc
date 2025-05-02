@@ -1,7 +1,10 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { ArrowLeft, MapPin, Utensils, Hotel, Star } from "lucide-react"
 import { ItineraryDay } from "@/components/itinerary-day"
-import { getItinerary } from "@/lib/data"
+import { getItinerary, getAccommodations, type Itinerary } from "@/lib/data"
 import { Footer } from "@/components/footer"
 import { CommentSection } from "@/components/comment-section"
 
@@ -12,11 +15,45 @@ interface ItineraryPageProps {
 }
 
 export default function ItineraryPage({ params }: ItineraryPageProps) {
-  const destination = params.destination
-  const formattedDestination = destination.charAt(0).toUpperCase() + destination.slice(1)
+  const [itinerary, setItinerary] = useState<Itinerary | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  // In a real app, this would fetch from a database
-  const itinerary = getItinerary(destination)
+  useEffect(() => {
+    const fetchData = () => {
+      const data = getItinerary(params.destination)
+      setItinerary(data || null)
+      setLoading(false)
+    }
+
+    fetchData()
+  }, [params.destination])
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p>Loading itinerary...</p>
+      </div>
+    )
+  }
+
+  if (!itinerary) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <h1 className="mb-4 text-2xl font-bold">Itinerary Not Found</h1>
+          <p className="mb-6">The itinerary you're looking for doesn't exist or has been removed.</p>
+          <Link href="/" className="text-emerald-600 hover:underline">
+            Return to Home
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  const formattedDestination = itinerary.destination
+
+  // Get accommodations for this itinerary
+  const accommodations = getAccommodations(itinerary.id)
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -30,18 +67,28 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold">{formattedDestination} Itinerary</h1>
-              <p className="mt-2 text-muted-foreground">May 15, 2023 - May 30, 2023 • Detailed travel plan</p>
+              <p className="mt-2 text-muted-foreground">
+                {new Date(itinerary.startDate).toLocaleDateString()} -{" "}
+                {new Date(itinerary.endDate).toLocaleDateString()} • Detailed travel plan
+              </p>
             </div>
             <div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2">
               <div className="flex items-center">
-                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                <Star className="h-5 w-5 fill-yellow-400/50 text-yellow-400" />
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    className={`h-5 w-5 ${
+                      star <= Math.floor(itinerary.rating)
+                        ? "fill-yellow-400 text-yellow-400"
+                        : star <= itinerary.rating
+                          ? "fill-yellow-400/50 text-yellow-400"
+                          : "fill-yellow-400/10 text-yellow-400/30"
+                    }`}
+                  />
+                ))}
               </div>
-              <span className="font-medium">4.7</span>
-              <span className="text-sm text-muted-foreground">(24 reviews)</span>
+              <span className="font-medium">{itinerary.rating.toFixed(1)}</span>
+              <span className="text-sm text-muted-foreground">({itinerary.reviewCount} reviews)</span>
             </div>
           </div>
         </header>
@@ -51,7 +98,7 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
             <MapPin className="h-5 w-5 text-emerald-600" />
             <div>
               <h3 className="font-medium">Locations</h3>
-              <p className="text-sm text-muted-foreground">Hanoi, Ha Long Bay, Hoi An, Ho Chi Minh City</p>
+              <p className="text-sm text-muted-foreground">{itinerary.locations.join(", ")}</p>
             </div>
           </div>
 
@@ -59,7 +106,9 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
             <Hotel className="h-5 w-5 text-emerald-600" />
             <div>
               <h3 className="font-medium">Accommodations</h3>
-              <p className="text-sm text-muted-foreground">4 Hotels, 1 Resort</p>
+              <p className="text-sm text-muted-foreground">
+                {accommodations.length} {accommodations.length === 1 ? "Place" : "Places"}
+              </p>
             </div>
           </div>
 
@@ -67,7 +116,12 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
             <Utensils className="h-5 w-5 text-emerald-600" />
             <div>
               <h3 className="font-medium">Restaurants</h3>
-              <p className="text-sm text-muted-foreground">12 Recommended Places</p>
+              <p className="text-sm text-muted-foreground">
+                {itinerary.days.reduce((count, day) => {
+                  return count + day.activities.filter((a) => a.type === "food").length
+                }, 0)}{" "}
+                Recommended Places
+              </p>
             </div>
           </div>
         </div>
@@ -75,77 +129,21 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
         <section className="space-y-6">
           <h2 className="text-2xl font-semibold">Daily Itinerary</h2>
 
-          <ItineraryDay
-            day={1}
-            date="May 15, 2023"
-            location="Hanoi"
-            activities={[
-              {
-                time: "09:00 AM",
-                title: "Arrival at Noi Bai International Airport",
-                description: "Check-in at Hanoi La Siesta Hotel & Spa",
-                type: "travel",
-              },
-              {
-                time: "12:00 PM",
-                title: "Lunch at Bún Chả Hương Liên",
-                description: "Famous spot where Anthony Bourdain dined with Barack Obama",
-                type: "food",
-              },
-              {
-                time: "02:00 PM",
-                title: "Old Quarter Walking Tour",
-                description: "Explore the historic streets and shops of Hanoi's Old Quarter",
-                type: "activity",
-              },
-              {
-                time: "06:00 PM",
-                title: "Dinner at Cha Ca La Vong",
-                description: "Try the famous fish dish that the restaurant is named after",
-                type: "food",
-              },
-            ]}
-          />
-
-          <ItineraryDay
-            day={2}
-            date="May 16, 2023"
-            location="Hanoi"
-            activities={[
-              {
-                time: "08:00 AM",
-                title: "Breakfast at Hotel",
-                description: "Continental breakfast included with stay",
-                type: "food",
-              },
-              {
-                time: "09:30 AM",
-                title: "Ho Chi Minh Mausoleum",
-                description: "Visit the memorial dedicated to the Vietnamese leader",
-                type: "activity",
-              },
-              {
-                time: "12:30 PM",
-                title: "Lunch at Quan An Ngon",
-                description: "Sample a variety of Vietnamese street food in a restaurant setting",
-                type: "food",
-              },
-              {
-                time: "03:00 PM",
-                title: "Temple of Literature",
-                description: "Explore Vietnam's first national university",
-                type: "activity",
-              },
-              {
-                time: "07:00 PM",
-                title: "Water Puppet Show",
-                description: "Evening performance at Thang Long Water Puppet Theatre",
-                type: "activity",
-              },
-            ]}
-          />
-
-          {/* More days would be added here */}
+          {itinerary.days.length > 0 ? (
+            itinerary.days.map((day) => (
+              <ItineraryDay
+                key={day.id}
+                day={day.day}
+                date={day.date}
+                location={day.location}
+                activities={day.activities}
+              />
+            ))
+          ) : (
+            <div className="rounded-lg border p-8 text-center">
+              <p className="text-muted-foreground">No daily itinerary has been added yet.</p>
+            </div>
+          )}
         </section>
 
         <CommentSection />
