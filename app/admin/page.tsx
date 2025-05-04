@@ -55,7 +55,12 @@ export default function AdminPage() {
   const [isOfflineMode, setIsOfflineMode] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [itemToDelete, setItemToDelete] = useState<{ type: string; id: string; name: string } | null>(null)
+  const [itemToDelete, setItemToDelete] = useState<{
+    type: string
+    id: string
+    name: string
+    itineraryId?: string
+  } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [itineraries, setItineraries] = useState<Itinerary[]>([])
   const [accommodations, setAccommodations] = useState<Accommodation[]>([])
@@ -95,6 +100,12 @@ export default function AdminPage() {
     title: "",
     description: "",
     type: "activity",
+    expense: {
+      amount: 0,
+      currency: "INR",
+      category: "general",
+    },
+    image: "",
   })
   const [newLocation, setNewLocation] = useState<Partial<Location>>({
     name: "",
@@ -125,11 +136,30 @@ export default function AdminPage() {
     setIsLoading(false)
   }, [router])
 
-  const loadData = () => {
-    setItineraries(getItineraries())
-    setAccommodations(getAccommodations())
-    setLocations(getLocations())
-    setCompanions(getCompanions())
+  const loadData = async () => {
+    try {
+      setIsLoading(true)
+      const [itinerariesData, accommodationsData, locationsData, companionsData] = await Promise.all([
+        getItineraries(),
+        getAccommodations(),
+        getLocations(),
+        getCompanions(),
+      ])
+
+      setItineraries(itinerariesData)
+      setAccommodations(accommodationsData)
+      setLocations(locationsData)
+      setCompanions(companionsData)
+    } catch (error) {
+      console.error("Error loading data:", error)
+      toast({
+        title: "Error loading data",
+        description: "There was a problem loading your data. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleLogout = () => {
@@ -139,86 +169,127 @@ export default function AdminPage() {
     router.push("/")
   }
 
-  const handleSaveChanges = () => {
-    toast({
-      title: "Changes saved",
-      description: isOfflineMode
-        ? "Your changes have been saved locally and will sync when you're back online."
-        : "Your changes have been saved successfully.",
-    })
+  const handleSaveChanges = async () => {
+    try {
+      // If we're in offline mode, we would sync the local changes
+      // For now, we'll just show a success message
+      toast({
+        title: "Changes saved",
+        description: isOfflineMode
+          ? "Your changes have been saved locally and will sync when you're back online."
+          : "Your changes have been saved successfully.",
+      })
+
+      // Refresh data to show the changes
+      await loadData()
+    } catch (error) {
+      console.error("Error saving changes:", error)
+      toast({
+        title: "Error",
+        description: "There was a problem saving your changes. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   const toggleOfflineMode = () => {
-    setIsOfflineMode(!isOfflineMode)
+    const newMode = !isOfflineMode
+    setIsOfflineMode(newMode)
+
+    // Update UI immediately
     toast({
-      title: isOfflineMode ? "Online Mode Activated" : "Offline Mode Activated",
-      description: isOfflineMode
-        ? "Changes will be saved directly to the database."
-        : "Changes will be saved locally and synced when you're back online.",
+      title: newMode ? "Offline Mode Activated" : "Online Mode Activated",
+      description: newMode
+        ? "Changes will be saved locally and synced when you're back online."
+        : "Changes will be saved directly to the database.",
     })
+
+    // Save the mode to localStorage
+    localStorage.setItem("offlineMode", newMode ? "true" : "false")
   }
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (itemToDelete) {
-      switch (itemToDelete.type) {
-        case "destination":
-          deleteItinerary(itemToDelete.id)
-          setItineraries(getItineraries())
-          break
-        case "location":
-          deleteLocation(itemToDelete.id)
-          setLocations(getLocations())
-          break
-        case "accommodation":
-          deleteAccommodation(itemToDelete.id)
-          setAccommodations(getAccommodations())
-          break
-        case "companion":
-          deleteCompanion(itemToDelete.id)
-          setCompanions(getCompanions())
-          break
-        case "day":
-          deleteDay(itemToDelete.id)
-          if (selectedItinerary) {
-            const updated = getItinerary(selectedItinerary.id)
-            if (updated) setSelectedItinerary(updated)
-          }
-          break
-        case "activity":
-          if (currentDay) {
-            deleteActivity(currentDay.id, itemToDelete.id)
-            if (selectedItinerary) {
-              const updated = getItinerary(selectedItinerary.id)
-              if (updated) setSelectedItinerary(updated)
+      try {
+        switch (itemToDelete.type) {
+          case "destination":
+            await deleteItinerary(itemToDelete.id)
+            setItineraries(await getItineraries())
+            break
+          case "location":
+            await deleteLocation(itemToDelete.id)
+            setLocations(await getLocations())
+            break
+          case "accommodation":
+            await deleteAccommodation(itemToDelete.id)
+            setAccommodations(await getAccommodations())
+            break
+          case "companion":
+            await deleteCompanion(itemToDelete.id)
+            setCompanions(await getCompanions())
+            break
+          case "day":
+            if (itemToDelete.itineraryId) {
+              await deleteDay(itemToDelete.itineraryId, itemToDelete.id)
+              if (selectedItinerary) {
+                const updated = await getItinerary(selectedItinerary.id)
+                if (updated) setSelectedItinerary(updated)
+              }
             }
-          }
-          break
+            break
+          case "activity":
+            if (currentDay && itemToDelete.itineraryId) {
+              await deleteActivity(itemToDelete.itineraryId, currentDay.id, itemToDelete.id)
+              if (selectedItinerary) {
+                const updated = await getItinerary(selectedItinerary.id)
+                if (updated) setSelectedItinerary(updated)
+              }
+            }
+            break
+        }
+
+        toast({
+          title: "Item deleted",
+          description: `${itemToDelete.name} has been deleted successfully.`,
+        })
+      } catch (error) {
+        console.error("Error deleting item:", error)
+        toast({
+          title: "Error",
+          description: "There was a problem deleting the item. Please try again.",
+          variant: "destructive",
+        })
       }
 
-      toast({
-        title: "Item deleted",
-        description: `${itemToDelete.name} has been deleted successfully.`,
-      })
       setDeleteDialogOpen(false)
       setItemToDelete(null)
     }
   }
 
-  const confirmDelete = (type: string, id: string, name: string) => {
-    setItemToDelete({ type, id, name })
+  const confirmDelete = (type: string, id: string, name: string, itineraryId?: string) => {
+    setItemToDelete({ type, id, name, itineraryId })
     setDeleteDialogOpen(true)
   }
 
-  const markAsComplete = (id: string, name: string) => {
-    markItineraryAsComplete(id)
-    setItineraries(getItineraries())
-    toast({
-      title: "Trip marked as complete",
-      description: `${name} has been marked as completed.`,
-    })
+  const markAsComplete = async (id: string, name: string) => {
+    try {
+      await markItineraryAsComplete(id)
+      setItineraries(await getItineraries())
+      toast({
+        title: "Trip marked as complete",
+        description: `${name} has been marked as completed.`,
+      })
+    } catch (error) {
+      console.error("Error marking trip as complete:", error)
+      toast({
+        title: "Error",
+        description: "There was a problem updating the trip status. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
-  const handleAddItinerary = () => {
+  const handleAddItinerary = async () => {
     if (!newItinerary.destination || !newItinerary.startDate || !newItinerary.endDate) {
       toast({
         title: "Missing information",
@@ -228,40 +299,49 @@ export default function AdminPage() {
       return
     }
 
-    const itinerary: Itinerary = {
-      id: generateId(),
-      destination: newItinerary.destination || "",
-      image: newItinerary.image || "/placeholder.svg?height=300&width=400",
-      description: newItinerary.description || "",
-      startDate: newItinerary.startDate || "",
-      endDate: newItinerary.endDate || "",
-      status: (newItinerary.status as "online" | "completed") || "online",
-      season: (newItinerary.season as string) || "Spring",
-      rating: 0,
-      reviewCount: 0,
-      locations: [],
-      days: [],
+    try {
+      const itinerary: Itinerary = {
+        id: generateId(),
+        destination: newItinerary.destination || "",
+        image: newItinerary.image || "/placeholder.svg?height=300&width=400",
+        description: newItinerary.description || "",
+        startDate: newItinerary.startDate || "",
+        endDate: newItinerary.endDate || "",
+        status: (newItinerary.status as "online" | "completed") || "online",
+        season: (newItinerary.season as string) || "Spring",
+        rating: 0,
+        reviewCount: 0,
+        locations: [],
+        days: [],
+      }
+
+      await saveItinerary(itinerary)
+      setItineraries(await getItineraries())
+      setNewItinerary({
+        destination: "",
+        description: "",
+        image: "/placeholder.svg?height=300&width=400",
+        startDate: "",
+        endDate: "",
+        status: "online",
+        season: "Spring",
+        locations: [],
+        days: [],
+      })
+      setShowItineraryForm(false)
+
+      toast({
+        title: "Itinerary added",
+        description: `${itinerary.destination} has been added successfully.`,
+      })
+    } catch (error) {
+      console.error("Error adding itinerary:", error)
+      toast({
+        title: "Error",
+        description: "There was a problem adding the itinerary. Please try again.",
+        variant: "destructive",
+      })
     }
-
-    saveItinerary(itinerary)
-    setItineraries(getItineraries())
-    setNewItinerary({
-      destination: "",
-      description: "",
-      image: "/placeholder.svg?height=300&width=400",
-      startDate: "",
-      endDate: "",
-      status: "online",
-      season: "Spring",
-      locations: [],
-      days: [],
-    })
-    setShowItineraryForm(false)
-
-    toast({
-      title: "Itinerary added",
-      description: `${itinerary.destination} has been added successfully.`,
-    })
   }
 
   const handleEditItinerary = (itinerary: Itinerary) => {
@@ -278,32 +358,41 @@ export default function AdminPage() {
     setShowItineraryForm(true)
   }
 
-  const handleUpdateItinerary = () => {
+  const handleUpdateItinerary = async () => {
     if (!selectedItinerary) return
 
-    const updatedItinerary: Itinerary = {
-      ...selectedItinerary,
-      destination: newItinerary.destination || selectedItinerary.destination,
-      description: newItinerary.description || selectedItinerary.description,
-      image: newItinerary.image || selectedItinerary.image,
-      startDate: newItinerary.startDate || selectedItinerary.startDate,
-      endDate: newItinerary.endDate || selectedItinerary.endDate,
-      status: (newItinerary.status as "online" | "completed") || selectedItinerary.status,
-      season: (newItinerary.season as string) || selectedItinerary.season,
+    try {
+      const updatedItinerary: Itinerary = {
+        ...selectedItinerary,
+        destination: newItinerary.destination || selectedItinerary.destination,
+        description: newItinerary.description || selectedItinerary.description,
+        image: newItinerary.image || selectedItinerary.image,
+        startDate: newItinerary.startDate || selectedItinerary.startDate,
+        endDate: newItinerary.endDate || selectedItinerary.endDate,
+        status: (newItinerary.status as "online" | "completed") || selectedItinerary.status,
+        season: (newItinerary.season as string) || selectedItinerary.season,
+      }
+
+      await saveItinerary(updatedItinerary)
+      setItineraries(await getItineraries())
+      setSelectedItinerary(updatedItinerary)
+      setShowItineraryForm(false)
+
+      toast({
+        title: "Itinerary updated",
+        description: `${updatedItinerary.destination} has been updated successfully.`,
+      })
+    } catch (error) {
+      console.error("Error updating itinerary:", error)
+      toast({
+        title: "Error",
+        description: "There was a problem updating the itinerary. Please try again.",
+        variant: "destructive",
+      })
     }
-
-    saveItinerary(updatedItinerary)
-    setItineraries(getItineraries())
-    setSelectedItinerary(updatedItinerary)
-    setShowItineraryForm(false)
-
-    toast({
-      title: "Itinerary updated",
-      description: `${updatedItinerary.destination} has been updated successfully.`,
-    })
   }
 
-  const handleAddDay = () => {
+  const handleAddDay = async () => {
     if (!selectedItinerary || !newDay.date || !newDay.location) {
       toast({
         title: "Missing information",
@@ -313,34 +402,42 @@ export default function AdminPage() {
       return
     }
 
-    const day: ItineraryDayType = {
-      id: generateId(),
-      day: newDay.day || 1,
-      date: newDay.date || "",
-      location: newDay.location || "",
-      activities: [],
+    try {
+      const day: ItineraryDayType = {
+        id: generateId(),
+        day: newDay.day || 1,
+        date: newDay.date || "",
+        location: newDay.location || "",
+        activities: [],
+      }
+
+      const updated = await addDayToItinerary(selectedItinerary.id, day)
+      if (updated) setSelectedItinerary(updated)
+
+      setNewDay({
+        day: (selectedItinerary.days.length || 0) + 1,
+        date: "",
+        location: "",
+        activities: [],
+      })
+      setShowDayForm(false)
+
+      toast({
+        title: "Day added",
+        description: `Day ${day.day} has been added to ${selectedItinerary.destination}.`,
+      })
+    } catch (error) {
+      console.error("Error adding day:", error)
+      toast({
+        title: "Error",
+        description: "There was a problem adding the day. Please try again.",
+        variant: "destructive",
+      })
     }
-
-    addDayToItinerary(selectedItinerary.id, day)
-    const updated = getItinerary(selectedItinerary.id)
-    if (updated) setSelectedItinerary(updated)
-
-    setNewDay({
-      day: (selectedItinerary.days.length || 0) + 1,
-      date: "",
-      location: "",
-      activities: [],
-    })
-    setShowDayForm(false)
-
-    toast({
-      title: "Day added",
-      description: `Day ${day.day} has been added to ${selectedItinerary.destination}.`,
-    })
   }
 
-  const handleAddActivity = () => {
-    if (!currentDay || !newActivity.time || !newActivity.title) {
+  const handleAddActivity = async () => {
+    if (!currentDay || !selectedItinerary || !newActivity.time || !newActivity.title) {
       toast({
         title: "Missing information",
         description: "Please fill in all required fields.",
@@ -349,35 +446,49 @@ export default function AdminPage() {
       return
     }
 
-    const activity: Activity = {
-      id: generateId(),
-      time: newActivity.time || "",
-      title: newActivity.title || "",
-      description: newActivity.description || "",
-      type: (newActivity.type as "food" | "activity" | "travel" | "accommodation") || "activity",
-    }
+    try {
+      const activity: Activity = {
+        id: generateId(),
+        time: newActivity.time || "",
+        title: newActivity.title || "",
+        description: newActivity.description || "",
+        type: (newActivity.type as "food" | "activity" | "travel" | "accommodation") || "activity",
+        expense: newActivity.expense || { amount: 0, currency: "INR", category: "general" },
+        image: newActivity.image || "",
+      }
 
-    addActivityToDay(currentDay.id, activity)
-    if (selectedItinerary) {
-      const updated = getItinerary(selectedItinerary.id)
+      const updated = await addActivityToDay(selectedItinerary.id, currentDay.id, activity)
       if (updated) setSelectedItinerary(updated)
+
+      setNewActivity({
+        time: "",
+        title: "",
+        description: "",
+        type: "activity",
+        expense: {
+          amount: 0,
+          currency: "INR",
+          category: "general",
+        },
+        image: "",
+      })
+      setShowActivityForm(false)
+
+      toast({
+        title: "Activity added",
+        description: `${activity.title} has been added to Day ${currentDay.day}.`,
+      })
+    } catch (error) {
+      console.error("Error adding activity:", error)
+      toast({
+        title: "Error",
+        description: "There was a problem adding the activity. Please try again.",
+        variant: "destructive",
+      })
     }
-
-    setNewActivity({
-      time: "",
-      title: "",
-      description: "",
-      type: "activity",
-    })
-    setShowActivityForm(false)
-
-    toast({
-      title: "Activity added",
-      description: `${activity.title} has been added to Day ${currentDay.day}.`,
-    })
   }
 
-  const handleAddLocation = () => {
+  const handleAddLocation = async () => {
     if (!selectedItinerary || !newLocation.name || !newLocation.dates) {
       toast({
         title: "Missing information",
@@ -387,56 +498,74 @@ export default function AdminPage() {
       return
     }
 
-    const location: Location = {
-      id: generateId(),
-      name: newLocation.name || "",
-      dates: newLocation.dates || "",
-      destinationId: selectedItinerary.id,
+    try {
+      const location: Location = {
+        id: generateId(),
+        name: newLocation.name || "",
+        dates: newLocation.dates || "",
+        destinationId: selectedItinerary.id,
+      }
+
+      await saveLocation(location)
+      setLocations(await getLocations())
+
+      // Update the itinerary's locations array
+      const updatedItinerary = {
+        ...selectedItinerary,
+        locations: [...selectedItinerary.locations, location.name],
+      }
+      await saveItinerary(updatedItinerary)
+      setSelectedItinerary(updatedItinerary)
+
+      setNewLocation({
+        name: "",
+        dates: "",
+      })
+      setShowLocationForm(false)
+
+      toast({
+        title: "Location added",
+        description: `${location.name} has been added to ${selectedItinerary.destination}.`,
+      })
+    } catch (error) {
+      console.error("Error adding location:", error)
+      toast({
+        title: "Error",
+        description: "There was a problem adding the location. Please try again.",
+        variant: "destructive",
+      })
     }
-
-    saveLocation(location)
-    setLocations(getLocations())
-
-    // Update the itinerary's locations array
-    const updatedItinerary = {
-      ...selectedItinerary,
-      locations: [...selectedItinerary.locations, location.name],
-    }
-    saveItinerary(updatedItinerary)
-    setSelectedItinerary(updatedItinerary)
-
-    setNewLocation({
-      name: "",
-      dates: "",
-    })
-    setShowLocationForm(false)
-
-    toast({
-      title: "Location added",
-      description: `${location.name} has been added to ${selectedItinerary.destination}.`,
-    })
   }
 
-  const handleUpdateLocation = () => {
+  const handleUpdateLocation = async () => {
     if (!currentLocation || !selectedItinerary) return
 
-    const updatedLocation: Location = {
-      ...currentLocation,
-      name: newLocation.name || currentLocation.name,
-      dates: newLocation.dates || currentLocation.dates,
+    try {
+      const updatedLocation: Location = {
+        ...currentLocation,
+        name: newLocation.name || currentLocation.name,
+        dates: newLocation.dates || currentLocation.dates,
+      }
+
+      await saveLocation(updatedLocation)
+      setLocations(await getLocations())
+      setShowLocationForm(false)
+
+      toast({
+        title: "Location updated",
+        description: `${updatedLocation.name} has been updated successfully.`,
+      })
+    } catch (error) {
+      console.error("Error updating location:", error)
+      toast({
+        title: "Error",
+        description: "There was a problem updating the location. Please try again.",
+        variant: "destructive",
+      })
     }
-
-    saveLocation(updatedLocation)
-    setLocations(getLocations())
-    setShowLocationForm(false)
-
-    toast({
-      title: "Location updated",
-      description: `${updatedLocation.name} has been updated successfully.`,
-    })
   }
 
-  const handleAddAccommodation = () => {
+  const handleAddAccommodation = async () => {
     if (!selectedItinerary || !newAccommodation.name || !newAccommodation.location || !newAccommodation.dates) {
       toast({
         title: "Missing information",
@@ -446,51 +575,69 @@ export default function AdminPage() {
       return
     }
 
-    const accommodation: Accommodation = {
-      id: generateId(),
-      name: newAccommodation.name || "",
-      location: newAccommodation.location || "",
-      dates: newAccommodation.dates || "",
-      destinationId: selectedItinerary.id,
+    try {
+      const accommodation: Accommodation = {
+        id: generateId(),
+        name: newAccommodation.name || "",
+        location: newAccommodation.location || "",
+        dates: newAccommodation.dates || "",
+        destinationId: selectedItinerary.id,
+      }
+
+      await saveAccommodation(accommodation)
+      setAccommodations(await getAccommodations())
+
+      setNewAccommodation({
+        name: "",
+        location: "",
+        dates: "",
+      })
+      setShowAccommodationForm(false)
+
+      toast({
+        title: "Accommodation added",
+        description: `${accommodation.name} has been added to ${selectedItinerary.destination}.`,
+      })
+    } catch (error) {
+      console.error("Error adding accommodation:", error)
+      toast({
+        title: "Error",
+        description: "There was a problem adding the accommodation. Please try again.",
+        variant: "destructive",
+      })
     }
-
-    saveAccommodation(accommodation)
-    setAccommodations(getAccommodations())
-
-    setNewAccommodation({
-      name: "",
-      location: "",
-      dates: "",
-    })
-    setShowAccommodationForm(false)
-
-    toast({
-      title: "Accommodation added",
-      description: `${accommodation.name} has been added to ${selectedItinerary.destination}.`,
-    })
   }
 
-  const handleUpdateAccommodation = () => {
+  const handleUpdateAccommodation = async () => {
     if (!currentAccommodation) return
 
-    const updatedAccommodation: Accommodation = {
-      ...currentAccommodation,
-      name: newAccommodation.name || currentAccommodation.name,
-      location: newAccommodation.location || currentAccommodation.location,
-      dates: newAccommodation.dates || currentAccommodation.dates,
+    try {
+      const updatedAccommodation: Accommodation = {
+        ...currentAccommodation,
+        name: newAccommodation.name || currentAccommodation.name,
+        location: newAccommodation.location || currentAccommodation.location,
+        dates: newAccommodation.dates || currentAccommodation.dates,
+      }
+
+      await saveAccommodation(updatedAccommodation)
+      setAccommodations(await getAccommodations())
+      setShowAccommodationForm(false)
+
+      toast({
+        title: "Accommodation updated",
+        description: `${updatedAccommodation.name} has been updated successfully.`,
+      })
+    } catch (error) {
+      console.error("Error updating accommodation:", error)
+      toast({
+        title: "Error",
+        description: "There was a problem updating the accommodation. Please try again.",
+        variant: "destructive",
+      })
     }
-
-    saveAccommodation(updatedAccommodation)
-    setAccommodations(getAccommodations())
-    setShowAccommodationForm(false)
-
-    toast({
-      title: "Accommodation updated",
-      description: `${updatedAccommodation.name} has been updated successfully.`,
-    })
   }
 
-  const handleAddCompanion = () => {
+  const handleAddCompanion = async () => {
     if (!newCompanion.name || !newCompanion.relationship || !newCompanion.bio) {
       toast({
         title: "Missing information",
@@ -500,50 +647,68 @@ export default function AdminPage() {
       return
     }
 
-    const companion: Companion = {
-      id: generateId(),
-      name: newCompanion.name || "",
-      relationship: newCompanion.relationship || "",
-      bio: newCompanion.bio || "",
-      image: newCompanion.image || "/placeholder.svg?height=400&width=300",
+    try {
+      const companion: Companion = {
+        id: generateId(),
+        name: newCompanion.name || "",
+        relationship: newCompanion.relationship || "",
+        bio: newCompanion.bio || "",
+        image: newCompanion.image || "/placeholder.svg?height=400&width=300",
+      }
+
+      await saveCompanion(companion)
+      setCompanions(await getCompanions())
+
+      setNewCompanion({
+        name: "",
+        relationship: "",
+        bio: "",
+        image: "/placeholder.svg?height=400&width=300",
+      })
+      setShowCompanionForm(false)
+
+      toast({
+        title: "Companion added",
+        description: `${companion.name} has been added to your companions.`,
+      })
+    } catch (error) {
+      console.error("Error adding companion:", error)
+      toast({
+        title: "Error",
+        description: "There was a problem adding the companion. Please try again.",
+        variant: "destructive",
+      })
     }
-
-    saveCompanion(companion)
-    setCompanions(getCompanions())
-
-    setNewCompanion({
-      name: "",
-      relationship: "",
-      bio: "",
-      image: "/placeholder.svg?height=400&width=300",
-    })
-    setShowCompanionForm(false)
-
-    toast({
-      title: "Companion added",
-      description: `${companion.name} has been added to your companions.`,
-    })
   }
 
-  const handleUpdateCompanion = () => {
+  const handleUpdateCompanion = async () => {
     if (!currentCompanion) return
 
-    const updatedCompanion: Companion = {
-      ...currentCompanion,
-      name: newCompanion.name || currentCompanion.name,
-      relationship: newCompanion.relationship || currentCompanion.relationship,
-      bio: newCompanion.bio || currentCompanion.bio,
-      image: newCompanion.image || currentCompanion.image,
+    try {
+      const updatedCompanion: Companion = {
+        ...currentCompanion,
+        name: newCompanion.name || currentCompanion.name,
+        relationship: newCompanion.relationship || currentCompanion.relationship,
+        bio: newCompanion.bio || currentCompanion.bio,
+        image: newCompanion.image || currentCompanion.image,
+      }
+
+      await saveCompanion(updatedCompanion)
+      setCompanions(await getCompanions())
+      setShowCompanionForm(false)
+
+      toast({
+        title: "Companion updated",
+        description: `${updatedCompanion.name} has been updated successfully.`,
+      })
+    } catch (error) {
+      console.error("Error updating companion:", error)
+      toast({
+        title: "Error",
+        description: "There was a problem updating the companion. Please try again.",
+        variant: "destructive",
+      })
     }
-
-    saveCompanion(updatedCompanion)
-    setCompanions(getCompanions())
-    setShowCompanionForm(false)
-
-    toast({
-      title: "Companion updated",
-      description: `${updatedCompanion.name} has been updated successfully.`,
-    })
   }
 
   const handleEditLocation = (location: Location) => {
@@ -576,8 +741,20 @@ export default function AdminPage() {
     setShowCompanionForm(true)
   }
 
-  const handleSelectItinerary = (itinerary: Itinerary) => {
-    setSelectedItinerary(itinerary)
+  const handleSelectItinerary = async (itinerary: Itinerary) => {
+    try {
+      const fullItinerary = await getItinerary(itinerary.id)
+      if (fullItinerary) {
+        setSelectedItinerary(fullItinerary)
+      }
+    } catch (error) {
+      console.error("Error selecting itinerary:", error)
+      toast({
+        title: "Error",
+        description: "There was a problem loading the itinerary details. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   if (isLoading) {
@@ -595,11 +772,12 @@ export default function AdminPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 text-emerald-600 hover:underline">
-          <ArrowLeft className="h-4 w-4" />
-          Back to Travel Plans
-        </Link>
-
+        <div className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2 text-emerald-600 hover:underline">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Travel Plans
+          </Link>
+        </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <div className={`h-2 w-2 rounded-full ${isOfflineMode ? "bg-amber-500" : "bg-emerald-500"}`}></div>
@@ -857,6 +1035,12 @@ export default function AdminPage() {
                               title: "",
                               description: "",
                               type: "activity",
+                              expense: {
+                                amount: 0,
+                                currency: "INR",
+                                category: "general",
+                              },
+                              image: "",
                             })
                             setShowActivityForm(true)
                           }}
@@ -867,7 +1051,7 @@ export default function AdminPage() {
                         <Button
                           variant="destructive"
                           size="sm"
-                          onClick={() => confirmDelete("day", day.id, `Day ${day.day}`)}
+                          onClick={() => confirmDelete("day", day.id, `Day ${day.day}`, selectedItinerary.id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -894,7 +1078,9 @@ export default function AdminPage() {
                                 <Button
                                   variant="destructive"
                                   size="sm"
-                                  onClick={() => confirmDelete("activity", activity.id, activity.title)}
+                                  onClick={() =>
+                                    confirmDelete("activity", activity.id, activity.title, selectedItinerary.id)
+                                  }
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
@@ -1242,7 +1428,10 @@ export default function AdminPage() {
                 <Select
                   value={newActivity.type}
                   onValueChange={(value) =>
-                    setNewActivity({ ...newActivity, type: value as "food" | "activity" | "travel" | "accommodation" })
+                    setNewActivity({
+                      ...newActivity,
+                      type: value as "food" | "activity" | "travel" | "accommodation" | "must-visit",
+                    })
                   }
                 >
                   <SelectTrigger id="activity-type">
@@ -1253,6 +1442,7 @@ export default function AdminPage() {
                     <SelectItem value="activity">Activity</SelectItem>
                     <SelectItem value="travel">Travel</SelectItem>
                     <SelectItem value="accommodation">Accommodation</SelectItem>
+                    <SelectItem value="must-visit">Must Visit Place</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1272,6 +1462,56 @@ export default function AdminPage() {
                 rows={2}
                 value={newActivity.description}
                 onChange={(e) => setNewActivity({ ...newActivity, description: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="activity-expense">Expense Amount</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="activity-expense"
+                  type="number"
+                  value={newActivity.expense?.amount || 0}
+                  onChange={(e) =>
+                    setNewActivity({
+                      ...newActivity,
+                      expense: {
+                        ...(newActivity.expense as any),
+                        amount: Number.parseFloat(e.target.value),
+                      },
+                    })
+                  }
+                />
+                <Select
+                  value={newActivity.expense?.currency || "INR"}
+                  onValueChange={(value) =>
+                    setNewActivity({
+                      ...newActivity,
+                      expense: {
+                        ...(newActivity.expense as any),
+                        currency: value,
+                      },
+                    })
+                  }
+                >
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder="Currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="INR">INR (₹)</SelectItem>
+                    <SelectItem value="VND">VND (₫)</SelectItem>
+                    <SelectItem value="USD">USD ($)</SelectItem>
+                    <SelectItem value="EUR">EUR (€)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="activity-image">Image URL (Optional)</Label>
+              <Input
+                id="activity-image"
+                value={newActivity.image || ""}
+                onChange={(e) => setNewActivity({ ...newActivity, image: e.target.value })}
+                placeholder="https://example.com/image.jpg"
               />
             </div>
           </div>
@@ -1391,11 +1631,12 @@ export default function AdminPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="companion-relationship">Relationship</Label>
+              <Label htmlFor="companion-relationship">Role</Label>
               <Input
                 id="companion-relationship"
                 value={newCompanion.relationship}
                 onChange={(e) => setNewCompanion({ ...newCompanion, relationship: e.target.value })}
+                placeholder="e.g. Tour Guide, Photographer"
               />
             </div>
             <div className="space-y-2">

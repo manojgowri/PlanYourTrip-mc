@@ -6,12 +6,26 @@ import { Compass, MapPin } from "lucide-react"
 import { TravelCard } from "@/components/travel-card"
 import { Footer } from "@/components/footer"
 import { getItineraries, type Itinerary } from "@/lib/data"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function HomePage() {
   const [itineraries, setItineraries] = useState<Itinerary[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setItineraries(getItineraries())
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const data = await getItineraries()
+        setItineraries(data)
+      } catch (error) {
+        console.error("Error fetching itineraries:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
   }, [])
 
   return (
@@ -20,13 +34,15 @@ export default function HomePage() {
         <header className="mb-10 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Compass className="h-8 w-8 text-emerald-600" />
-            <h1 className="text-3xl font-bold">Plan Your Trip</h1>
+            <h1 className="text-3xl font-bold">
+              Plan Your Trip <span className="text-emerald-600">Amigos</span>
+            </h1>
           </div>
           <div className="flex items-center gap-4">
             <Link href="/companions" className="text-sm font-medium text-emerald-600 hover:text-emerald-700">
               Travel Companions
             </Link>
-            {/* Admin link removed from public view */}
+            <ThemeToggle />
           </div>
         </header>
 
@@ -39,45 +55,51 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {itineraries.map((itinerary) => (
-              <TravelCard
-                key={itinerary.id}
-                destination={itinerary.destination}
-                image={itinerary.image}
-                description={itinerary.description}
-                startDate={new Date(itinerary.startDate).toLocaleDateString("en-US", {
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-                endDate={new Date(itinerary.endDate).toLocaleDateString("en-US", {
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-                locations={itinerary.locations}
-                status={itinerary.status}
-                season={itinerary.season}
-                days={Math.ceil(
-                  (new Date(itinerary.endDate).getTime() - new Date(itinerary.startDate).getTime()) /
-                    (1000 * 60 * 60 * 24),
-                )}
-                rating={itinerary.rating}
-                reviewCount={itinerary.reviewCount}
-                id={itinerary.id}
-              />
-            ))}
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <p>Loading itineraries...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {itineraries.map((itinerary) => (
+                <TravelCard
+                  key={itinerary.id}
+                  destination={itinerary.destination}
+                  image={itinerary.image}
+                  description={itinerary.description}
+                  startDate={new Date(itinerary.startDate).toLocaleDateString("en-US", {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                  endDate={new Date(itinerary.endDate).toLocaleDateString("en-US", {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                  locations={itinerary.locations}
+                  status={itinerary.status}
+                  season={itinerary.season}
+                  days={Math.ceil(
+                    (new Date(itinerary.endDate).getTime() - new Date(itinerary.startDate).getTime()) /
+                      (1000 * 60 * 60 * 24),
+                  )}
+                  rating={itinerary.rating}
+                  reviewCount={itinerary.reviewCount}
+                  id={itinerary.id}
+                />
+              ))}
 
-            {itineraries.length === 0 && (
-              <div className="col-span-full rounded-lg border p-8 text-center">
-                <p className="text-muted-foreground">No travel plans have been added yet.</p>
-                <Link href="/admin" className="mt-4 inline-block text-emerald-600 hover:underline">
-                  Add your first trip
-                </Link>
-              </div>
-            )}
-          </div>
+              {itineraries.length === 0 && (
+                <div className="col-span-full rounded-lg border p-8 text-center">
+                  <p className="text-muted-foreground">No travel plans have been added yet.</p>
+                  <Link href="/admin" className="mt-4 inline-block text-emerald-600 hover:underline">
+                    Add your first trip
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
         </section>
 
         <section className="mb-12">

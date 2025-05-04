@@ -16,6 +16,10 @@ interface TravelCardProps {
   days: number
   rating: number
   reviewCount: number
+  expenses?: {
+    amount: number
+    currency: string
+  }
 }
 
 export function TravelCard({
@@ -31,6 +35,7 @@ export function TravelCard({
   days,
   rating,
   reviewCount,
+  expenses,
 }: TravelCardProps) {
   return (
     <Card className="group relative overflow-hidden transition-all hover:shadow-lg">
@@ -69,6 +74,16 @@ export function TravelCard({
         </div>
 
         <p className="mb-3 text-sm text-muted-foreground">{description}</p>
+
+        {expenses && expenses.amount > 0 && (
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-sm font-medium">Total Expenses:</span>
+            <Badge variant="outline" className="bg-green-50">
+              {expenses.currency === "INR" ? "₹" : "$"}
+              {expenses.amount.toFixed(2)}
+            </Badge>
+          </div>
+        )}
 
         <div className="flex flex-wrap gap-1">
           {locations.map((location, index) => (

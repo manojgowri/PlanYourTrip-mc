@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
+import { login } from "@/lib/data"
 
 export default function LoginPage() {
   const { toast } = useToast()
@@ -23,13 +24,12 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      // In a real app, this would be an API call to validate credentials
-      // For this demo, we're using hardcoded credentials
-      // The actual credentials would be stored securely and not in client-side code
-      if (username === "travel_admin" && password === "Budget!Travel2023") {
-        // Set auth token in localStorage (in a real app, use secure HTTP-only cookies)
-        localStorage.setItem("auth_token", "secure_admin_token")
-        localStorage.setItem("auth_user", username)
+      const result = await login(username, password)
+
+      if (result) {
+        // Store token and user info in localStorage
+        localStorage.setItem("auth_token", result.token)
+        localStorage.setItem("auth_user", JSON.stringify(result.user))
 
         toast({
           title: "Login successful",
@@ -38,17 +38,11 @@ export default function LoginPage() {
 
         // Redirect to admin page
         router.push("/admin")
-      } else {
-        toast({
-          title: "Login failed",
-          description: "Invalid username or password.",
-          variant: "destructive",
-        })
       }
     } catch (error) {
       toast({
-        title: "Login error",
-        description: "An error occurred during login.",
+        title: "Login failed",
+        description: "Invalid username or password.",
         variant: "destructive",
       })
     } finally {

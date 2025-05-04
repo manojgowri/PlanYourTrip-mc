@@ -7,9 +7,8 @@ import { ThemeProvider } from "@/components/theme-provider"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Plan Your Trip",
+  title: "Plan Your Trip Amigos",
   description: "Your personal travel planner and itinerary manager",
-    generator: 'v0.dev'
 }
 
 export default function RootLayout({
