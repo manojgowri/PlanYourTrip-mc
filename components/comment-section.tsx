@@ -6,65 +6,24 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Star } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import type { Comment } from "@/lib/data"
 
-interface Comment {
-  id: number
-  name: string
-  date: string
-  content: string
-  rating: number
+interface CommentSectionProps {
+  comments: Comment[]
+  onAddComment: (comment: Omit<Comment, "id" | "date">) => Promise<void>
+  itineraryId: string
 }
 
-// Sample comments
-const initialComments: Comment[] = [
-  {
-    id: 1,
-    name: "Alex Thompson",
-    date: "June 12, 2023",
-    content:
-      "This itinerary was incredibly helpful for planning my own Vietnam trip! The restaurant recommendations were spot on.",
-    rating: 5,
-  },
-  {
-    id: 2,
-    name: "Jamie Lee",
-    date: "May 30, 2023",
-    content: "I followed this exact itinerary and had an amazing time. The accommodations were perfect for my budget.",
-    rating: 5,
-  },
-  {
-    id: 3,
-    name: "Chris Morgan",
-    date: "May 25, 2023",
-    content: "Great itinerary overall, but I would suggest spending more time in Hoi An and less in Hanoi.",
-    rating: 4,
-  },
-  {
-    id: 4,
-    name: "Taylor Wilson",
-    date: "May 20, 2023",
-    content: "The budget tips were so helpful! I managed to do this trip for much less than I expected.",
-    rating: 5,
-  },
-  {
-    id: 5,
-    name: "Jordan Smith",
-    date: "May 15, 2023",
-    content: "This was my first time traveling to Southeast Asia and this itinerary made it so much easier to plan.",
-    rating: 5,
-  },
-]
-
-export function CommentSection() {
+export function CommentSection({ comments, onAddComment, itineraryId }: CommentSectionProps) {
   const { toast } = useToast()
-  const [comments, setComments] = useState<Comment[]>(initialComments)
   const [showAllComments, setShowAllComments] = useState(false)
   const [newComment, setNewComment] = useState("")
   const [newRating, setNewRating] = useState(5)
   const [hoverRating, setHoverRating] = useState(0)
   const [name, setName] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmitComment = () => {
+  const handleSubmitComment = async () => {
     if (!name.trim()) {
       toast({
         title: "Name required",
@@ -83,22 +42,33 @@ export function CommentSection() {
       return
     }
 
-    const comment: Comment = {
-      id: comments.length + 1,
-      name: name,
-      date: new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
-      content: newComment,
-      rating: newRating,
+    try {
+      setIsSubmitting(true)
+
+      await onAddComment({
+        name,
+        content: newComment,
+        rating: newRating,
+        itineraryId,
+      })
+
+      setNewComment("")
+      setName("")
+
+      toast({
+        title: "Comment submitted",
+        description: "Thank you for your feedback!",
+      })
+    } catch (error) {
+      console.error("Error submitting comment:", error)
+      toast({
+        title: "Error",
+        description: "There was a problem submitting your comment. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
     }
-
-    setComments([comment, ...comments])
-    setNewComment("")
-    setName("")
-
-    toast({
-      title: "Comment submitted",
-      description: "Thank you for your feedback!",
-    })
   }
 
   const displayedComments = showAllComments ? comments : comments.slice(0, 3)
@@ -162,7 +132,9 @@ export function CommentSection() {
             />
           </div>
 
-          <Button onClick={handleSubmitComment}>Submit Comment</Button>
+          <Button onClick={handleSubmitComment} disabled={isSubmitting}>
+            {isSubmitting ? "Submitting..." : "Submit Comment"}
+          </Button>
         </CardContent>
       </Card>
 
@@ -186,6 +158,10 @@ export function CommentSection() {
             <p className="text-sm">{comment.content}</p>
           </div>
         ))}
+
+        {comments.length === 0 && (
+          <p className="text-center text-muted-foreground">No comments yet. Be the first to leave a review!</p>
+        )}
 
         {comments.length > 3 && (
           <Button variant="outline" onClick={() => setShowAllComments(!showAllComments)} className="w-full">

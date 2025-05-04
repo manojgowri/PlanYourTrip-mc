@@ -8,7 +8,7 @@ import { Footer } from "@/components/footer"
 interface Companion {
   id: number
   name: string
-  relationship: string
+  relationship: string // We'll keep the property name but change the display text
   bio: string
   image: string
 }
@@ -82,7 +82,7 @@ export default function CompanionsPage() {
                 onClick={() => setSelectedCompanion(companion)}
               >
                 <h3 className="text-lg font-medium">{companion.name}</h3>
-                <p className="text-sm text-emerald-600">{companion.relationship}</p>
+                <p className="text-sm text-emerald-600">Role: {companion.relationship}</p>
                 <p className="mt-2 text-sm text-muted-foreground">{companion.bio}</p>
               </div>
             ))}
@@ -100,7 +100,7 @@ export default function CompanionsPage() {
                     />
                   </div>
                   <h3 className="text-xl font-medium">{selectedCompanion.name}</h3>
-                  <p className="text-emerald-600">{selectedCompanion.relationship}</p>
+                  <p className="text-emerald-600">Role: {selectedCompanion.relationship}</p>
                 </div>
               ) : (
                 <div className="flex h-80 items-center justify-center text-center text-muted-foreground">
@@ -122,7 +122,7 @@ export default function CompanionsPage() {
                   />
                 </div>
                 <h3 className="text-xl font-medium">{selectedCompanion.name}</h3>
-                <p className="text-emerald-600">{selectedCompanion.relationship}</p>
+                <p className="text-emerald-600">Role: {selectedCompanion.relationship}</p>
               </div>
             </div>
           )}

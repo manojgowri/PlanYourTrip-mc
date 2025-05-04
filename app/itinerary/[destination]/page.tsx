@@ -4,9 +4,10 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { ArrowLeft, MapPin, Utensils, Hotel, Star } from "lucide-react"
 import { ItineraryDay } from "@/components/itinerary-day"
-import { getItinerary, getAccommodations, type Itinerary } from "@/lib/data"
+import { getItinerary, getAccommodations, getComments, addComment, type Itinerary, type Comment } from "@/lib/data"
 import { Footer } from "@/components/footer"
 import { CommentSection } from "@/components/comment-section"
+import { PreTripChecklist } from "@/components/pre-trip-checklist"
 
 interface ItineraryPageProps {
   params: {
@@ -16,17 +17,92 @@ interface ItineraryPageProps {
 
 export default function ItineraryPage({ params }: ItineraryPageProps) {
   const [itinerary, setItinerary] = useState<Itinerary | null>(null)
+  const [accommodations, setAccommodations] = useState([])
+  const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
+  const [checklistItems, setChecklistItems] = useState([
+    {
+      id: "visa",
+      title: "Check Visa Requirements",
+      description: "Research and apply for necessary visas for Vietnam.",
+      completed: false,
+    },
+    {
+      id: "flights",
+      title: "Book Flights",
+      description: "Compare prices and book flights to Vietnam.",
+      completed: false,
+    },
+    {
+      id: "accommodation",
+      title: "Reserve Accommodations",
+      description: "Book hotels or hostels for your stay.",
+      completed: false,
+    },
+    {
+      id: "insurance",
+      title: "Get Travel Insurance",
+      description: "Purchase travel insurance for your trip.",
+      completed: false,
+    },
+    {
+      id: "currency",
+      title: "Exchange Currency",
+      description: "Get Vietnamese Dong (VND) for your trip.",
+      completed: false,
+    },
+  ])
 
   useEffect(() => {
-    const fetchData = () => {
-      const data = getItinerary(params.destination)
-      setItinerary(data || null)
-      setLoading(false)
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const itineraryData = await getItinerary(params.destination)
+
+        if (itineraryData) {
+          setItinerary(itineraryData)
+
+          // Fetch related data
+          const [accommodationsData, commentsData] = await Promise.all([
+            getAccommodations(itineraryData.id),
+            getComments(itineraryData.id),
+          ])
+
+          setAccommodations(accommodationsData)
+          setComments(commentsData)
+        }
+      } catch (error) {
+        console.error("Error fetching itinerary data:", error)
+      } finally {
+        setLoading(false)
+      }
     }
 
     fetchData()
   }, [params.destination])
+
+  const handleAddComment = async (comment: Omit<Comment, "id" | "date">) => {
+    if (!itinerary) return
+
+    try {
+      const newComment = await addComment({
+        ...comment,
+        id: "",
+        date: "",
+        itineraryId: itinerary.id,
+      })
+
+      if (newComment) {
+        setComments([newComment, ...comments])
+      }
+    } catch (error) {
+      console.error("Error adding comment:", error)
+    }
+  }
+
+  const toggleChecklistItem = (id: string) => {
+    setChecklistItems((items) => items.map((item) => (item.id === id ? { ...item, completed: !item.completed } : item)))
+  }
 
   if (loading) {
     return (
@@ -51,9 +127,6 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
   }
 
   const formattedDestination = itinerary.destination
-
-  // Get accommodations for this itinerary
-  const accommodations = getAccommodations(itinerary.id)
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -126,6 +199,17 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
           </div>
         </div>
 
+        {itinerary.status === "online" && (
+          <section className="mb-8">
+            <h2 className="mb-4 text-2xl font-semibold">Pre-Trip Planning</h2>
+            <PreTripChecklist
+              destination={itinerary.destination}
+              items={checklistItems}
+              onToggleItem={toggleChecklistItem}
+            />
+          </section>
+        )}
+
         <section className="space-y-6">
           <h2 className="text-2xl font-semibold">Daily Itinerary</h2>
 
@@ -146,7 +230,7 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
           )}
         </section>
 
-        <CommentSection />
+        <CommentSection comments={comments} onAddComment={handleAddComment} itineraryId={itinerary.id} />
       </div>
       <Footer />
     </div>
