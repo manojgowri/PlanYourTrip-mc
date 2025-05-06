@@ -65,14 +65,14 @@ export function ItineraryDay({ day, date, location, activities }: ItineraryDayPr
       {!isCollapsed && (
         <CardContent className="p-0">
           <div className="relative pl-8">
-            <div className="absolute left-4 top-0 h-full w-0.5 bg-emerald-200"></div>
+            <div className="absolute left-4 top-0 h-full w-0.5 bg-emerald-200 dark:bg-emerald-800"></div>
 
             {activities.map((activity, index) => (
               <div key={index} className="relative py-4 pl-6 pr-4">
-                <div className="absolute left-0 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-emerald-600 bg-white"></div>
-                <div className="mb-1 flex items-center justify-between">
-                  <span className="text-sm font-medium text-emerald-700">{activity.time}</span>
-                  <div className="flex items-center gap-2">
+                <div className="absolute left-0 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-emerald-600 bg-background"></div>
+                <div className="mb-1 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                  <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">{activity.time}</span>
+                  <div className="flex items-center gap-2 mt-1 sm:mt-0">
                     {getActivityIcon(activity.type)}
                     {activity.expense && activity.expense.amount > 0 && (
                       <span className="text-sm font-medium">
