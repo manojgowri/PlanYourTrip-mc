@@ -8,8 +8,17 @@ require("dotenv").config()
 const app = express()
 const PORT = process.env.PORT || 3001
 
-// Middleware
-app.use(cors())
+// CORS Configuration
+const corsOrigin = process.env.CORS_ORIGIN || "http://localhost:3000"
+app.use(
+  cors({
+    origin: corsOrigin,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  }),
+)
+
+// JSON Middleware
 app.use(express.json())
 
 // MongoDB Connection
@@ -566,6 +575,11 @@ app.put("/api/itineraries/:id/complete", authenticateToken, isAdmin, async (req,
 
 // Initialize admin user
 initializeAdmin()
+
+// Health check endpoint
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok", message: "Server is running" })
+})
 
 // Start server
 app.listen(PORT, () => {
