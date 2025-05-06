@@ -68,7 +68,7 @@ export function TravelCard({
             <span className="text-sm font-medium">{rating.toFixed(1)}</span>
             <span className="text-xs text-muted-foreground">({reviewCount} reviews)</span>
           </div>
-          <Badge variant="outline" className="bg-amber-50">
+          <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950/20">
             {season}
           </Badge>
         </div>
@@ -78,7 +78,7 @@ export function TravelCard({
         {expenses && expenses.amount > 0 && (
           <div className="mb-3 flex items-center justify-between">
             <span className="text-sm font-medium">Total Expenses:</span>
-            <Badge variant="outline" className="bg-green-50">
+            <Badge variant="outline" className="bg-green-50 dark:bg-green-950/20">
               {expenses.currency === "INR" ? "₹" : "$"}
               {expenses.amount.toFixed(2)}
             </Badge>
@@ -87,7 +87,7 @@ export function TravelCard({
 
         <div className="flex flex-wrap gap-1">
           {locations.map((location, index) => (
-            <Badge key={index} variant="outline" className="bg-emerald-50">
+            <Badge key={index} variant="outline" className="bg-emerald-50 dark:bg-emerald-950/20">
               {location}
             </Badge>
           ))}
@@ -102,7 +102,7 @@ export function TravelCard({
             </span>
           </div>
           {status === "completed" && (
-            <Badge variant="outline" className="bg-slate-50">
+            <Badge variant="outline" className="bg-slate-50 dark:bg-slate-900">
               {days} days
             </Badge>
           )}
