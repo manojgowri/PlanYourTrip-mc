@@ -1,60 +1,31 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Wifi, WifiOff } from "lucide-react"
+import { useState } from "react"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 
 interface ModeToggleProps {
-  initialMode?: boolean
-  onChange?: (isOffline: boolean) => void
+  initialMode?: "edit" | "view"
+  onChange?: (mode: "edit" | "view") => void
 }
 
-export function ModeToggle({ initialMode = false, onChange }: ModeToggleProps) {
-  const [isOffline, setIsOffline] = useState(initialMode)
-  const [mounted, setMounted] = useState(false)
+export function ModeToggle({ initialMode = "view", onChange }: ModeToggleProps) {
+  const [mode, setMode] = useState<"edit" | "view">(initialMode)
 
-  // Avoid hydration mismatch
-  useEffect(() => {
-    setMounted(true)
-
-    // Check localStorage for saved mode
-    const savedMode = localStorage.getItem("offlineMode")
-    if (savedMode) {
-      setIsOffline(savedMode === "true")
-    }
-  }, [])
-
-  const toggleMode = () => {
-    const newMode = !isOffline
-    setIsOffline(newMode)
-    localStorage.setItem("offlineMode", String(newMode))
-
+  const handleToggle = () => {
+    const newMode = mode === "view" ? "edit" : "view"
+    setMode(newMode)
     if (onChange) {
       onChange(newMode)
     }
   }
 
-  if (!mounted) {
-    return (
-      <Button variant="outline" size="sm" className="opacity-0">
-        Toggle Mode
-      </Button>
-    )
-  }
-
   return (
-    <Button variant="outline" size="sm" onClick={toggleMode} className="flex items-center gap-2">
-      {isOffline ? (
-        <>
-          <WifiOff className="h-4 w-4 text-amber-500" />
-          <span>Offline Mode</span>
-        </>
-      ) : (
-        <>
-          <Wifi className="h-4 w-4 text-emerald-500" />
-          <span>Online Mode</span>
-        </>
-      )}
-    </Button>
+    <div className="flex items-center space-x-2">
+      <Switch id="mode-toggle" checked={mode === "edit"} onCheckedChange={handleToggle} />
+      <Label htmlFor="mode-toggle" className="text-sm font-medium">
+        {mode === "edit" ? "Edit Mode" : "View Mode"}
+      </Label>
+    </div>
   )
 }

@@ -35,7 +35,7 @@ export default function HomePage() {
           <div className="flex items-center gap-2">
             <Compass className="h-8 w-8 text-emerald-600" />
             <h1 className="text-3xl font-bold">
-              Plan Your Trip <span className="text-emerald-600 font-bold">Amigos</span>
+              Plan Your Trip <span className="text-emerald-600">Amigos</span>
             </h1>
           </div>
           <div className="flex items-center gap-4">
@@ -85,7 +85,7 @@ export default function HomePage() {
                       (1000 * 60 * 60 * 24),
                   )}
                   rating={itinerary.rating}
-                  reviewCount={itinerary.reviewCount || 0}
+                  reviewCount={itinerary.reviewCount}
                   id={itinerary.id}
                 />
               ))}
@@ -103,7 +103,7 @@ export default function HomePage() {
         </section>
 
         <section className="mb-12">
-          <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/20 p-8">
+          <div className="rounded-xl bg-emerald-50 p-8">
             <div className="grid gap-8 md:grid-cols-2">
               <div>
                 <h2 className="mb-4 text-2xl font-bold">Budget Travel Made Easy</h2>
@@ -113,8 +113,8 @@ export default function HomePage() {
                 </p>
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
-                    <div className="rounded-full bg-emerald-100 dark:bg-emerald-900 p-2">
-                      <MapPin className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                    <div className="rounded-full bg-emerald-100 p-2">
+                      <MapPin className="h-5 w-5 text-emerald-600" />
                     </div>
                     <div>
                       <h3 className="font-medium">Affordable Accommodations</h3>
@@ -124,8 +124,8 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <div className="rounded-full bg-emerald-100 dark:bg-emerald-900 p-2">
-                      <MapPin className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                    <div className="rounded-full bg-emerald-100 p-2">
+                      <MapPin className="h-5 w-5 text-emerald-600" />
                     </div>
                     <div>
                       <h3 className="font-medium">Local Food Recommendations</h3>
@@ -135,8 +135,8 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <div className="rounded-full bg-emerald-100 dark:bg-emerald-900 p-2">
-                      <MapPin className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                    <div className="rounded-full bg-emerald-100 p-2">
+                      <MapPin className="h-5 w-5 text-emerald-600" />
                     </div>
                     <div>
                       <h3 className="font-medium">Hidden Gems</h3>
