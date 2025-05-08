@@ -2,50 +2,67 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Check } from "lucide-react"
+import { CheckCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { markItineraryAsComplete } from "@/lib/data"
 
 interface CompleteStatusButtonProps {
   itineraryId: string
-  itineraryName: string
-  onComplete?: () => void
+  isCompleted: boolean
+  onStatusChange?: (isCompleted: boolean) => void
 }
 
-export function CompleteStatusButton({ itineraryId, itineraryName, onComplete }: CompleteStatusButtonProps) {
+export function CompleteStatusButton({ itineraryId, isCompleted, onStatusChange }: CompleteStatusButtonProps) {
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [status, setStatus] = useState(isCompleted)
   const { toast } = useToast()
-  const [isLoading, setIsLoading] = useState(false)
 
-  const handleComplete = async () => {
-    setIsLoading(true)
+  const handleToggleStatus = async () => {
+    if (isUpdating) return
 
+    setIsUpdating(true)
     try {
-      await markItineraryAsComplete(itineraryId)
+      const updatedItinerary = await markItineraryAsComplete(itineraryId)
 
-      toast({
-        title: "Trip marked as complete",
-        description: `${itineraryName} has been marked as completed.`,
-      })
+      if (updatedItinerary) {
+        const newStatus = updatedItinerary.status === "completed"
+        setStatus(newStatus)
 
-      if (onComplete) {
-        onComplete()
+        if (onStatusChange) {
+          onStatusChange(newStatus)
+        }
+
+        toast({
+          title: newStatus ? "Marked as completed" : "Marked as active",
+          variant: "success",
+        })
+      } else {
+        toast({
+          title: "Failed to update status",
+          description: "Please try again later",
+          variant: "error",
+        })
       }
     } catch (error) {
-      console.error("Error marking trip as complete:", error)
       toast({
-        title: "Error",
-        description: "There was a problem updating the trip status. Please try again.",
-        variant: "destructive",
+        title: "Error updating status",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "error",
       })
     } finally {
-      setIsLoading(false)
+      setIsUpdating(false)
     }
   }
 
   return (
-    <Button variant="outline" size="sm" className="gap-1" onClick={handleComplete} disabled={isLoading}>
-      <Check className="h-4 w-4" />
-      {isLoading ? "Updating..." : "Complete"}
+    <Button
+      onClick={handleToggleStatus}
+      disabled={isUpdating}
+      variant={status ? "outline" : "default"}
+      className="flex items-center gap-2"
+    >
+      <CheckCircle size={16} className={status ? "text-green-500" : ""} />
+      {isUpdating ? "Updating..." : status ? "Completed" : "Mark as Complete"}
     </Button>
   )
 }

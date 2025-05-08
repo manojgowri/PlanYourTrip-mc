@@ -2,43 +2,41 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Save, Check } from "lucide-react"
+import { Save } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 interface SaveChangesButtonProps {
-  onSave: () => Promise<void>
-  isOfflineMode?: boolean
+  onSave: () => Promise<boolean>
+  disabled?: boolean
 }
 
-export function SaveChangesButton({ onSave, isOfflineMode = false }: SaveChangesButtonProps) {
-  const { toast } = useToast()
+export function SaveChangesButton({ onSave, disabled = false }: SaveChangesButtonProps) {
   const [isSaving, setIsSaving] = useState(false)
-  const [showSuccess, setShowSuccess] = useState(false)
+  const { toast } = useToast()
 
   const handleSave = async () => {
+    if (disabled || isSaving) return
+
     setIsSaving(true)
-
     try {
-      await onSave()
-
-      toast({
-        title: "Changes saved",
-        description: isOfflineMode
-          ? "Your changes have been saved locally and will sync when you're back online."
-          : "Your changes have been saved successfully.",
-      })
-
-      // Show success state briefly
-      setShowSuccess(true)
-      setTimeout(() => {
-        setShowSuccess(false)
-      }, 2000)
+      const success = await onSave()
+      if (success) {
+        toast({
+          title: "Changes saved successfully",
+          variant: "success",
+        })
+      } else {
+        toast({
+          title: "Failed to save changes",
+          description: "Please try again later",
+          variant: "error",
+        })
+      }
     } catch (error) {
-      console.error("Error saving changes:", error)
       toast({
-        title: "Error",
-        description: "There was a problem saving your changes. Please try again.",
-        variant: "destructive",
+        title: "Error saving changes",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "error",
       })
     } finally {
       setIsSaving(false)
@@ -46,18 +44,9 @@ export function SaveChangesButton({ onSave, isOfflineMode = false }: SaveChanges
   }
 
   return (
-    <Button onClick={handleSave} disabled={isSaving || showSuccess} className="relative">
-      {showSuccess ? (
-        <>
-          <Check className="mr-2 h-4 w-4" />
-          Saved
-        </>
-      ) : (
-        <>
-          <Save className="mr-2 h-4 w-4" />
-          {isSaving ? "Saving..." : "Save Changes"}
-        </>
-      )}
+    <Button onClick={handleSave} disabled={disabled || isSaving} className="flex items-center gap-2" variant="default">
+      <Save size={16} />
+      {isSaving ? "Saving..." : "Save Changes"}
     </Button>
   )
 }
