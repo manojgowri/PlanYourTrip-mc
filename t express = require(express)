@@ -1,0 +1,425 @@
+[1mdiff --git a/backend/server.js b/backend/server.js[m
+[1mindex 4505c35..ef37d1b 100644[m
+[1m--- a/backend/server.js[m
+[1m+++ b/backend/server.js[m
+[36m@@ -8,8 +8,21 @@[m [mrequire("dotenv").config()[m
+ const app = express()[m
+ const PORT = process.env.PORT || 3001[m
+ [m
+[32m+[m[32m// Enhanced logging for debugging[m
+[32m+[m[32mconsole.log("Starting server with environment:", {[m
+[32m+[m[32m  NODE_ENV: process.env.NODE_ENV,[m
+[32m+[m[32m  PORT: PORT,[m
+[32m+[m[32m  MONGODB_URI: process.env.MONGODB_URI ? "Set (hidden for security)" : "Not set",[m
+[32m+[m[32m  JWT_SECRET: process.env.JWT_SECRET ? "Set (hidden for security)" : "Not set",[m
+[32m+[m[32m  CORS_ORIGIN: process.env.CORS_ORIGIN || "*",[m
+[32m+[m[32m})[m
+[32m+[m
+ // CORS Configuration[m
+[31m-const corsOrigin = process.env.CORS_ORIGIN || "http://localhost:3000"[m
+[32m+[m[32m// Note: Using "*" for CORS origin is not recommended for production[m
+[32m+[m[32m// It's better to specify exact origins for security[m
+[32m+[m[32mconst corsOrigin = process.env.CORS_ORIGIN || "*"[m
+[32m+[m[32mconsole.log(`CORS origin set to: ${corsOrigin}`)[m
+[32m+[m
+ app.use([m
+   cors({[m
+     origin: corsOrigin,[m
+[36m@@ -18,14 +31,56 @@[m [mapp.use([m
+   }),[m
+ )[m
+ [m
+[31m-// JSON Middleware[m
+[31m-app.use(express.json())[m
+[32m+[m[32m// JSON Middleware with increased size limit for images[m
+[32m+[m[32mapp.use(express.json({ limit: "50mb" }))[m
+ [m
+[31m-// MongoDB Connection[m
+[32m+[m[32m// MongoDB Connection with enhanced error handling[m
+ mongoose[m
+   .connect(process.env.MONGODB_URI)[m
+[31m-  .then(() => console.log("Connected to MongoDB Atlas"))[m
+[31m-  .catch((err) => console.error("MongoDB connection error:", err))[m
+[32m+[m[32m  .then(() => {[m
+[32m+[m[32m    console.log("Connected to MongoDB Atlas successfully")[m
+[32m+[m[32m    // Log database information[m
+[32m+[m[32m    mongoose.connection.db[m
+[32m+[m[32m      .admin()[m
+[32m+[m[32m      .listDatabases()[m
+[32m+[m[32m      .then((result) => {[m
+[32m+[m[32m        console.log([m
+[32m+[m[32m          "Available databases:",[m
+[32m+[m[32m          result.databases.map((db) => db.name),[m
+[32m+[m[32m        )[m
+[32m+[m[32m        // List collections in the current database[m
+[32m+[m[32m        return mongoose.connection.db.listCollections().toArray()[m
+[32m+[m[32m      })[m
+[32m+[m[32m      .then((collections) => {[m
+[32m+[m[32m        console.log([m
+[32m+[m[32m          "Available collections:",[m
+[32m+[m[32m          collections.map((c) => c.name),[m
+[32m+[m[32m        )[m
+[32m+[m[32m      })[m
+[32m+[m[32m      .catch((err) => console.error("Error listing databases/collections:", err))[m
+[32m+[m[32m  })[m
+[32m+[m[32m  .catch((err) => {[m
+[32m+[m[32m    console.error("MongoDB connection error:", err)[m
+[32m+[m[32m    console.error([m
+[32m+[m[32m      "MongoDB URI format (redacted):",[m
+[32m+[m[32m      process.env.MONGODB_URI[m
+[32m+[m[32m        ? process.env.MONGODB_URI.replace(/mongodb\+srv:\/\/([^:]+):[^@]+@/, "mongodb+srv://[USERNAME]:[PASSWORD]@")[m
+[32m+[m[32m        : "Not set",[m
+[32m+[m[32m    )[m
+[32m+[m[32m  })[m
+[32m+[m
+[32m+[m[32m// Enhanced error handling for MongoDB connection[m
+[32m+[m[32mmongoose.connection.on("error", (err) => {[m
+[32m+[m[32m  console.error("MongoDB connection error event:", err)[m
+[32m+[m[32m})[m
+[32m+[m
+[32m+[m[32mmongoose.connection.on("disconnected", () => {[m
+[32m+[m[32m  console.log("MongoDB disconnected, attempting to reconnect...")[m
+[32m+[m[32m})[m
+[32m+[m
+[32m+[m[32mmongoose.connection.on("reconnected", () => {[m
+[32m+[m[32m  console.log("MongoDB reconnected successfully")[m
+[32m+[m[32m})[m
+ [m
+ // Define Schemas[m
+ const activitySchema = new mongoose.Schema({[m
+[36m@@ -149,24 +204,33 @@[m [mconst userSchema = new mongoose.Schema({[m
+   },[m
+ })[m
+ [m
+[31m-// Create Models[m
+[31m-const Itinerary = mongoose.model("Itinerary", itinerarySchema)[m
+[31m-const Location = mongoose.model("Location", locationSchema)[m
+[31m-const Accommodation = mongoose.model("Accommodation", accommodationSchema)[m
+[31m-const Companion = mongoose.model("Companion", companionSchema)[m
+[31m-const Comment = mongoose.model("Comment", commentSchema)[m
+[31m-const User = mongoose.model("User", userSchema)[m
+[32m+[m[32m// Create Models with explicit collection names to ensure consistency[m
+[32m+[m[32mconst Itinerary = mongoose.model("Itinerary", itinerarySchema, "itineraries")[m
+[32m+[m[32mconst Location = mongoose.model("Location", locationSchema, "locations")[m
+[32m+[m[32mconst Accommodation = mongoose.model("Accommodation", accommodationSchema, "accommodations")[m
+[32m+[m[32mconst Companion = mongoose.model("Companion", companionSchema, "companions")[m
+[32m+[m[32mconst Comment = mongoose.model("Comment", commentSchema, "comments")[m
+[32m+[m[32mconst User = mongoose.model("User", userSchema, "users")[m
+ [m
+[31m-// Authentication Middleware[m
+[32m+[m[32m// Authentication Middleware with enhanced logging[m
+ const authenticateToken = (req, res, next) => {[m
+   const authHeader = req.headers["authorization"][m
+   const token = authHeader && authHeader.split(" ")[1][m
+ [m
+[32m+[m[32m  console.log(`Auth attempt: ${req.method} ${req.path}`, {[m
+[32m+[m[32m    hasToken: !!token,[m
+[32m+[m[32m    authHeader: authHeader ? `${authHeader.substring(0, 15)}...` : "none",[m
+[32m+[m[32m  })[m
+[32m+[m
+   if (!token) return res.status(401).json({ message: "Access denied" })[m
+ [m
+   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {[m
+[31m-    if (err) return res.status(403).json({ message: "Invalid token" })[m
+[32m+[m[32m    if (err) {[m
+[32m+[m[32m      console.error("Token verification failed:", err.message)[m
+[32m+[m[32m      return res.status(403).json({ message: "Invalid token" })[m
+[32m+[m[32m    }[m
+     req.user = user[m
+[32m+[m[32m    console.log("Authentication successful for user:", user.username)[m
+     next()[m
+   })[m
+ }[m
+[36m@@ -200,6 +264,7 @@[m [mapp.post("/api/register", async (req, res) => {[m
+     await user.save()[m
+     res.status(201).json({ message: "User created successfully" })[m
+   } catch (error) {[m
+[32m+[m[32m    console.error("Registration error:", error)[m
+     res.status(500).json({ message: error.message })[m
+   }[m
+ })[m
+[36m@@ -207,22 +272,31 @@[m [mapp.post("/api/register", async (req, res) => {[m
+ app.post("/api/login", async (req, res) => {[m
+   try {[m
+     const { username, password } = req.body[m
+[32m+[m[32m    console.log("Login attempt for user:", username)[m
+ [m
+     // Find user[m
+     const user = await User.findOne({ username })[m
+[31m-    if (!user) return res.status(400).json({ message: "Invalid username or password" })[m
+[32m+[m[32m    if (!user) {[m
+[32m+[m[32m      console.log("Login failed: User not found")[m
+[32m+[m[32m      return res.status(400).json({ message: "Invalid username or password" })[m
+[32m+[m[32m    }[m
+ [m
+     // Validate password[m
+     const validPassword = await bcrypt.compare(password, user.password)[m
+[31m-    if (!validPassword) return res.status(400).json({ message: "Invalid username or password" })[m
+[32m+[m[32m    if (!validPassword) {[m
+[32m+[m[32m      console.log("Login failed: Invalid password")[m
+[32m+[m[32m      return res.status(400).json({ message: "Invalid username or password" })[m
+[32m+[m[32m    }[m
+ [m
+     // Create token[m
+     const token = jwt.sign({ id: user._id, username: user.username, isAdmin: user.isAdmin }, process.env.JWT_SECRET, {[m
+       expiresIn: "24h",[m
+     })[m
+ [m
+[32m+[m[32m    console.log("Login successful for user:", username)[m
+     res.json({ token, user: { username: user.username, isAdmin: user.isAdmin } })[m
+   } catch (error) {[m
+[32m+[m[32m    console.error("Login error:", error)[m
+     res.status(500).json({ message: error.message })[m
+   }[m
+ })[m
+[36m@@ -242,72 +316,128 @@[m [mconst initializeAdmin = async () => {[m
+       })[m
+ [m
+       await adminUser.save()[m
+[31m-      console.log("Admin user created")[m
+[32m+[m[32m      console.log("Admin user created successfully")[m
+[32m+[m[32m    } else {[m
+[32m+[m[32m      console.log("Admin user already exists")[m
+     }[m
+   } catch (error) {[m
+     console.error("Error creating admin user:", error)[m
+   }[m
+ }[m
+ [m
+[31m-// Itinerary Routes[m
+[32m+[m[32m// Itinerary Routes with enhanced logging[m
+ app.get("/api/itineraries", async (req, res) => {[m
+   try {[m
+[32m+[m[32m    console.log("Fetching all itineraries")[m
+     const itineraries = await Itinerary.find()[m
+[32m+[m[32m    console.log(`Found ${itineraries.length} itineraries`)[m
+     res.json(itineraries)[m
+   } catch (error) {[m
+[32m+[m[32m    console.error("Error fetching itineraries:", error)[m
+     res.status(500).json({ message: error.message })[m
+   }[m
+ })[m
+ [m
+ app.get("/api/itineraries/:id", async (req, res) => {[m
+   try {[m
+[32m+[m[32m    console.log(`Fetching itinerary with id: ${req.params.id}`)[m
+     const itinerary = await Itinerary.findOne({ id: req.params.id })[m
+[32m+[m
+     if (!itinerary) {[m
+[32m+[m[32m      console.log(`Itinerary not found with id: ${req.params.id}, trying by destination name`)[m
+       // Try to find by destination name (case insensitive)[m
+       const itineraryByName = await Itinerary.findOne({[m
+         destination: { $regex: new RegExp("^" + req.params.id + "$", "i") },[m
+       })[m
+ [m
+[31m-      if (!itineraryByName) return res.status(404).json({ message: "Itinerary not found" })[m
+[32m+[m[32m      if (!itineraryByName) {[m
+[32m+[m[32m        console.log(`Itinerary not found by destination name: ${req.params.id}`)[m
+[32m+[m[32m        return res.status(404).json({ message: "Itinerary not found" })[m
+[32m+[m[32m      }[m
+[32m+[m
+[32m+[m[32m      console.log(`Found itinerary by destination name: ${itineraryByName.destination}`)[m
+       return res.json(itineraryByName)[m
+     }[m
+[32m+[m
+[32m+[m[32m    console.log(`Found itinerary: ${itinerary.destination}`)[m
+     res.json(itinerary)[m
+   } catch (error) {[m
+[32m+[m[32m    console.error(`Error fetching itinerary ${req.params.id}:`, error)[m
+     res.status(500).json({ message: error.message })[m
+   }[m
+ })[m
+ [m
+ app.post("/api/itineraries", authenticateToken, isAdmin, async (req, res) => {[m
+   try {[m
+[32m+[m[32m    console.log("Creating new itinerary:", req.body.destination)[m
+[32m+[m[32m    console.log("Request body:", JSON.stringify(req.body))[m
+[32m+[m
+[32m+[m[32m    // Check if itinerary with this ID already exists[m
+[32m+[m[32m    const existingItinerary = await Itinerary.findOne({ id: req.body.id })[m
+[32m+[m[32m    if (existingItinerary) {[m
+[32m+[m[32m      console.log(`Itinerary with id ${req.body.id} already exists, updating instead`)[m
+[32m+[m[32m      const updatedItinerary = await Itinerary.findOneAndUpdate({ id: req.body.id }, req.body, { new: true })[m
+[32m+[m[32m      return res.json(updatedItinerary)[m
+[32m+[m[32m    }[m
+[32m+[m
+     const newItinerary = new Itinerary(req.body)[m
+     const savedItinerary = await newItinerary.save()[m
+[32m+[m
+[32m+[m[32m    console.log(`Itinerary created successfully with id: ${savedItinerary.id}`)[m
+     res.status(201).json(savedItinerary)[m
+   } catch (error) {[m
+[32m+[m[32m    console.error("Error creating itinerary:", error)[m
+     res.status(400).json({ message: error.message })[m
+   }[m
+ })[m
+ [m
+ app.put("/api/itineraries/:id", authenticateToken, isAdmin, async (req, res) => {[m
+   try {[m
+[32m+[m[32m    console.log(`Updating itinerary with id: ${req.params.id}`)[m
+[32m+[m[32m    console.log("Update data:", JSON.stringify(req.body))[m
+[32m+[m
+[32m+[m[32m    // First check if the itinerary exists[m
+[32m+[m[32m    const existingItinerary = await Itinerary.findOne({ id: req.params.id })[m
+[32m+[m[32m    if (!existingItinerary) {[m
+[32m+[m[32m      console.log(`Itinerary not found with id: ${req.params.id}, creating new one`)[m
+[32m+[m[32m      // If not found, create a new one[m
+[32m+[m[32m      const newItinerary = new Itinerary({[m
+[32m+[m[32m        ...req.body,[m
+[32m+[m[32m        id: req.params.id,[m
+[32m+[m[32m      })[m
+[32m+[m[32m      const savedItinerary = await newItinerary.save()[m
+[32m+[m[32m      console.log(`Created new itinerary with id: ${savedItinerary.id}`)[m
+[32m+[m[32m      return res.status(201).json(savedItinerary)[m
+[32m+[m[32m    }[m
+[32m+[m
+     const updatedItinerary = await Itinerary.findOneAndUpdate({ id: req.params.id }, req.body, { new: true })[m
+[31m-    if (!updatedItinerary) return res.status(404).json({ message: "Itinerary not found" })[m
+[32m+[m
+[32m+[m[32m    console.log(`Itinerary updated successfully: ${updatedItinerary.destination}`)[m
+     res.json(updatedItinerary)[m
+   } catch (error) {[m
+[32m+[m[32m    console.error(`Error updating itinerary ${req.params.id}:`, error)[m
+     res.status(400).json({ message: error.message })[m
+   }[m
+ })[m
+ [m
+ app.delete("/api/itineraries/:id", authenticateToken, isAdmin, async (req, res) => {[m
+   try {[m
+[32m+[m[32m    console.log(`Deleting itinerary with id: ${req.params.id}`)[m
+[32m+[m
+     const deletedItinerary = await Itinerary.findOneAndDelete({ id: req.params.id })[m
+[31m-    if (!deletedItinerary) return res.status(404).json({ message: "Itinerary not found" })[m
+[32m+[m[32m    if (!deletedItinerary) {[m
+[32m+[m[32m      console.log(`Itinerary not found with id: ${req.params.id}`)[m
+[32m+[m[32m      return res.status(404).json({ message: "Itinerary not found" })[m
+[32m+[m[32m    }[m
+ [m
+     // Delete related data[m
+     await Location.deleteMany({ destinationId: req.params.id })[m
+     await Accommodation.deleteMany({ destinationId: req.params.id })[m
+ [m
+[32m+[m[32m    console.log(`Itinerary deleted successfully: ${deletedItinerary.destination}`)[m
+     res.json({ message: "Itinerary deleted successfully" })[m
+   } catch (error) {[m
+[32m+[m[32m    console.error(`Error deleting itinerary ${req.params.id}:`, error)[m
+     res.status(500).json({ message: error.message })[m
+   }[m
+ })[m
+[36m@@ -316,24 +446,95 @@[m [mapp.delete("/api/itineraries/:id", authenticateToken, isAdmin, async (req, res)[m
+ app.get("/api/locations", async (req, res) => {[m
+   try {[m
+     const { destinationId } = req.query[m
+[32m+[m[32m    console.log(`Fetching locations${destinationId ? ` for destination: ${destinationId}` : ""}`)[m
+[32m+[m
+     const query = destinationId ? { destinationId } : {}[m
+     const locations = await Location.find(query)[m
+[32m+[m
+[32m+[m[32m    console.log(`Found ${locations.length} locations`)[m
+     res.json(locations)[m
+   } catch (error) {[m
+[32m+[m[32m    console.error("Error fetching locations:", error)[m
+     res.status(500).json({ message: error.message })[m
+   }[m
+ })[m
+ [m
+ app.post("/api/locations", authenticateToken, isAdmin, async (req, res) => {[m
+   try {[m
+[32m+[m[32m    console.log("Creating new location:", req.body.name)[m
+[32m+[m
+     const newLocation = new Location(req.body)[m
+     const savedLocation = await newLocation.save()[m
+[32m+[m
+[32m+[m[32m    console.log(`Location created successfully with id: ${savedLocation.id}`)[m
+     res.status(201).json(savedLocation)[m
+   } catch (error) {[m
+[32m+[m[32m    console.error("Error creating location:", error)[m
+     res.status(400).json({ message: error.message })[m
+   }[m
+ })[m
+ [m
+[32m+[m[32m// Add a database test endpoint[m
+[32m+[m[32mapp.get("/api/test-db", async (req, res) => {[m
+[32m+[m[32m  try {[m
+[32m+[m[32m    console.log("Testing database connection...")[m
+[32m+[m
+[32m+[m[32m    // Check connection status[m
+[32m+[m[32m    const connectionState = mongoose.connection.readyState[m
+[32m+[m[32m    const states = {[m
+[32m+[m[32m      0: "disconnected",[m
+[32m+[m[32m      1: "connected",[m
+[32m+[m[32m      2: "connecting",[m
+[32m+[m[32m      3: "disconnecting",[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    console.log(`MongoDB connection state: ${states[connectionState]}`)[m
+[32m+[m
+[32m+[m[32m    if (connectionState !== 1) {[m
+[32m+[m[32m      return res.status(500).json({[m
+[32m+[m[32m        success: false,[m
+[32m+[m[32m        message: `Database not connected (state: ${states[connectionState]})`,[m
+[32m+[m[32m        connectionState,[m
+[32m+[m[32m      })[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    // List all collections[m
+[32m+[m[32m    const collections = await mongoose.connection.db.listCollections().toArray()[m
+[32m+[m[32m    const collectionNames = collections.map((c) => c.name)[m
+[32m+[m
+[32m+[m[32m    // Count documents in each collection[m
+[32m+[m[32m    const counts = {}[m
+[32m+[m[32m    for (const name of collectionNames) {[m
+[32m+[m[32m      counts[name] = await mongoose.connection.db.collection(name).countDocuments()[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    // Try to insert a test document[m
+[32m+[m[32m    const testResult = await mongoose.connection.db.collection("test_collection").insertOne({[m
+[32m+[m[32m      test: "This is a test document",[m
+[32m+[m[32m      date: new Date(),[m
+[32m+[m[32m    })[m
+[32m+[m
+[32m+[m[32m    // Delete the test document[m
+[32m+[m[32m    await mongoose.connection.db.collection("test_collection").deleteOne({ _id: testResult.insertedId })[m
+[32m+[m
+[32m+[m[32m    res.json({[m
+[32m+[m[32m      success: true,[m
+[32m+[m[32m      message: "Database connection successful",[m
+[32m+[m[32m      connectionState: states[connectionState],[m
+[32m+[m[32m      collections: collectionNames,[m
+[32m+[m[32m      documentCounts: counts,[m
+[32m+[m[32m      testInsert: testResult.acknowledged,[m
+[32m+[m[32m    })[m
+[32m+[m[32m  } catch (error) {[m
+[32m+[m[32m    console.error("Database test error:", error)[m
+[32m+[m[32m    res.status(500).json({[m
+[32m+[m[32m      success: false,[m
+[32m+[m[32m      message: "Database test failed",[m
+[32m+[m[32m      error: error.message,[m
+[32m+[m[32m    })[m
+[32m+[m[32m  }[m
+[32m+[m[32m})[m
+[32m+[m
+ app.put("/api/locations/:id", authenticateToken, isAdmin, async (req, res) => {[m
+   try {[m
+     const updatedLocation = await Location.findOneAndUpdate({ id: req.params.id }, req.body, { new: true })[m
+[36m@@ -576,9 +777,18 @@[m [mapp.put("/api/itineraries/:id/complete", authenticateToken, isAdmin, async (req,[m
+ // Initialize admin user[m
+ initializeAdmin()[m
+ [m
+[31m-// Health check endpoint[m
+[32m+[m[32m// Health check endpoint with enhanced information[m
+ app.get("/health", (req, res) => {[m
+[31m-  res.status(200).json({ status: "ok", message: "Server is running" })[m
+[32m+[m[32m  const health = {[m
+[32m+[m[32m    status: "ok",[m
+[32m+[m[32m    timestamp: new Date(),[m
+[32m+[m[32m    uptime: process.uptime(),[m
+[32m+[m[32m    mongodb: mongoose.connection.readyState === 1 ? "connected" : "disconnected",[m
+[32m+[m[32m    environment: process.env.NODE_ENV || "development",[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  console.log("Health check:", health)[m
+[32m+[m[32m  res.status(200).json(health)[m
+ })[m
+ [m
+ // Start server[m
