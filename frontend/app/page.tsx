@@ -1,10 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Link from "next/link"
-import { Compass, MapPin } from "lucide-react"
+import { MapPin } from "lucide-react"
 import { TravelCard } from "@/components/travel-card"
-import { Footer } from "@/components/footer"
 import { getItineraries, type Itinerary } from "@/lib/data"
 import { ThemeToggle } from "@/components/theme-toggle"
 
@@ -32,16 +30,11 @@ export default function HomePage() {
     <div className="flex min-h-screen flex-col">
       <div className="container mx-auto flex-1 px-4 py-8">
         <header className="mb-10 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Compass className="h-8 w-8 text-emerald-600" />
-            <h1 className="text-3xl font-bold">
-              Plan Your Trip <span className="text-emerald-600">Amigos</span>
-            </h1>
+          <div>
+            <h2 className="text-2xl font-bold">Our Travel Adventures</h2>
+            <p className="text-muted-foreground">Explore our budget-friendly travel experiences</p>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/companions" className="text-sm font-medium text-emerald-600 hover:text-emerald-700">
-              Travel Companions
-            </Link>
             <ThemeToggle />
           </div>
         </header>
@@ -93,9 +86,6 @@ export default function HomePage() {
               {itineraries.length === 0 && (
                 <div className="col-span-full rounded-lg border p-8 text-center">
                   <p className="text-muted-foreground">No travel plans have been added yet.</p>
-                  <Link href="/admin" className="mt-4 inline-block text-emerald-600 hover:underline">
-                    Add your first trip
-                  </Link>
                 </div>
               )}
             </div>
@@ -160,7 +150,6 @@ export default function HomePage() {
           </div>
         </section>
       </div>
-      <Footer />
     </div>
   )
 }
