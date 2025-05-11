@@ -3,7 +3,6 @@
 import { useState } from "react"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
-import { Footer } from "@/components/footer"
 
 interface Companion {
   id: number
@@ -128,7 +127,6 @@ export default function CompanionsPage() {
           )}
         </div>
       </div>
-      <Footer />
     </div>
   )
 }

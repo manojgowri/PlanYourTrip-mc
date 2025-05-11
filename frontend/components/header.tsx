@@ -24,9 +24,8 @@ export function Header() {
 
   const navItems = [
     { href: "/", label: "Home" },
-    { href: "/itinerary", label: "Itineraries" },
     { href: "/companions", label: "Companions" },
-    { href: "/admin", label: "Admin" },
+    { href: "/admin", label: "Admin Access" },
   ]
 
   return (
@@ -68,11 +67,6 @@ export function Header() {
         <div className="flex items-center gap-2">
           <LanguageSelector />
           <ThemeToggle />
-          <Link href="/login">
-            <Button variant="outline" size="sm" className="hidden md:inline-flex">
-              Login
-            </Button>
-          </Link>
         </div>
       </div>
 
@@ -92,10 +86,13 @@ export function Header() {
                 {item.label}
               </Link>
             ))}
-            <Link href="/login" className="py-2" onClick={closeMenu}>
-              <Button variant="outline" size="sm" className="w-full">
-                Login
-              </Button>
+            {/* Admin access link */}
+            <Link
+              href="/admin"
+              className="py-2 text-sm font-medium transition-colors hover:text-primary"
+              onClick={closeMenu}
+            >
+              Admin Access
             </Link>
           </nav>
         </div>
