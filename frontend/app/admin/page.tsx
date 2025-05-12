@@ -48,6 +48,7 @@ import {
   type ItineraryDay as ItineraryDayType,
   type Activity,
 } from "@/lib/data"
+import ImageUpload from "@/components/image-upload"
 
 export default function AdminPage() {
   const { toast } = useToast()
@@ -1275,11 +1276,10 @@ export default function AdminPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="cover-image">Cover Image URL</Label>
-                <Input
-                  id="cover-image"
-                  value={newItinerary.image}
-                  onChange={(e) => setNewItinerary({ ...newItinerary, image: e.target.value })}
+                <Label htmlFor="cover-image">Cover Image</Label>
+                <ImageUpload
+                  initialImage={newItinerary.image}
+                  onImageChange={(imageData) => setNewItinerary({ ...newItinerary, image: imageData })}
                 />
               </div>
             </div>
