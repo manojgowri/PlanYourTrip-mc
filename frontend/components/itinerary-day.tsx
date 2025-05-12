@@ -1,24 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { MapPin, Utensils, Compass, Plane, ChevronDown, ChevronUp, Hotel, Star } from "lucide-react"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { formatCurrency } from "@/lib/models"
-
-type ActivityType = "food" | "activity" | "travel" | "accommodation" | "must-visit"
-
-interface Activity {
-  time: string
-  title: string
-  description: string
-  type: ActivityType
-  expense?: {
-    amount: number
-    currency: string
-    category: string
-  }
-  image?: string
-}
+import { ChevronDown, ChevronUp } from "lucide-react"
+import type { Activity } from "@/lib/data"
+import { getPlaceholderImage } from "@/lib/image-utils"
 
 interface ItineraryDayProps {
   day: number
@@ -28,93 +13,108 @@ interface ItineraryDayProps {
 }
 
 export function ItineraryDay({ day, date, location, activities }: ItineraryDayProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(true)
 
-  // Calculate total expenses for the day
-  const totalExpenses = activities.reduce((total, activity) => {
-    if (activity.expense && activity.expense.amount) {
-      return total + activity.expense.amount
+  const toggleExpand = () => {
+    setIsExpanded(!isExpanded)
+  }
+
+  const formattedDate = new Date(date).toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  })
+
+  const getActivityTypeColor = (type: string) => {
+    switch (type) {
+      case "food":
+        return "bg-amber-100 text-amber-800"
+      case "activity":
+        return "bg-blue-100 text-blue-800"
+      case "travel":
+        return "bg-purple-100 text-purple-800"
+      case "accommodation":
+        return "bg-green-100 text-green-800"
+      case "must-visit":
+        return "bg-red-100 text-red-800"
+      default:
+        return "bg-gray-100 text-gray-800"
     }
-    return total
-  }, 0)
+  }
 
   return (
-    <Card>
-      <CardHeader className="border-b bg-muted/50 pb-3 cursor-pointer" onClick={() => setIsCollapsed(!isCollapsed)}>
-        <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-2">
-            <h3 className="text-lg font-bold">
-              Day {day} - {location}
-            </h3>
-            {isCollapsed ? (
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            ) : (
-              <ChevronUp className="h-4 w-4 text-muted-foreground" />
-            )}
-            <p className="text-sm text-muted-foreground">{date}</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-emerald-600" />
-              <span className="text-sm">{location}</span>
-            </div>
-            {totalExpenses > 0 && <div className="text-sm font-medium">{formatCurrency(totalExpenses, "INR")}</div>}
-          </div>
+    <div className="rounded-lg border shadow-sm">
+      <div
+        className="flex cursor-pointer items-center justify-between p-4"
+        onClick={toggleExpand}
+        role="button"
+        tabIndex={0}
+      >
+        <div>
+          <h3 className="text-lg font-medium">
+            Day {day}: {location}
+          </h3>
+          <p className="text-sm text-muted-foreground">{formattedDate}</p>
         </div>
-      </CardHeader>
-      {!isCollapsed && (
-        <CardContent className="p-0">
-          <div className="relative pl-8">
-            <div className="absolute left-4 top-0 h-full w-0.5 bg-emerald-200"></div>
+        <button className="rounded-full p-1 hover:bg-gray-100">
+          {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+        </button>
+      </div>
 
-            {activities.map((activity, index) => (
-              <div key={index} className="relative py-4 pl-6 pr-4">
-                <div className="absolute left-0 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-emerald-600 bg-white"></div>
-                <div className="mb-1 flex items-center justify-between">
-                  <span className="text-sm font-medium text-emerald-700">{activity.time}</span>
-                  <div className="flex items-center gap-2">
-                    {getActivityIcon(activity.type)}
-                    {activity.expense && activity.expense.amount > 0 && (
-                      <span className="text-sm font-medium">
-                        {formatCurrency(activity.expense.amount, activity.expense.currency)}
+      {isExpanded && (
+        <div className="border-t px-4 py-3">
+          {activities.length > 0 ? (
+            <div className="space-y-4">
+              {activities.map((activity) => (
+                <div key={activity.id} className="flex gap-4">
+                  <div className="w-16 shrink-0 text-center">
+                    <span className="text-sm font-medium">{activity.time}</span>
+                  </div>
+                  <div className="flex-1 rounded-lg border p-3">
+                    <div className="mb-2 flex items-center justify-between">
+                      <h4 className="font-medium">{activity.title}</h4>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${getActivityTypeColor(activity.type)}`}
+                      >
+                        {activity.type}
                       </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{activity.description}</p>
+
+                    {activity.image && (
+                      <div className="mt-3 overflow-hidden rounded-md">
+                        <img
+                          src={activity.image || "/placeholder.svg"}
+                          alt={activity.title}
+                          className="h-40 w-full object-cover"
+                          onError={(e) => {
+                            // If image fails to load, replace with placeholder
+                            e.currentTarget.src = getPlaceholderImage(400, 160)
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {activity.expense && (
+                      <div className="mt-2 text-sm">
+                        <span className="font-medium">Cost: </span>
+                        <span>
+                          {activity.expense.amount} {activity.expense.currency}
+                        </span>
+                        {activity.expense.category && (
+                          <span className="ml-2 text-xs text-muted-foreground">({activity.expense.category})</span>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
-                <h4 className="font-medium">{activity.title}</h4>
-                <p className="text-sm text-muted-foreground">{activity.description}</p>
-
-                {activity.image && (
-                  <div className="mt-2 h-24 w-full overflow-hidden rounded-md">
-                    <img
-                      src={activity.image || "/placeholder.svg"}
-                      alt={activity.title}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </CardContent>
+              ))}
+            </div>
+          ) : (
+            <p className="py-2 text-center text-sm text-muted-foreground">No activities planned for this day yet.</p>
+          )}
+        </div>
       )}
-    </Card>
+    </div>
   )
-}
-
-function getActivityIcon(type: ActivityType) {
-  switch (type) {
-    case "food":
-      return <Utensils className="h-4 w-4 text-orange-500" />
-    case "activity":
-      return <Compass className="h-4 w-4 text-blue-500" />
-    case "travel":
-      return <Plane className="h-4 w-4 text-purple-500" />
-    case "accommodation":
-      return <Hotel className="h-4 w-4 text-red-500" />
-    case "must-visit":
-      return <Star className="h-4 w-4 text-amber-500" />
-    default:
-      return null
-  }
 }
