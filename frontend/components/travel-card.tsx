@@ -37,6 +37,17 @@ export function TravelCard({
   reviewCount,
   expenses,
 }: TravelCardProps) {
+  // Function to determine if the image is a base64 string or a URL
+  const isBase64Image = (src: string) => {
+    return src && (src.startsWith("data:image/") || src.startsWith("data:application/octet-stream"))
+  }
+
+  // Use the provided image if it's base64 or a valid URL, otherwise use placeholder
+  const imageSource =
+    image && (isBase64Image(image) || image.startsWith("/") || image.startsWith("http"))
+      ? image
+      : "/placeholder.svg?height=300&width=400"
+
   return (
     <Card className="group relative overflow-hidden transition-all hover:shadow-lg">
       {/* Status Badge */}
@@ -53,7 +64,7 @@ export function TravelCard({
       <CardHeader className="p-0">
         <div className="relative h-48 w-full overflow-hidden">
           <img
-            src={image || "/placeholder.svg"}
+            src={imageSource || "/placeholder.svg"}
             alt={`${destination} travel image`}
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />

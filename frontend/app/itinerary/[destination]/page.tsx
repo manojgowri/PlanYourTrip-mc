@@ -2,10 +2,17 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, MapPin, Utensils, Hotel, Star } from "lucide-react"
+import { ArrowLeft, MapPin, Utensils, Hotel, Star, Calendar, Bed } from "lucide-react"
 import { ItineraryDay } from "@/components/itinerary-day"
-import { getItinerary, getAccommodations, getComments, addComment, type Itinerary, type Comment } from "@/lib/data"
-import { Footer } from "@/components/footer"
+import {
+  getItinerary,
+  getAccommodations,
+  getComments,
+  addComment,
+  type Itinerary,
+  type Comment,
+  type Accommodation,
+} from "@/lib/data"
 import { CommentSection } from "@/components/comment-section"
 import { PreTripChecklist } from "@/components/pre-trip-checklist"
 
@@ -17,7 +24,7 @@ interface ItineraryPageProps {
 
 export default function ItineraryPage({ params }: ItineraryPageProps) {
   const [itinerary, setItinerary] = useState<Itinerary | null>(null)
-  const [accommodations, setAccommodations] = useState([])
+  const [accommodations, setAccommodations] = useState<Accommodation[]>([])
   const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
   const [checklistItems, setChecklistItems] = useState([
@@ -68,6 +75,7 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
             getComments(itineraryData.id),
           ])
 
+          console.log("Fetched accommodations:", accommodationsData)
           setAccommodations(accommodationsData)
           setComments(commentsData)
         }
@@ -199,6 +207,29 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
           </div>
         </div>
 
+        {accommodations.length > 0 && (
+          <section className="mb-8">
+            <h2 className="mb-4 text-2xl font-semibold">Accommodations</h2>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {accommodations.map((accommodation) => (
+                <div key={accommodation.id} className="rounded-lg border p-4 shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <Bed className="h-5 w-5 text-emerald-600" />
+                    <div>
+                      <h3 className="font-medium">{accommodation.name}</h3>
+                      <p className="text-sm text-muted-foreground">{accommodation.location}</p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-gray-500" />
+                        <span className="text-xs text-muted-foreground">{accommodation.dates}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         {itinerary.status === "online" && (
           <section className="mb-8">
             <h2 className="mb-4 text-2xl font-semibold">Pre-Trip Planning</h2>
@@ -232,7 +263,7 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
 
         <CommentSection comments={comments} onAddComment={handleAddComment} itineraryId={itinerary.id} />
       </div>
-      <Footer />
+      {/* Footer is already included in the layout.tsx, so we don't need it here */}
     </div>
   )
 }

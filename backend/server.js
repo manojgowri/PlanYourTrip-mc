@@ -33,6 +33,7 @@ app.use(
 
 // JSON Middleware with increased size limit for images
 app.use(express.json({ limit: "50mb" }))
+app.use(express.urlencoded({ limit: "50mb", extended: true }))
 
 // MongoDB Connection with enhanced error handling
 mongoose
@@ -466,6 +467,19 @@ app.post("/api/locations", authenticateToken, isAdmin, async (req, res) => {
     const newLocation = new Location(req.body)
     const savedLocation = await newLocation.save()
 
+    // Update the itinerary's locations array if destinationId is provided
+    if (req.body.destinationId) {
+      const itinerary = await Itinerary.findOne({ id: req.body.destinationId })
+      if (itinerary) {
+        // Add the location name to the itinerary's locations array if it's not already there
+        if (!itinerary.locations.includes(req.body.name)) {
+          itinerary.locations.push(req.body.name)
+          await itinerary.save()
+          console.log(`Added location ${req.body.name} to itinerary ${req.body.destinationId}`)
+        }
+      }
+    }
+
     console.log(`Location created successfully with id: ${savedLocation.id}`)
     res.status(201).json(savedLocation)
   } catch (error) {
@@ -559,20 +573,30 @@ app.delete("/api/locations/:id", authenticateToken, isAdmin, async (req, res) =>
 app.get("/api/accommodations", async (req, res) => {
   try {
     const { destinationId } = req.query
+    console.log(`Fetching accommodations${destinationId ? ` for destination: ${destinationId}` : ""}`)
+
     const query = destinationId ? { destinationId } : {}
     const accommodations = await Accommodation.find(query)
+
+    console.log(`Found ${accommodations.length} accommodations`)
     res.json(accommodations)
   } catch (error) {
+    console.error("Error fetching accommodations:", error)
     res.status(500).json({ message: error.message })
   }
 })
 
 app.post("/api/accommodations", authenticateToken, isAdmin, async (req, res) => {
   try {
+    console.log("Creating new accommodation:", req.body)
+
     const newAccommodation = new Accommodation(req.body)
     const savedAccommodation = await newAccommodation.save()
+
+    console.log(`Accommodation created successfully with id: ${savedAccommodation.id}`)
     res.status(201).json(savedAccommodation)
   } catch (error) {
+    console.error("Error creating accommodation:", error)
     res.status(400).json({ message: error.message })
   }
 })
@@ -678,14 +702,32 @@ app.post("/api/comments", async (req, res) => {
 // Day and Activity Management
 app.post("/api/itineraries/:id/days", authenticateToken, isAdmin, async (req, res) => {
   try {
-    const itinerary = await Itinerary.findOne({ id: req.params.id })
-    if (!itinerary) return res.status(404).json({ message: "Itinerary not found" })
+    console.log(`Adding day to itinerary ${req.params.id}:`, req.body)
 
-    itinerary.days.push(req.body)
+    const itinerary = await Itinerary.findOne({ id: req.params.id })
+    if (!itinerary) {
+      console.log(`Itinerary not found with id: ${req.params.id}`)
+      return res.status(404).json({ message: "Itinerary not found" })
+    }
+
+    // Ensure day has an ID
+    const day = {
+      ...req.body,
+      id: req.body.id || Date.now().toString(36) + Math.random().toString(36).substring(2),
+    }
+
+    // Add the day to the itinerary
+    itinerary.days.push(day)
+
+    // Sort days by day number
+    itinerary.days.sort((a, b) => a.day - b.day)
+
     const updatedItinerary = await itinerary.save()
+    console.log(`Day added successfully to itinerary ${req.params.id}`)
 
     res.status(201).json(updatedItinerary)
   } catch (error) {
+    console.error("Error adding day to itinerary:", error)
     res.status(400).json({ message: error.message })
   }
 })

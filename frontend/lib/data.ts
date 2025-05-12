@@ -69,8 +69,9 @@ export interface Location {
   destinationId: string
 }
 
-// API URL
+// API URL with fallback and logging
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"
+console.log("API URL:", API_URL)
 
 // Helper function to generate a unique ID
 export function generateId(): string {
@@ -80,12 +81,17 @@ export function generateId(): string {
 // Helper function to get auth token
 function getAuthToken(): string | null {
   if (typeof window === "undefined") return null
-  return localStorage.getItem("auth_token")
+  const token = localStorage.getItem("auth_token")
+  return token
 }
 
-// Helper function for API requests
+// Helper function for API requests with enhanced error handling and logging
 async function apiRequest(endpoint: string, options: RequestInit = {}) {
   const token = getAuthToken()
+  console.log(`API Request: ${options.method || "GET"} ${endpoint}`, {
+    hasToken: !!token,
+    bodyLength: options.body ? (options.body as string).length : 0,
+  })
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -96,23 +102,42 @@ async function apiRequest(endpoint: string, options: RequestInit = {}) {
     headers["Authorization"] = `Bearer ${token}`
   }
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers,
-  })
+  try {
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers,
+    })
 
-  if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.message || "API request failed")
+    // Log response status
+    console.log(`API Response: ${options.method || "GET"} ${endpoint}`, {
+      status: response.status,
+      ok: response.ok,
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: "Unknown error" }))
+      console.error(`API Error: ${options.method || "GET"} ${endpoint}`, {
+        status: response.status,
+        error: errorData,
+      })
+      throw new Error(errorData.message || "API request failed")
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    console.error(`API Request Failed: ${options.method || "GET"} ${endpoint}`, error)
+    throw error
   }
-
-  return response.json()
 }
 
-// Data access functions
+// Data access functions with enhanced error handling
 export async function getItineraries(): Promise<Itinerary[]> {
   try {
-    return await apiRequest("/itineraries")
+    console.log("Fetching all itineraries")
+    const data = await apiRequest("/itineraries")
+    console.log(`Fetched ${data.length} itineraries`)
+    return data
   } catch (error) {
     console.error("Error fetching itineraries:", error)
     return []
@@ -121,7 +146,10 @@ export async function getItineraries(): Promise<Itinerary[]> {
 
 export async function getItinerary(id: string): Promise<Itinerary | undefined> {
   try {
-    return await apiRequest(`/itineraries/${id}`)
+    console.log(`Fetching itinerary: ${id}`)
+    const data = await apiRequest(`/itineraries/${id}`)
+    console.log(`Fetched itinerary: ${data.destination}`)
+    return data
   } catch (error) {
     console.error(`Error fetching itinerary ${id}:`, error)
     return undefined
@@ -130,8 +158,11 @@ export async function getItinerary(id: string): Promise<Itinerary | undefined> {
 
 export async function saveItinerary(itinerary: Itinerary): Promise<Itinerary | undefined> {
   try {
+    console.log(`Saving itinerary: ${itinerary.destination}`, { id: itinerary.id })
+
     if (itinerary.id) {
       // Update existing itinerary
+      console.log(`Updating existing itinerary: ${itinerary.id}`)
       return await apiRequest(`/itineraries/${itinerary.id}`, {
         method: "PUT",
         body: JSON.stringify(itinerary),
@@ -142,6 +173,7 @@ export async function saveItinerary(itinerary: Itinerary): Promise<Itinerary | u
         ...itinerary,
         id: generateId(),
       }
+      console.log(`Creating new itinerary with generated id: ${newItinerary.id}`)
       return await apiRequest("/itineraries", {
         method: "POST",
         body: JSON.stringify(newItinerary),
@@ -150,6 +182,28 @@ export async function saveItinerary(itinerary: Itinerary): Promise<Itinerary | u
   } catch (error) {
     console.error("Error saving itinerary:", error)
     return undefined
+  }
+}
+
+// Add a function to test the database connection
+export async function testDatabaseConnection(): Promise<any> {
+  try {
+    console.log("Testing database connection")
+    return await apiRequest("/test-db")
+  } catch (error) {
+    console.error("Database connection test failed:", error)
+    throw error
+  }
+}
+
+// Add a function to check server health
+export async function checkServerHealth(): Promise<any> {
+  try {
+    console.log("Checking server health")
+    return await apiRequest("/health")
+  } catch (error) {
+    console.error("Server health check failed:", error)
+    throw error
   }
 }
 
@@ -177,6 +231,8 @@ export async function getAccommodations(destinationId?: string): Promise<Accommo
 
 export async function saveAccommodation(accommodation: Accommodation): Promise<Accommodation | undefined> {
   try {
+    console.log("Saving accommodation:", accommodation)
+
     if (accommodation.id) {
       // Update existing accommodation
       return await apiRequest(`/accommodations/${accommodation.id}`, {
@@ -189,10 +245,14 @@ export async function saveAccommodation(accommodation: Accommodation): Promise<A
         ...accommodation,
         id: generateId(),
       }
-      return await apiRequest("/accommodations", {
+
+      const savedAccommodation = await apiRequest("/accommodations", {
         method: "POST",
         body: JSON.stringify(newAccommodation),
       })
+
+      console.log("Accommodation saved successfully:", savedAccommodation)
+      return savedAccommodation
     }
   } catch (error) {
     console.error("Error saving accommodation:", error)
@@ -224,22 +284,49 @@ export async function getLocations(destinationId?: string): Promise<Location[]> 
 
 export async function saveLocation(location: Location): Promise<Location | undefined> {
   try {
+    console.log("Saving location:", location)
+
     if (location.id) {
       // Update existing location
-      return await apiRequest(`/locations/${location.id}`, {
+      const updatedLocation = await apiRequest(`/locations/${location.id}`, {
         method: "PUT",
         body: JSON.stringify(location),
       })
+
+      // Update the itinerary's locations array if this is a new location name
+      if (location.destinationId) {
+        const itinerary = await getItinerary(location.destinationId)
+        if (itinerary && !itinerary.locations.includes(location.name)) {
+          itinerary.locations.push(location.name)
+          await saveItinerary(itinerary)
+        }
+      }
+
+      return updatedLocation
     } else {
       // Create new location with generated ID
       const newLocation = {
         ...location,
         id: generateId(),
       }
-      return await apiRequest("/locations", {
+
+      const savedLocation = await apiRequest("/locations", {
         method: "POST",
         body: JSON.stringify(newLocation),
       })
+
+      // Update the itinerary's locations array
+      if (location.destinationId) {
+        const itinerary = await getItinerary(location.destinationId)
+        if (itinerary) {
+          if (!itinerary.locations.includes(location.name)) {
+            itinerary.locations.push(location.name)
+            await saveItinerary(itinerary)
+          }
+        }
+      }
+
+      return savedLocation
     }
   } catch (error) {
     console.error("Error saving location:", error)
@@ -307,15 +394,20 @@ export async function deleteCompanion(id: string): Promise<boolean> {
 
 export async function addDayToItinerary(itineraryId: string, day: ItineraryDay): Promise<Itinerary | undefined> {
   try {
+    console.log(`Adding day to itinerary ${itineraryId}:`, day)
+
     const dayWithId = {
       ...day,
       id: day.id || generateId(),
     }
 
-    return await apiRequest(`/itineraries/${itineraryId}/days`, {
+    const updatedItinerary = await apiRequest(`/itineraries/${itineraryId}/days`, {
       method: "POST",
       body: JSON.stringify(dayWithId),
     })
+
+    console.log("Day added successfully, updated itinerary:", updatedItinerary)
+    return updatedItinerary
   } catch (error) {
     console.error("Error adding day to itinerary:", error)
     return undefined
