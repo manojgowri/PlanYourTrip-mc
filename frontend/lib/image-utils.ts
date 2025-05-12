@@ -44,6 +44,17 @@ export function getImagePlaceholder(width: number, height: number, text = ""): s
   return `https://placehold.co/${width}x${height}/CCCCCC/666666${text ? `?text=${encodeURIComponent(text)}` : ""}`
 }
 
+/**
+ * Gets a placeholder image URL with the specified dimensions
+ * @param width Width of the placeholder image
+ * @param height Height of the placeholder image
+ * @returns URL to the placeholder image
+ */
+export function getPlaceholderImage(width = 400, height = 300): string {
+  // Use a data URI for the placeholder to avoid 404 errors
+  return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='${width}' height='${height}'%3E%3Crect width='100%25' height='100%25' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='24' text-anchor='middle' dominant-baseline='middle' fill='%23888888'%3EImage Placeholder%3C/text%3E%3C/svg%3E`
+}
+
 // Check if image exists
 export async function checkImageExists(url: string): Promise<boolean> {
   try {

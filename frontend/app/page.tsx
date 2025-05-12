@@ -6,7 +6,7 @@ import { TravelCard } from "@/components/travel-card"
 import { getItineraries, type Itinerary } from "@/lib/data"
 import { ThemeToggle } from "@/components/theme-toggle"
 
-export default function HomePage() {
+export default function Page() {
   const [itineraries, setItineraries] = useState<Itinerary[]>([])
   const [loading, setLoading] = useState(true)
 
