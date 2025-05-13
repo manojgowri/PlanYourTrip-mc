@@ -1,86 +1,79 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
-import { Compass, Menu, X } from "lucide-react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { LanguageSelector } from "@/components/language-selector"
+import { ThemeToggle } from "./theme-toggle"
+import { Menu, X } from "lucide-react"
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
-  return (
-    <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2">
-          <Compass className="h-6 w-6 text-emerald-600" />
-          <h1 className="text-xl font-bold">
-            Plan Your Trip <span className="text-emerald-600">Amigos</span>
-          </h1>
-        </Link>
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen)
+  }
 
-        {/* Desktop Navigation */}
-        <nav className="hidden items-center gap-6 md:flex">
-          <Link href="/" className="text-sm font-medium hover:text-emerald-600">
+  return (
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-16 items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
+            <img src="/android-chrome-192x192.png" alt="Logo" className="h-8 w-8" />
+            <span className="text-xl font-bold">
+              Plan Your Trip <span className="text-blue-600">Amigos</span>
+            </span>
+          </Link>
+        </div>
+
+        {/* Mobile menu button */}
+        <Button variant="ghost" size="icon" className="md:hidden" onClick={toggleMenu}>
+          {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          <span className="sr-only">Toggle menu</span>
+        </Button>
+
+        {/* Desktop navigation */}
+        <nav className="hidden md:flex items-center gap-6">
+          <Link href="/" className="text-sm font-medium hover:underline">
             Home
           </Link>
-          <Link href="/companions" className="text-sm font-medium hover:text-emerald-600">
+          <Link href="/companions" className="text-sm font-medium hover:underline">
             Travel Companions
           </Link>
-          <Link href="/admin" className="text-sm font-medium hover:text-emerald-600">
-            Admin Access
+          <Link href="/contact" className="text-sm font-medium hover:underline">
+            Contact
           </Link>
-          <div className="flex items-center gap-2">
-            <LanguageSelector />
-            <ThemeToggle />
-          </div>
+          <ThemeToggle />
         </nav>
 
-        {/* Mobile Menu Button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="md:hidden"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-        >
-          {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </Button>
-      </div>
-
-      {/* Mobile Navigation */}
-      {isMenuOpen && (
-        <div className="container mx-auto px-4 pb-4 md:hidden">
-          <nav className="flex flex-col space-y-4">
-            <Link
-              href="/"
-              className="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Home
-            </Link>
-            <Link
-              href="/companions"
-              className="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Travel Companions
-            </Link>
-            <Link
-              href="/admin"
-              className="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Admin Access
-            </Link>
-            <div className="flex items-center gap-2 px-3 py-2">
-              <LanguageSelector />
-              <ThemeToggle />
+        {/* Mobile navigation */}
+        {isMenuOpen && (
+          <div className="absolute top-16 left-0 right-0 bg-background border-b shadow-lg md:hidden">
+            <div className="container py-4 flex flex-col gap-4">
+              <Link href="/" className="text-sm font-medium hover:underline" onClick={() => setIsMenuOpen(false)}>
+                Home
+              </Link>
+              <Link
+                href="/companions"
+                className="text-sm font-medium hover:underline"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Travel Companions
+              </Link>
+              <Link
+                href="/contact"
+                className="text-sm font-medium hover:underline"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Contact
+              </Link>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Theme</span>
+                <ThemeToggle />
+              </div>
             </div>
-          </nav>
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </header>
   )
 }

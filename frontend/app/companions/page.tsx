@@ -1,117 +1,87 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
-import { getCompanions, type Companion } from "@/lib/data"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { fetchCompanions } from "@/lib/data"
+import type { Companion } from "@/lib/models"
+import { getImageUrl } from "@/lib/image-utils"
 
 export default function CompanionsPage() {
   const [companions, setCompanions] = useState<Companion[]>([])
-  const [selectedCompanion, setSelectedCompanion] = useState<Companion | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchCompanions = async () => {
+    const loadCompanions = async () => {
       try {
         setLoading(true)
-        const data = await getCompanions()
+        const data = await fetchCompanions()
         setCompanions(data)
-        setLoading(false)
-      } catch (error) {
-        console.error("Error fetching companions:", error)
+        setError(null)
+      } catch (err) {
+        console.error("Error fetching companions:", err)
+        setError("Failed to load travel companions. Please try again later.")
+      } finally {
         setLoading(false)
       }
     }
 
-    fetchCompanions()
+    loadCompanions()
   }, [])
 
-  return (
-    <div className="flex min-h-screen flex-col">
-      <div className="container mx-auto flex-1 px-4 py-8">
-        <Link href="/" className="mb-6 flex items-center gap-2 text-emerald-600 hover:underline">
-          <ArrowLeft className="h-4 w-4" />
-          Back to Home
-        </Link>
-
-        <header className="mb-10 text-center">
-          <h1 className="mb-3 text-3xl font-bold">Travel Companions</h1>
-          <p className="mx-auto max-w-2xl text-muted-foreground">
-            Meet the amazing people who join me on my adventures around the world.
-          </p>
-        </header>
-
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <p>Loading companions...</p>
-          </div>
-        ) : companions.length > 0 ? (
-          <div className="grid gap-8 md:grid-cols-2">
-            <div className="space-y-4">
-              {companions.map((companion) => (
-                <div
-                  key={companion.id}
-                  className={`cursor-pointer rounded-lg border p-4 transition-colors hover:bg-emerald-50 ${
-                    selectedCompanion?.id === companion.id ? "border-emerald-500 bg-emerald-50" : ""
-                  }`}
-                  onMouseEnter={() => setSelectedCompanion(companion)}
-                  onClick={() => setSelectedCompanion(companion)}
-                >
-                  <h3 className="text-lg font-medium">{companion.name}</h3>
-                  <p className="text-sm text-emerald-600">Role: {companion.relationship}</p>
-                  <p className="mt-2 text-sm text-muted-foreground">{companion.bio}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="sticky top-4 hidden md:block">
-              <div className="overflow-hidden rounded-lg border bg-white p-4 shadow-sm">
-                {selectedCompanion ? (
-                  <div className="text-center">
-                    <div className="mx-auto mb-4 overflow-hidden rounded-lg">
-                      <img
-                        src={selectedCompanion.image || "/placeholder.svg"}
-                        alt={selectedCompanion.name}
-                        className="h-80 w-full object-cover"
-                      />
-                    </div>
-                    <h3 className="text-xl font-medium">{selectedCompanion.name}</h3>
-                    <p className="text-emerald-600">Role: {selectedCompanion.relationship}</p>
-                  </div>
-                ) : (
-                  <div className="flex h-80 items-center justify-center text-center text-muted-foreground">
-                    <p>Select a companion to see their photo</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Mobile view for the selected companion */}
-            {selectedCompanion && (
-              <div className="mt-4 block rounded-lg border bg-white p-4 shadow-sm md:hidden">
-                <div className="text-center">
-                  <div className="mx-auto mb-4 overflow-hidden rounded-lg">
-                    <img
-                      src={selectedCompanion.image || "/placeholder.svg"}
-                      alt={selectedCompanion.name}
-                      className="h-64 w-full object-cover"
-                    />
-                  </div>
-                  <h3 className="text-xl font-medium">{selectedCompanion.name}</h3>
-                  <p className="text-emerald-600">Role: {selectedCompanion.relationship}</p>
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-12">
-              <h3 className="mb-2 text-lg font-medium">No companions yet</h3>
-              <p className="text-muted-foreground">Travel companions will be added by the administrator soon.</p>
-            </div>
-          </div>
-        )}
+  if (loading) {
+    return (
+      <div className="container mx-auto py-8">
+        <h1 className="text-3xl font-bold mb-6">Travel Companions</h1>
+        <p>Loading companions...</p>
       </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto py-8">
+        <h1 className="text-3xl font-bold mb-6">Travel Companions</h1>
+        <p className="text-red-500">{error}</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="container mx-auto py-8">
+      <h1 className="text-3xl font-bold mb-6">Travel Companions</h1>
+
+      {companions.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-lg text-gray-600 dark:text-gray-400">
+            No travel companions have been added yet. Check back later!
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {companions.map((companion) => (
+            <Card key={companion.id} className="overflow-hidden">
+              <div className="aspect-square relative">
+                <img
+                  src={getImageUrl(companion.image) || "/placeholder.svg"}
+                  alt={companion.name}
+                  className="object-cover w-full h-full"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement
+                    target.src = "/placeholder.svg?height=300&width=300"
+                  }}
+                />
+              </div>
+              <CardContent className="p-4">
+                <h2 className="text-xl font-bold">{companion.name}</h2>
+                <Badge className="mt-2 mb-2">{companion.relationship}</Badge>
+                <p className="text-gray-600 dark:text-gray-400 mt-2">{companion.bio}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

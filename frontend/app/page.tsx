@@ -1,12 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { MapPin } from "lucide-react"
 import { TravelCard } from "@/components/travel-card"
 import { getItineraries, type Itinerary } from "@/lib/data"
-import { ThemeToggle } from "@/components/theme-toggle"
+import { MapPin } from "lucide-react"
 
-export default function Page() {
+export default function HomePage() {
   const [itineraries, setItineraries] = useState<Itinerary[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -29,14 +28,9 @@ export default function Page() {
   return (
     <div className="flex min-h-screen flex-col">
       <div className="container mx-auto flex-1 px-4 py-8">
-        <header className="mb-10 flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold">Our Travel Adventures</h2>
-            <p className="text-muted-foreground">Explore our budget-friendly travel experiences</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-          </div>
+        <header className="mb-10">
+          <h2 className="text-2xl font-bold">Our Travel Adventures</h2>
+          <p className="text-muted-foreground">Explore our budget-friendly travel experiences</p>
         </header>
 
         <section className="mb-12">
@@ -57,19 +51,12 @@ export default function Page() {
               {itineraries.map((itinerary) => (
                 <TravelCard
                   key={itinerary.id}
+                  id={itinerary.id}
                   destination={itinerary.destination}
                   image={itinerary.image}
                   description={itinerary.description}
-                  startDate={new Date(itinerary.startDate).toLocaleDateString("en-US", {
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                  endDate={new Date(itinerary.endDate).toLocaleDateString("en-US", {
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
+                  startDate={itinerary.startDate}
+                  endDate={itinerary.endDate}
                   locations={itinerary.locations}
                   status={itinerary.status}
                   season={itinerary.season}
@@ -79,7 +66,6 @@ export default function Page() {
                   )}
                   rating={itinerary.rating}
                   reviewCount={itinerary.reviewCount}
-                  id={itinerary.id}
                 />
               ))}
 
@@ -140,7 +126,7 @@ export default function Page() {
               <div className="flex items-center justify-center">
                 <div className="relative h-64 w-full overflow-hidden rounded-lg sm:h-80">
                   <img
-                    src="/placeholder.svg?height=400&width=600"
+                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400' viewBox='0 0 600 400'%3E%3Crect width='600' height='400' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' fontFamily='Arial' fontSize='24' fill='%23999' textAnchor='middle' dominantBaseline='middle'%3EBudget travel planning%3C/text%3E%3C/svg%3E"
                     alt="Budget travel planning"
                     className="h-full w-full object-cover"
                   />
