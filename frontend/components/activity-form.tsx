@@ -8,227 +8,111 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { getAvailableCurrencies } from "@/lib/currency-utils"
-import { Camera, Upload } from "lucide-react"
+import { ImageUpload } from "./image-upload"
+import type { Activity } from "@/lib/models"
 
 interface ActivityFormProps {
-  onSubmit: (data: any) => void
-  initialData?: any
-  isLoading?: boolean
+  activity?: Activity
+  onSubmit: (activity: Partial<Activity>) => void
+  onCancel: () => void
 }
 
-export function ActivityForm({ onSubmit, initialData, isLoading = false }: ActivityFormProps) {
-  const [formData, setFormData] = useState({
-    time: initialData?.time || "",
-    title: initialData?.title || "",
-    description: initialData?.description || "",
-    type: initialData?.type || "activity",
-    expense: {
-      amount: initialData?.expense?.amount || 0,
-      currency: initialData?.expense?.currency || "INR",
-      category: initialData?.expense?.category || "general",
-    },
-    image: initialData?.image || "",
-  })
-
-  const [imagePreview, setImagePreview] = useState<string | null>(initialData?.image || null)
-  const [isUploading, setIsUploading] = useState(false)
-
-  const currencies = getAvailableCurrencies()
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleExpenseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      expense: {
-        ...prev.expense,
-        [name]: name === "amount" ? Number.parseFloat(value) || 0 : value,
-      },
-    }))
-  }
-
-  const handleCurrencyChange = (value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      expense: {
-        ...prev.expense,
-        currency: value,
-      },
-    }))
-  }
-
-  const handleTypeChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, type: value }))
-  }
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    // In a real app, you would upload to a server or cloud storage
-    // For now, we'll just create a data URL for preview
-    setIsUploading(true)
-
-    try {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        const result = reader.result as string
-        setImagePreview(result)
-        setFormData((prev) => ({ ...prev, image: result }))
-        setIsUploading(false)
-      }
-      reader.readAsDataURL(file)
-    } catch (error) {
-      console.error("Error uploading image:", error)
-      setIsUploading(false)
-    }
-  }
+export function ActivityForm({ activity, onSubmit, onCancel }: ActivityFormProps) {
+  const [title, setTitle] = useState(activity?.title || "")
+  const [description, setDescription] = useState(activity?.description || "")
+  const [location, setLocation] = useState(activity?.location || "")
+  const [type, setType] = useState(activity?.type || "sightseeing")
+  const [image, setImage] = useState(activity?.image || "")
+  const [cost, setCost] = useState(activity?.cost?.toString() || "")
+  const [currency, setCurrency] = useState(activity?.currency || "USD")
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(formData)
+    onSubmit({
+      title,
+      description,
+      location,
+      type,
+      image,
+      cost: cost ? Number.parseFloat(cost) : undefined,
+      currency,
+    })
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="time">Time</Label>
-          <Input
-            id="time"
-            name="time"
-            placeholder="e.g. 09:00 AM"
-            value={formData.time}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="type">Activity Type</Label>
-          <Select value={formData.type} onValueChange={handleTypeChange}>
-            <SelectTrigger id="type">
-              <SelectValue placeholder="Select type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="food">Food</SelectItem>
-              <SelectItem value="activity">Activity</SelectItem>
-              <SelectItem value="travel">Travel</SelectItem>
-              <SelectItem value="accommodation">Accommodation</SelectItem>
-              <SelectItem value="must-visit">Must Visit Place</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
       <div className="space-y-2">
         <Label htmlFor="title">Title</Label>
-        <Input id="title" name="title" value={formData.title} onChange={handleChange} required />
+        <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} required />
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="description">Description</Label>
-        <Textarea id="description" name="description" rows={3} value={formData.description} onChange={handleChange} />
+        <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
       </div>
 
       <div className="space-y-2">
-        <Label>Expense</Label>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex gap-2">
-            <Input
-              type="number"
-              name="amount"
-              value={formData.expense.amount}
-              onChange={handleExpenseChange}
-              placeholder="Amount"
-              min="0"
-              step="0.01"
-            />
+        <Label htmlFor="location">Location</Label>
+        <Input id="location" value={location} onChange={(e) => setLocation(e.target.value)} />
+      </div>
 
-            <Select value={formData.expense.currency} onValueChange={handleCurrencyChange}>
-              <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="Currency" />
-              </SelectTrigger>
-              <SelectContent>
-                {currencies.map((currency) => (
-                  <SelectItem key={currency.code} value={currency.code}>
-                    {currency.code} ({currency.symbol})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      <div className="space-y-2">
+        <Label htmlFor="type">Type</Label>
+        <Select value={type} onValueChange={setType}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="sightseeing">Sightseeing</SelectItem>
+            <SelectItem value="food">Food & Dining</SelectItem>
+            <SelectItem value="adventure">Adventure</SelectItem>
+            <SelectItem value="relaxation">Relaxation</SelectItem>
+            <SelectItem value="cultural">Cultural</SelectItem>
+            <SelectItem value="shopping">Shopping</SelectItem>
+            <SelectItem value="must-visit">Must Visit Place</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-          <Select
-            value={formData.expense.category}
-            onValueChange={(value) =>
-              setFormData((prev) => ({
-                ...prev,
-                expense: { ...prev.expense, category: value },
-              }))
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Category" />
+      <div className="space-y-2">
+        <Label htmlFor="cost">Cost</Label>
+        <div className="flex gap-2">
+          <Input
+            id="cost"
+            type="number"
+            min="0"
+            step="0.01"
+            value={cost}
+            onChange={(e) => setCost(e.target.value)}
+            placeholder="0.00"
+          />
+          <Select value={currency} onValueChange={setCurrency}>
+            <SelectTrigger className="w-[100px]">
+              <SelectValue placeholder="Currency" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="general">General</SelectItem>
-              <SelectItem value="food">Food</SelectItem>
-              <SelectItem value="transportation">Transportation</SelectItem>
-              <SelectItem value="accommodation">Accommodation</SelectItem>
-              <SelectItem value="activities">Activities</SelectItem>
-              <SelectItem value="shopping">Shopping</SelectItem>
+              <SelectItem value="USD">USD</SelectItem>
+              <SelectItem value="EUR">EUR</SelectItem>
+              <SelectItem value="GBP">GBP</SelectItem>
+              <SelectItem value="JPY">JPY</SelectItem>
+              <SelectItem value="VND">VND</SelectItem>
+              <SelectItem value="INR">INR</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="image">Image (Optional)</Label>
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => document.getElementById("image-upload")?.click()}
-              disabled={isUploading}
-              className="flex gap-2"
-            >
-              {isUploading ? "Uploading..." : "Upload Image"}
-              {isUploading ? <Upload className="h-4 w-4 animate-pulse" /> : <Camera className="h-4 w-4" />}
-            </Button>
-            <Input id="image-upload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-            {imagePreview && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setImagePreview(null)
-                  setFormData((prev) => ({ ...prev, image: "" }))
-                }}
-              >
-                Remove Image
-              </Button>
-            )}
-          </div>
-
-          {imagePreview && (
-            <div className="relative h-40 w-full overflow-hidden rounded-md border">
-              <img src={imagePreview || "/placeholder.svg"} alt="Preview" className="h-full w-full object-cover" />
-            </div>
-          )}
-        </div>
+        <Label>Image</Label>
+        <ImageUpload initialImage={image} onImageChange={setImage} />
       </div>
 
-      <Button type="submit" disabled={isLoading || isUploading} className="w-full">
-        {isLoading ? "Saving..." : "Save Activity"}
-      </Button>
+      <div className="flex justify-end gap-2 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit">{activity ? "Update Activity" : "Add Activity"}</Button>
+      </div>
     </form>
   )
 }
