@@ -11,6 +11,7 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
+    "shortid": "^2.2.16",
     "uuid": "^9.0.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
