@@ -1,13 +1,20 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "./theme-toggle"
-import { Menu, X } from "lucide-react"
+import { Menu, X, Settings } from "lucide-react"
+import { getAuthToken } from "@/lib/data"
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+  useEffect(() => {
+    const token = getAuthToken()
+    setIsAuthenticated(!!token)
+  }, [])
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
@@ -42,6 +49,12 @@ export function Header() {
           <Link href="/contact" className="text-sm font-medium hover:underline">
             Contact
           </Link>
+          {isAuthenticated && (
+            <Link href="/admin" className="text-sm font-medium hover:underline flex items-center gap-1">
+              <Settings className="h-4 w-4" />
+              Admin
+            </Link>
+          )}
           <ThemeToggle />
         </nav>
 
@@ -66,6 +79,16 @@ export function Header() {
               >
                 Contact
               </Link>
+              {isAuthenticated && (
+                <Link
+                  href="/admin"
+                  className="text-sm font-medium hover:underline flex items-center gap-1"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Settings className="h-4 w-4" />
+                  Admin
+                </Link>
+              )}
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium">Theme</span>
                 <ThemeToggle />

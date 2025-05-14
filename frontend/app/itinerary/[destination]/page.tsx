@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, MapPin, Utensils, Hotel, Star, Calendar, Bed } from "lucide-react"
+import { ArrowLeft, MapPin, Utensils, Hotel, Star, Calendar, Bed, Check, X } from "lucide-react"
 import { ItineraryDay } from "@/components/itinerary-day"
 import {
   getItinerary,
@@ -12,9 +12,10 @@ import {
   type Itinerary,
   type Comment,
   type Accommodation,
+  type ChecklistItem,
 } from "@/lib/data"
 import { CommentSection } from "@/components/comment-section"
-import { PreTripChecklist } from "@/components/pre-trip-checklist"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface ItineraryPageProps {
   params: {
@@ -27,38 +28,7 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
   const [accommodations, setAccommodations] = useState<Accommodation[]>([])
   const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
-  const [checklistItems, setChecklistItems] = useState([
-    {
-      id: "visa",
-      title: "Check Visa Requirements",
-      description: "Research and apply for necessary visas for Vietnam.",
-      completed: false,
-    },
-    {
-      id: "flights",
-      title: "Book Flights",
-      description: "Compare prices and book flights to Vietnam.",
-      completed: false,
-    },
-    {
-      id: "accommodation",
-      title: "Reserve Accommodations",
-      description: "Book hotels or hostels for your stay.",
-      completed: false,
-    },
-    {
-      id: "insurance",
-      title: "Get Travel Insurance",
-      description: "Purchase travel insurance for your trip.",
-      completed: false,
-    },
-    {
-      id: "currency",
-      title: "Exchange Currency",
-      description: "Get Vietnamese Dong (VND) for your trip.",
-      completed: false,
-    },
-  ])
+  const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -68,6 +38,50 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
 
         if (itineraryData) {
           setItinerary(itineraryData)
+
+          // Set checklist items from metadata if available
+          if (itineraryData.metadata?.checklist) {
+            setChecklistItems(itineraryData.metadata.checklist)
+          } else {
+            // Default checklist items
+            setChecklistItems([
+              {
+                id: "visa",
+                title: "Check Visa Requirements",
+                description: "Research and apply for necessary visas.",
+                completed: false,
+                notes: "",
+              },
+              {
+                id: "flights",
+                title: "Book Flights",
+                description: "Compare prices and book flights.",
+                completed: false,
+                notes: "",
+              },
+              {
+                id: "accommodation",
+                title: "Reserve Accommodations",
+                description: "Book hotels or hostels for your stay.",
+                completed: false,
+                notes: "",
+              },
+              {
+                id: "insurance",
+                title: "Get Travel Insurance",
+                description: "Purchase travel insurance for your trip.",
+                completed: false,
+                notes: "",
+              },
+              {
+                id: "currency",
+                title: "Exchange Currency",
+                description: "Get local currency for your trip.",
+                completed: false,
+                notes: "",
+              },
+            ])
+          }
 
           // Fetch related data
           const [accommodationsData, commentsData] = await Promise.all([
@@ -106,10 +120,6 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
     } catch (error) {
       console.error("Error adding comment:", error)
     }
-  }
-
-  const toggleChecklistItem = (id: string) => {
-    setChecklistItems((items) => items.map((item) => (item.id === id ? { ...item, completed: !item.completed } : item)))
   }
 
   if (loading) {
@@ -230,14 +240,42 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
           </section>
         )}
 
-        {itinerary.status === "online" && (
+        {itinerary.status === "online" && checklistItems.length > 0 && (
           <section className="mb-8">
-            <h2 className="mb-4 text-2xl font-semibold">Pre-Trip Planning</h2>
-            <PreTripChecklist
-              destination={itinerary.destination}
-              items={checklistItems}
-              onToggleItem={toggleChecklistItem}
-            />
+            <h2 className="mb-4 text-2xl font-semibold">Pre-Trip Checklist</h2>
+            <Card>
+              <CardHeader>
+                <CardTitle>Planning Status</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3">
+                  {checklistItems.map((item) => (
+                    <li
+                      key={item.id}
+                      className={`flex items-start gap-3 p-2 rounded-md ${
+                        item.completed ? "bg-emerald-50 dark:bg-emerald-950/20" : "bg-gray-50 dark:bg-gray-800/20"
+                      }`}
+                    >
+                      <div
+                        className={`mt-0.5 flex-shrink-0 rounded-full p-1 ${
+                          item.completed
+                            ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900 dark:text-emerald-400"
+                            : "bg-gray-200 text-gray-500 dark:bg-gray-700"
+                        }`}
+                      >
+                        {item.completed ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
+                      </div>
+                      <div>
+                        <h4 className={`font-medium ${item.completed ? "text-emerald-700 dark:text-emerald-400" : ""}`}>
+                          {item.title}
+                        </h4>
+                        {item.notes && <p className="text-sm text-muted-foreground mt-1">{item.notes}</p>}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
           </section>
         )}
 

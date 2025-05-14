@@ -1,7 +1,29 @@
+"use client"
+
 import Link from "next/link"
-import { Compass, Mail, Instagram, Youtube } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Compass, Mail, Instagram, Youtube, LogIn, LogOut } from "lucide-react"
+import { getAuthToken } from "@/lib/data"
+import { useRouter } from "next/navigation"
 
 export function Footer() {
+  const router = useRouter()
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+  useEffect(() => {
+    const token = getAuthToken()
+    setIsAuthenticated(!!token)
+  }, [])
+
+  const handleLogout = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("auth_token")
+      localStorage.removeItem("auth_user")
+      setIsAuthenticated(false)
+      router.push("/")
+    }
+  }
+
   return (
     <footer className="border-t bg-slate-50">
       <div className="container mx-auto px-4 py-8">
@@ -98,6 +120,25 @@ export function Footer() {
         <div className="mt-8 border-t pt-4 text-center text-sm text-muted-foreground">
           <p>© {new Date().getFullYear()} PlanYourTrip. All rights reserved.</p>
           <p className="mt-1">Created by Manoj V - Software Developer, Videographer, Video Editor</p>
+          <div className="mt-4 flex justify-center">
+            {isAuthenticated ? (
+              <button
+                onClick={handleLogout}
+                className="text-xs text-muted-foreground/60 hover:text-muted-foreground flex items-center gap-1"
+              >
+                <LogOut className="h-3 w-3" />
+                Logout
+              </button>
+            ) : (
+              <Link
+                href="/login"
+                className="text-xs text-muted-foreground/60 hover:text-muted-foreground flex items-center gap-1"
+              >
+                <LogIn className="h-3 w-3" />
+                Admin
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     </footer>

@@ -33,7 +33,17 @@ export interface Itinerary {
   rating: number
   reviewCount: number
   locations: string[]
-  isCompleted?: boolean
+  metadata?: {
+    checklist?: ChecklistItem[]
+    [key: string]: any
+  }
+}
+
+export interface ChecklistItem {
+  id: string
+  title: string
+  completed: boolean
+  notes: string
 }
 
 export interface Accommodation {
