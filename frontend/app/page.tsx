@@ -1,9 +1,12 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
+import { Compass, MapPin } from "lucide-react"
 import { TravelCard } from "@/components/travel-card"
-import { getItineraries, type Itinerary } from "@/lib/data"
-import { MapPin } from "lucide-react"
+import { getItineraries } from "@/lib/data"
+import { ThemeToggle } from "@/components/theme-toggle"
+import type { Itinerary } from "@/lib/models"
 
 export default function HomePage() {
   const [itineraries, setItineraries] = useState<Itinerary[]>([])
@@ -28,9 +31,19 @@ export default function HomePage() {
   return (
     <div className="flex min-h-screen flex-col">
       <div className="container mx-auto flex-1 px-4 py-8">
-        <header className="mb-10">
-          <h2 className="text-2xl font-bold">Our Travel Adventures</h2>
-          <p className="text-muted-foreground">Explore our budget-friendly travel experiences</p>
+        <header className="mb-10 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Compass className="h-8 w-8 text-emerald-600" />
+            <h1 className="text-3xl font-bold">
+              Plan Your Trip <span className="text-emerald-600">Amigos</span>
+            </h1>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link href="/companions" className="text-sm font-medium text-emerald-600 hover:text-emerald-700">
+              Travel Companions
+            </Link>
+            <ThemeToggle />
+          </div>
         </header>
 
         <section className="mb-12">
@@ -72,6 +85,9 @@ export default function HomePage() {
               {itineraries.length === 0 && (
                 <div className="col-span-full rounded-lg border p-8 text-center">
                   <p className="text-muted-foreground">No travel plans have been added yet.</p>
+                  <Link href="/admin" className="mt-4 inline-block text-emerald-600 hover:underline">
+                    Add your first trip
+                  </Link>
                 </div>
               )}
             </div>
@@ -126,7 +142,7 @@ export default function HomePage() {
               <div className="flex items-center justify-center">
                 <div className="relative h-64 w-full overflow-hidden rounded-lg sm:h-80">
                   <img
-                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400' viewBox='0 0 600 400'%3E%3Crect width='600' height='400' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' fontFamily='Arial' fontSize='24' fill='%23999' textAnchor='middle' dominantBaseline='middle'%3EBudget travel planning%3C/text%3E%3C/svg%3E"
+                    src="/placeholder.svg?height=400&width=600"
                     alt="Budget travel planning"
                     className="h-full w-full object-cover"
                   />

@@ -1,13 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { testDatabaseConnection, checkServerHealth } from "@/lib/data"
+import { testDatabaseConnection } from "@/lib/data"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export function DbConnectionTest() {
   const [dbStatus, setDbStatus] = useState<any>(null)
-  const [healthStatus, setHealthStatus] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -16,10 +15,6 @@ export function DbConnectionTest() {
     setError(null)
 
     try {
-      // Test server health
-      const health = await checkServerHealth()
-      setHealthStatus(health)
-
       // Test database connection
       const dbTest = await testDatabaseConnection()
       setDbStatus(dbTest)
@@ -45,15 +40,6 @@ export function DbConnectionTest() {
             <div className="p-4 bg-red-50 text-red-700 rounded-md">
               <h3 className="font-bold">Error</h3>
               <p>{error}</p>
-            </div>
-          )}
-
-          {healthStatus && (
-            <div className="p-4 bg-gray-50 rounded-md">
-              <h3 className="font-bold mb-2">Server Health</h3>
-              <pre className="text-xs overflow-auto p-2 bg-gray-100 rounded">
-                {JSON.stringify(healthStatus, null, 2)}
-              </pre>
             </div>
           )}
 
