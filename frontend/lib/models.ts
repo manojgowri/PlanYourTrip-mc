@@ -1,46 +1,75 @@
-// Currency conversion rates (example rates)
-export const currencyRates = {
-  VND: 0.0034, // Vietnamese Dong to INR
-  USD: 83.15, // USD to INR
-  EUR: 90.12, // EUR to INR
-  GBP: 105.67, // GBP to INR
-  AUD: 55.23, // AUD to INR
-  // Add more currencies as needed
+export interface Activity {
+  id: string
+  time: string
+  title: string
+  description: string
+  type: "food" | "activity" | "travel" | "accommodation" | "must-visit"
+  expense?: {
+    amount: number
+    currency: string
+    category: string
+  }
+  image?: string
 }
 
-export interface CurrencyInfo {
-  code: string
-  symbol: string
+export interface ItineraryDay {
+  id: string
+  day: number
+  date: string
+  location: string
+  activities: Activity[]
+}
+
+export interface Itinerary {
+  id: string
+  destination: string
+  image: string
+  description: string
+  startDate: string
+  endDate: string
+  days: ItineraryDay[]
+  status: "online" | "completed"
+  season: string
+  rating: number
+  reviewCount: number
+  locations: string[]
+  isCompleted?: boolean
+}
+
+export interface Accommodation {
+  id: string
   name: string
+  location: string
+  dates: string
+  destinationId: string
 }
 
-export const currencies: Record<string, CurrencyInfo> = {
-  VND: { code: "VND", symbol: "₫", name: "Vietnamese Dong" },
-  USD: { code: "USD", symbol: "$", name: "US Dollar" },
-  EUR: { code: "EUR", symbol: "€", name: "Euro" },
-  GBP: { code: "GBP", symbol: "£", name: "British Pound" },
-  INR: { code: "INR", symbol: "₹", name: "Indian Rupee" },
-  AUD: { code: "AUD", symbol: "$", name: "Australian Dollar" },
-  // Add more currencies as needed
+export interface Companion {
+  id: string
+  name: string
+  relationship: string
+  bio: string
+  image: string
 }
 
-export function convertCurrency(amount: number, fromCurrency: string, toCurrency = "INR"): number {
-  if (fromCurrency === toCurrency) return amount
-  if (fromCurrency === "INR") return amount / currencyRates[toCurrency]
-  if (toCurrency === "INR") return amount * currencyRates[fromCurrency]
-
-  // Convert from source to INR, then INR to target
-  const amountInINR = amount * currencyRates[fromCurrency]
-  return amountInINR / currencyRates[toCurrency]
+export interface Comment {
+  id: string
+  name: string
+  date: string
+  content: string
+  rating: number
+  itineraryId: string
 }
 
-export function formatCurrency(amount: number, currency = "INR"): string {
-  const currencyInfo = currencies[currency] || currencies.INR
-  return `${currencyInfo.symbol}${amount.toFixed(2)}`
+export interface Location {
+  id: string
+  name: string
+  dates: string
+  destinationId: string
 }
 
-export interface ExpenseInfo {
-  amount: number
-  currency: string
-  category: string
+export interface User {
+  id: string
+  username: string
+  isAdmin: boolean
 }

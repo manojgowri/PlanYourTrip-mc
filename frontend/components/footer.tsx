@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Compass } from "lucide-react"
+import { Compass, Mail, Instagram, Youtube } from "lucide-react"
 
 export function Footer() {
   return (
@@ -15,6 +15,17 @@ export function Footer() {
               Your personal travel planner and itinerary manager. Keep track of your adventures and share them with
               friends and family.
             </p>
+            <div className="mt-4">
+              <a
+                href="https://www.youtube.com/@MVVibez?sub_confirmation=1"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+              >
+                <Youtube className="h-4 w-4" />
+                Subscribe to MV Vibez
+              </a>
+            </div>
           </div>
 
           <div>
@@ -31,8 +42,8 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/admin" className="text-muted-foreground hover:text-emerald-600">
-                  Admin Access
+                <Link href="/contact" className="text-muted-foreground hover:text-emerald-600">
+                  Contact
                 </Link>
               </li>
             </ul>
@@ -41,14 +52,52 @@ export function Footer() {
           <div>
             <h3 className="mb-3 text-sm font-semibold">Contact</h3>
             <ul className="space-y-2 text-sm">
-              <li className="text-muted-foreground">Email: hello@planyourtrip.com</li>
-              <li className="text-muted-foreground">Instagram: @planyourtrip</li>
+              <li className="flex items-center gap-2 text-muted-foreground">
+                <Mail className="h-4 w-4" />
+                <a href="mailto:mvvibez@gmail.com" className="hover:text-emerald-600">
+                  mvvibez@gmail.com
+                </a>
+              </li>
+              <li className="flex items-center gap-2 text-muted-foreground">
+                <Instagram className="h-4 w-4" />
+                <a
+                  href="https://www.instagram.com/_iam_mv/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-emerald-600"
+                >
+                  @_iam_mv
+                </a>
+              </li>
+              <li className="flex items-center gap-2 text-muted-foreground">
+                <Instagram className="h-4 w-4" />
+                <a
+                  href="https://www.instagram.com/shotsbymanojv/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-emerald-600"
+                >
+                  @shotsbymanojv
+                </a>
+              </li>
+              <li className="flex items-center gap-2 text-muted-foreground">
+                <Youtube className="h-4 w-4" />
+                <a
+                  href="https://www.youtube.com/@MVVibez"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-emerald-600"
+                >
+                  @MVVibez
+                </a>
+              </li>
             </ul>
           </div>
         </div>
 
         <div className="mt-8 border-t pt-4 text-center text-sm text-muted-foreground">
           <p>© {new Date().getFullYear()} PlanYourTrip. All rights reserved.</p>
+          <p className="mt-1">Created by Manoj V - Software Developer, Videographer, Video Editor</p>
         </div>
       </div>
     </footer>

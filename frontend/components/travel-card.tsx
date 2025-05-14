@@ -1,70 +1,84 @@
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+"use client"
+
 import Link from "next/link"
 import { Calendar, MapPin } from "lucide-react"
-import { formatDate } from "@/lib/utils"
-import type { Itinerary } from "@/lib/models"
-import { getImageUrl } from "@/lib/image-utils"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 
 interface TravelCardProps {
-  itinerary: Itinerary
+  id: string
+  destination: string
+  image?: string
+  description: string
+  startDate: string
+  endDate: string
+  status: "online" | "completed"
+  season?: string
+  locations?: string[]
+  days?: number
+  rating?: number
+  reviewCount?: number
 }
 
-export function TravelCard({ itinerary }: TravelCardProps) {
-  const { id, destination, startDate, endDate, image, description, locations, season, isCompleted } = itinerary
+export function TravelCard({
+  id,
+  destination,
+  image,
+  description,
+  startDate,
+  endDate,
+  status,
+  season,
+  locations = [],
+  days,
+  rating,
+  reviewCount,
+}: TravelCardProps) {
+  // Use a placeholder image if none is provided
+  const imageUrl =
+    image ||
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' fontFamily='Arial' fontSize='24' fill='%23999' textAnchor='middle' dominantBaseline='middle'%3EImage Placeholder%3C/text%3E%3C/svg%3E"
 
   return (
-    <Card className="overflow-hidden h-full flex flex-col">
-      <div className="relative">
-        {isCompleted && (
-          <div className="absolute top-2 right-2 z-10">
-            <Badge variant="secondary" className="bg-white text-black font-medium">
-              Completed
-            </Badge>
-          </div>
-        )}
-        <div className="aspect-video bg-gray-100 relative">
-          <img
-            src={getImageUrl(image) || "/placeholder.svg"}
-            alt={destination}
-            className="object-cover w-full h-full"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement
-              target.src = "/placeholder.svg?height=300&width=300"
-            }}
-          />
+    <Card className="overflow-hidden transition-all hover:shadow-md">
+      <div className="relative aspect-video overflow-hidden">
+        <img
+          src={imageUrl || "/placeholder.svg"}
+          alt={`${destination} travel`}
+          className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+          onError={(e) => {
+            // If image fails to load, replace with placeholder
+            e.currentTarget.src =
+              "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' fontFamily='Arial' fontSize='24' fill='%23999' textAnchor='middle' dominantBaseline='middle'%3EImage Placeholder%3C/text%3E%3C/svg%3E"
+          }}
+        />
+        <div className="absolute right-2 top-2">
+          <Badge variant={status === "completed" ? "secondary" : "default"}>
+            {status === "completed" ? "Completed" : "Upcoming"}
+          </Badge>
         </div>
       </div>
-
-      <CardContent className="p-4 flex-grow flex flex-col">
-        <div className="flex justify-between items-start mb-2">
+      <CardContent className="p-4">
+        <div className="mb-2 flex items-center justify-between">
           <h3 className="text-xl font-bold">{destination}</h3>
-          {season && (
-            <Badge variant="outline" className="ml-2">
-              {season}
-            </Badge>
-          )}
+          {season && <Badge variant="outline">{season}</Badge>}
         </div>
-
-        <div className="flex items-center text-gray-600 dark:text-gray-400 mb-2">
-          <Calendar className="h-4 w-4 mr-1" />
-          <span className="text-sm">
-            {formatDate(startDate)} - {formatDate(endDate)}
+        <div className="mb-3 flex items-center gap-1 text-sm text-muted-foreground">
+          <Calendar className="h-3.5 w-3.5" />
+          <span>
+            {new Date(startDate).toLocaleDateString()} - {new Date(endDate).toLocaleDateString()}
           </span>
         </div>
-
-        {locations && locations.length > 0 && (
-          <div className="flex items-start text-gray-600 dark:text-gray-400 mb-3">
-            <MapPin className="h-4 w-4 mr-1 mt-0.5" />
-            <span className="text-sm">{locations.join(", ")}</span>
+        {locations.length > 0 && (
+          <div className="mb-3 flex items-start gap-1">
+            <MapPin className="mt-0.5 h-3.5 w-3.5 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">{locations.join(", ")}</p>
           </div>
         )}
-
-        {description && <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 flex-grow">{description}</p>}
-
+        <p className="mb-4 line-clamp-2 text-sm text-muted-foreground">{description}</p>
         <Link
-          href={`/itinerary/${id}`}
-          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium text-sm mt-auto"
+          href={`/itinerary/${encodeURIComponent(id)}`}
+          className="inline-flex items-center text-sm font-medium text-emerald-600 hover:underline"
         >
           View Itinerary
         </Link>
