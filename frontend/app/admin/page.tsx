@@ -11,21 +11,18 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ImageUpload } from "@/components/image-upload"
-import { AdminNav } from "@/components/admin/admin-nav"
 import { BackToTravelButton } from "@/components/back-to-travel-button"
 import {
-  fetchItineraries,
-  createItinerary,
-  updateItinerary,
+  getItineraries,
+  saveItinerary,
   deleteItinerary,
-  fetchCompanions,
-  createCompanion,
-  updateCompanion,
+  getCompanions,
+  saveCompanion,
   deleteCompanion,
   getAuthToken,
 } from "@/lib/data"
 import type { Itinerary, Companion } from "@/lib/models"
-import { getImageUrl } from "@/lib/image-utils"
+import { getPlaceholderImage } from "@/lib/image-utils"
 
 export default function AdminPage() {
   const router = useRouter()
@@ -45,7 +42,7 @@ export default function AdminPage() {
     image: "",
     locations: [],
     season: "summer",
-    isCompleted: false,
+    status: "online",
     days: [],
   })
 
@@ -76,7 +73,7 @@ export default function AdminPage() {
       setLoading(true)
       setError(null)
 
-      const [itinerariesData, companionsData] = await Promise.all([fetchItineraries(), fetchCompanions()])
+      const [itinerariesData, companionsData] = await Promise.all([getItineraries(), getCompanions()])
 
       setItineraries(itinerariesData)
       setCompanions(companionsData)
@@ -98,18 +95,19 @@ export default function AdminPage() {
 
       if (editingItinerary) {
         // Update existing itinerary
-        await updateItinerary(editingItinerary.id, {
+        await saveItinerary({
+          ...editingItinerary,
           ...newItinerary,
           locations: newItinerary.locations || [],
           days: editingItinerary.days || [],
-        })
+        } as Itinerary)
       } else {
         // Create new itinerary
-        await createItinerary({
+        await saveItinerary({
           ...newItinerary,
           locations: newItinerary.locations || [],
           days: [],
-        })
+        } as Itinerary)
       }
 
       // Reset form and reload data
@@ -121,7 +119,7 @@ export default function AdminPage() {
         image: "",
         locations: [],
         season: "summer",
-        isCompleted: false,
+        status: "online",
         days: [],
       })
       setEditingItinerary(null)
@@ -144,10 +142,13 @@ export default function AdminPage() {
 
       if (editingCompanion) {
         // Update existing companion
-        await updateCompanion(editingCompanion.id, newCompanion)
+        await saveCompanion({
+          ...editingCompanion,
+          ...newCompanion,
+        } as Companion)
       } else {
         // Create new companion
-        await createCompanion(newCompanion)
+        await saveCompanion(newCompanion as Companion)
       }
 
       // Reset form and reload data
@@ -178,7 +179,7 @@ export default function AdminPage() {
       image: itinerary.image || "",
       locations: itinerary.locations || [],
       season: itinerary.season || "summer",
-      isCompleted: itinerary.isCompleted || false,
+      status: itinerary.status || "online",
     })
   }
 
@@ -254,7 +255,26 @@ export default function AdminPage() {
         <BackToTravelButton />
       </div>
 
-      <AdminNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <div className="flex flex-wrap gap-2 mb-6">
+        <Button
+          variant={activeTab === "itineraries" ? "default" : "outline"}
+          onClick={() => setActiveTab("itineraries")}
+        >
+          Itineraries
+        </Button>
+        <Button variant={activeTab === "companions" ? "default" : "outline"} onClick={() => setActiveTab("companions")}>
+          Companions
+        </Button>
+        <Button
+          variant={activeTab === "database" ? "default" : "outline"}
+          onClick={() => router.push("/admin/db-test")}
+        >
+          Test Database
+        </Button>
+        <Button variant="outline" onClick={() => router.push("/")}>
+          Back to Site
+        </Button>
+      </div>
 
       {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
 
@@ -341,18 +361,18 @@ export default function AdminPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="isCompleted">Status</Label>
+                      <Label htmlFor="status">Status</Label>
                       <Select
-                        value={newItinerary.isCompleted ? "completed" : "planned"}
-                        onValueChange={(value) =>
-                          setNewItinerary({ ...newItinerary, isCompleted: value === "completed" })
+                        value={newItinerary.status}
+                        onValueChange={(value: "online" | "completed") =>
+                          setNewItinerary({ ...newItinerary, status: value })
                         }
                       >
-                        <SelectTrigger id="isCompleted">
+                        <SelectTrigger id="status">
                           <SelectValue placeholder="Select status" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="planned">Planned</SelectItem>
+                          <SelectItem value="online">Planned</SelectItem>
                           <SelectItem value="completed">Completed</SelectItem>
                         </SelectContent>
                       </Select>
@@ -382,7 +402,7 @@ export default function AdminPage() {
                             image: "",
                             locations: [],
                             season: "summer",
-                            isCompleted: false,
+                            status: "online",
                             days: [],
                           })
                         }}
@@ -408,12 +428,12 @@ export default function AdminPage() {
                   <Card key={itinerary.id} className="overflow-hidden">
                     <div className="aspect-video bg-gray-100 relative">
                       <img
-                        src={getImageUrl(itinerary.image) || "/placeholder.svg"}
+                        src={itinerary.image || getPlaceholderImage(400, 300)}
                         alt={itinerary.destination}
                         className="object-cover w-full h-full"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement
-                          target.src = "/placeholder.svg?height=300&width=300"
+                          target.src = getPlaceholderImage(400, 300)
                         }}
                       />
                     </div>
@@ -538,12 +558,12 @@ export default function AdminPage() {
                   <Card key={companion.id} className="overflow-hidden">
                     <div className="aspect-square bg-gray-100 relative">
                       <img
-                        src={getImageUrl(companion.image) || "/placeholder.svg"}
+                        src={companion.image || getPlaceholderImage(300, 300)}
                         alt={companion.name}
                         className="object-cover w-full h-full"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement
-                          target.src = "/placeholder.svg?height=300&width=300"
+                          target.src = getPlaceholderImage(300, 300)
                         }}
                       />
                     </div>

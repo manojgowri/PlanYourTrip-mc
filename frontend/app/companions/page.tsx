@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { fetchCompanions } from "@/lib/data"
+import { getCompanions } from "@/lib/data"
 import type { Companion } from "@/lib/models"
-import { getImageUrl } from "@/lib/image-utils"
+import { getPlaceholderImage } from "@/lib/image-utils"
 
 export default function CompanionsPage() {
   const [companions, setCompanions] = useState<Companion[]>([])
@@ -16,7 +16,7 @@ export default function CompanionsPage() {
     const loadCompanions = async () => {
       try {
         setLoading(true)
-        const data = await fetchCompanions()
+        const data = await getCompanions()
         setCompanions(data)
         setError(null)
       } catch (err) {
@@ -64,12 +64,12 @@ export default function CompanionsPage() {
             <Card key={companion.id} className="overflow-hidden">
               <div className="aspect-square relative">
                 <img
-                  src={getImageUrl(companion.image) || "/placeholder.svg"}
+                  src={companion.image || getPlaceholderImage(300, 300)}
                   alt={companion.name}
                   className="object-cover w-full h-full"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement
-                    target.src = "/placeholder.svg?height=300&width=300"
+                    target.src = getPlaceholderImage(300, 300)
                   }}
                 />
               </div>

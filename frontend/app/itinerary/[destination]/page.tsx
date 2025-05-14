@@ -263,7 +263,6 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
 
         <CommentSection comments={comments} onAddComment={handleAddComment} itineraryId={itinerary.id} />
       </div>
-      {/* Footer is already included in the layout.tsx, so we don't need it here */}
     </div>
   )
 }
