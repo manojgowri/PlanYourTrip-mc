@@ -252,7 +252,18 @@ export default function AdminPage() {
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <BackToTravelButton />
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              localStorage.removeItem("authToken")
+              router.push("/")
+            }}
+          >
+            Logout
+          </Button>
+          <BackToTravelButton />
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2 mb-6">
