@@ -145,6 +145,11 @@ export default function HomePage() {
                     src="/images/budget_travel_planning.jpg"
                     alt="Budget travel planning"
                     className="h-full w-full object-cover"
+                    onError={(e) => {
+                      console.error("Image failed to load")
+                      const target = e.target as HTMLImageElement
+                      target.src = "/placeholder.svg?height=400&width=600"
+                    }}
                   />
                 </div>
               </div>
