@@ -59,25 +59,42 @@ export default function CompanionsPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="space-y-6">
           {companions.map((companion) => (
             <Card key={companion.id} className="overflow-hidden">
-              <div className="aspect-square relative">
-                <img
-                  src={companion.image || getPlaceholderImage(300, 300)}
-                  alt={companion.name}
-                  className="object-cover w-full h-full"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement
-                    target.src = getPlaceholderImage(300, 300)
-                  }}
-                />
+              <div className="flex flex-col md:flex-row">
+                <CardContent className="p-6 md:w-1/2">
+                  <h2 className="text-2xl font-bold">{companion.name}</h2>
+                  <Badge className="mt-2 mb-3">{companion.relationship}</Badge>
+                  <p className="text-gray-600 dark:text-gray-400">{companion.bio}</p>
+                </CardContent>
+
+                <div className="md:w-1/2 bg-gray-100 dark:bg-gray-800 relative group">
+                  <div className="absolute inset-0 flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
+                    <img
+                      src={companion.image || getPlaceholderImage(300, 300)}
+                      alt={companion.name}
+                      className="object-cover w-full h-full"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement
+                        target.src = getPlaceholderImage(300, 300)
+                      }}
+                    />
+                  </div>
+                  <div className="md:block hidden aspect-square"></div>
+                  <div className="md:hidden aspect-square">
+                    <img
+                      src={companion.image || getPlaceholderImage(300, 300)}
+                      alt={companion.name}
+                      className="object-cover w-full h-full"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement
+                        target.src = getPlaceholderImage(300, 300)
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
-              <CardContent className="p-4">
-                <h2 className="text-xl font-bold">{companion.name}</h2>
-                <Badge className="mt-2 mb-2">{companion.relationship}</Badge>
-                <p className="text-gray-600 dark:text-gray-400 mt-2">{companion.bio}</p>
-              </CardContent>
             </Card>
           ))}
         </div>
