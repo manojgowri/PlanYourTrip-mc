@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { getCompanions } from "@/lib/data"
 import type { Companion } from "@/lib/models"
 import { getPlaceholderImage } from "@/lib/image-utils"
+import { SafeImage } from "@/components/safe-image"
 
 export default function CompanionsPage() {
   const [companions, setCompanions] = useState<Companion[]>([])
@@ -91,14 +92,10 @@ export default function CompanionsPage() {
               <div className="aspect-square h-[600px] flex items-center justify-center p-4">
                 {activeCompanion && (
                   <div className="w-full h-full flex items-center justify-center">
-                    <img
+                    <SafeImage
                       src={companions.find((c) => c.id === activeCompanion)?.image || getPlaceholderImage(500, 500)}
                       alt={companions.find((c) => c.id === activeCompanion)?.name || "Companion"}
                       className="object-cover max-w-full max-h-full rounded-lg shadow-lg transition-opacity duration-300"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement
-                        target.src = getPlaceholderImage(500, 500)
-                      }}
                     />
                   </div>
                 )}

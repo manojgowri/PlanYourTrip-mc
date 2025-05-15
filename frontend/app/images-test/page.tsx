@@ -1,3 +1,7 @@
+"use client"
+
+import { SafeImage } from "@/components/safe-image"
+
 export default function ImagesTestPage() {
   return (
     <div className="container mx-auto py-8">
@@ -7,15 +11,11 @@ export default function ImagesTestPage() {
         <div>
           <h2 className="text-xl font-bold mb-2">Budget Travel Planning Image</h2>
           <div className="border p-4 rounded-lg">
-            <img
+            <SafeImage
               src="/images/budget_travel_planning.JPG"
               alt="Budget travel planning"
               className="max-w-full h-auto rounded-lg"
-              onError={(e) => {
-                console.error("Image failed to load")
-                const target = e.target as HTMLImageElement
-                target.src = "/placeholder.svg?height=400&width=600"
-              }}
+              fallbackText="Budget travel image could not be loaded"
             />
           </div>
         </div>
