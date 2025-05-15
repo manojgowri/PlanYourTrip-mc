@@ -6,6 +6,7 @@ import { Compass, MapPin } from "lucide-react"
 import { TravelCard } from "@/components/travel-card"
 import { getItineraries } from "@/lib/data"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { SafeImage } from "@/components/safe-image"
 import type { Itinerary } from "@/lib/models"
 
 export default function HomePage() {
@@ -141,8 +142,8 @@ export default function HomePage() {
               </div>
               <div className="flex items-center justify-center">
                 <div className="relative h-64 w-full overflow-hidden rounded-lg sm:h-80">
-                  <img
-                    src="/images/budget_travel_planning.jpg"
+                  <SafeImage
+                    src="/images/budget_travel_planning.JPG"
                     alt="Budget travel planning"
                     className="h-full w-full object-cover"
                   />
