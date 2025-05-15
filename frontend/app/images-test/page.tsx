@@ -8,7 +8,7 @@ export default function ImagesTestPage() {
           <h2 className="text-xl font-bold mb-2">Budget Travel Planning Image</h2>
           <div className="border p-4 rounded-lg">
             <img
-              src="/images/budget_travel_planning.jpg"
+              src="/images/budget_travel_planning.JPG"
               alt="Budget travel planning"
               className="max-w-full h-auto rounded-lg"
               onError={(e) => {

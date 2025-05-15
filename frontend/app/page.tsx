@@ -142,7 +142,7 @@ export default function HomePage() {
               <div className="flex items-center justify-center">
                 <div className="relative h-64 w-full overflow-hidden rounded-lg sm:h-80">
                   <img
-                    src="/images/budget_travel_planning.jpg"
+                    src="/images/budget_travel_planning.JPG"
                     alt="Budget travel planning"
                     className="h-full w-full object-cover"
                     onError={(e) => {
