@@ -1,24 +1,46 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 interface SafeImageProps {
   src: string
   alt: string
   className?: string
-  fallbackText?: string
 }
 
-export function SafeImage({ src, alt, className = "", fallbackText = "Image not available" }: SafeImageProps) {
+export function SafeImage({ src, alt, className }: SafeImageProps) {
+  const [imageSrc, setImageSrc] = useState(src)
   const [error, setError] = useState(false)
 
-  if (error) {
-    return (
-      <div className={`flex items-center justify-center bg-gray-100 dark:bg-gray-800 ${className}`}>
-        <p className="text-gray-500 dark:text-gray-400">{fallbackText}</p>
-      </div>
-    )
+  useEffect(() => {
+    setImageSrc(src)
+    setError(false)
+  }, [src])
+
+  const handleError = () => {
+    // If the original source fails, try alternative case for extension
+    if (!error) {
+      setError(true)
+
+      // Try alternative case for extension
+      const lastDotIndex = src.lastIndexOf(".")
+      if (lastDotIndex !== -1) {
+        const basePath = src.substring(0, lastDotIndex)
+        const extension = src.substring(lastDotIndex + 1)
+
+        // Try uppercase if original was lowercase, and vice versa
+        const newExtension = extension.toLowerCase() === extension ? extension.toUpperCase() : extension.toLowerCase()
+
+        const alternateSrc = `${basePath}.${newExtension}`
+        console.log(`Original image failed to load. Trying: ${alternateSrc}`)
+        setImageSrc(alternateSrc)
+        return
+      }
+
+      // If all else fails, use placeholder
+      setImageSrc("/placeholder.svg?height=400&width=600")
+    }
   }
 
-  return <img src={src || "/placeholder.svg"} alt={alt} className={className} onError={() => setError(true)} />
+  return <img src={imageSrc || "/placeholder.svg"} alt={alt} className={className} onError={handleError} />
 }
