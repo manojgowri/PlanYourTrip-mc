@@ -1,11 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Link from "next/link"
-import { Compass, MapPin } from "lucide-react"
+import { MapPin } from "lucide-react"
 import { TravelCard } from "@/components/travel-card"
 import { getItineraries } from "@/lib/data"
-import { ThemeToggle } from "@/components/theme-toggle"
 import { SafeImage } from "@/components/safe-image"
 import type { Itinerary } from "@/lib/models"
 
@@ -32,28 +30,26 @@ export default function HomePage() {
   return (
     <div className="flex min-h-screen flex-col">
       <div className="container mx-auto flex-1 px-4 py-8">
-        <header className="mb-10 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Compass className="h-8 w-8 text-emerald-600" />
-            <h1 className="text-3xl font-bold">
-              Plan Your Trip <span className="text-emerald-600">Amigos</span>
-            </h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/companions" className="text-sm font-medium text-emerald-600 hover:text-emerald-700">
-              Travel Companions
-            </Link>
-            <ThemeToggle />
-          </div>
-        </header>
-
         <section className="mb-12">
-          <div className="mb-8 text-center">
-            <h2 className="mb-3 text-3xl font-bold">Our Travel Adventures</h2>
-            <p className="mx-auto max-w-2xl text-muted-foreground">
-              We're a group of budget travelers exploring the world together. Follow our journeys and discover how we
-              experience amazing destinations without breaking the bank!
-            </p>
+          <div className="relative mb-12 rounded-xl overflow-hidden">
+            {/* Background image container - 1200x400px recommended */}
+            <div className="h-[400px] w-full">
+              <SafeImage
+                src="/images/travel-adventures-bg.jpg"
+                alt="Travel adventures background"
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-black/40"></div>
+            </div>
+
+            {/* Content overlay */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-4">
+              <h2 className="mb-3 text-4xl font-bold text-center">Our Travel Adventures</h2>
+              <p className="mx-auto max-w-2xl text-center text-white/90">
+                We're a group of budget travelers exploring the world together. Follow our journeys and discover how we
+                experience amazing destinations without breaking the bank!
+              </p>
+            </div>
           </div>
 
           {loading ? (
@@ -80,15 +76,13 @@ export default function HomePage() {
                   )}
                   rating={itinerary.rating}
                   reviewCount={itinerary.reviewCount}
+                  metadata={itinerary.metadata}
                 />
               ))}
 
               {itineraries.length === 0 && (
                 <div className="col-span-full rounded-lg border p-8 text-center">
                   <p className="text-muted-foreground">No travel plans have been added yet.</p>
-                  <Link href="/admin" className="mt-4 inline-block text-emerald-600 hover:underline">
-                    Add your first trip
-                  </Link>
                 </div>
               )}
             </div>
@@ -143,7 +137,7 @@ export default function HomePage() {
               <div className="flex items-center justify-center">
                 <div className="relative h-64 w-full overflow-hidden rounded-lg sm:h-80">
                   <SafeImage
-                    src="/images/budget_travel_planning.JPG"
+                    src="/images/budget_travel_planning.jpg"
                     alt="Budget travel planning"
                     className="h-full w-full object-cover"
                   />
