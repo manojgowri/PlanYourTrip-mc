@@ -41,7 +41,7 @@ export function Header() {
               <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
             </svg>
             <span className="text-xl font-bold">
-              Plan Your Trip <span className="text-blue-600">Amigos</span>
+              Plan Your Trip <span className="text-emerald-600">Amigos</span>
             </span>
           </Link>
         </div>
