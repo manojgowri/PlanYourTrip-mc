@@ -10,6 +10,7 @@ import { BackToTravelButton } from "@/components/back-to-travel-button"
 import { getItinerary, saveItinerary, getAuthToken } from "@/lib/data"
 import { ArrowLeft, Save, LogOut } from "lucide-react"
 import type { Itinerary } from "@/lib/models"
+import { toast } from "@/hooks/use-toast"
 
 interface ItineraryEditPageProps {
   params: {
@@ -25,6 +26,8 @@ export default function ItineraryEditPage({ params }: ItineraryEditPageProps) {
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState("activities")
   const [checklist, setChecklist] = useState<ChecklistItem[]>([])
+  const [originalChecklist, setOriginalChecklist] = useState<ChecklistItem[]>([])
+  const [checklistChanged, setChecklistChanged] = useState(false)
 
   useEffect(() => {
     const token = getAuthToken()
@@ -44,17 +47,20 @@ export default function ItineraryEditPage({ params }: ItineraryEditPageProps) {
           if (data.metadata?.checklist && data.metadata.checklist.length > 0) {
             console.log("Found checklist in metadata:", data.metadata.checklist)
             setChecklist(data.metadata.checklist)
+            setOriginalChecklist(JSON.parse(JSON.stringify(data.metadata.checklist))) // Deep copy
           } else {
             console.log("No checklist found in metadata, using default items")
             // Default checklist items
-            setChecklist([
+            const defaultChecklist = [
               { id: "rooms", title: "Rooms Booked", completed: false, notes: "" },
               { id: "flights", title: "Flight Tickets Booked", completed: false, notes: "" },
               { id: "trains", title: "Train Bookings", completed: false, notes: "" },
               { id: "car", title: "Car Rentals", completed: false, notes: "" },
               { id: "visa", title: "Visa Requirements", completed: false, notes: "" },
               { id: "insurance", title: "Travel Insurance", completed: false, notes: "" },
-            ])
+            ]
+            setChecklist(defaultChecklist)
+            setOriginalChecklist(JSON.parse(JSON.stringify(defaultChecklist))) // Deep copy
           }
         } else {
           setError("Itinerary not found")
@@ -69,6 +75,19 @@ export default function ItineraryEditPage({ params }: ItineraryEditPageProps) {
 
     fetchItinerary()
   }, [params.id, router])
+
+  // Check if checklist has changed
+  useEffect(() => {
+    if (originalChecklist.length === 0 && checklist.length === 0) {
+      setChecklistChanged(false)
+      return
+    }
+
+    // Compare current checklist with original
+    const checklistStr = JSON.stringify(checklist)
+    const originalStr = JSON.stringify(originalChecklist)
+    setChecklistChanged(checklistStr !== originalStr)
+  }, [checklist, originalChecklist])
 
   const handleSave = async () => {
     if (!itinerary) return
@@ -86,13 +105,30 @@ export default function ItineraryEditPage({ params }: ItineraryEditPageProps) {
         },
       }
 
-      await saveItinerary(updatedItinerary)
+      console.log("Saving itinerary with checklist:", updatedItinerary.metadata.checklist)
 
-      // Show success message
-      alert("Itinerary saved successfully!")
+      const savedItinerary = await saveItinerary(updatedItinerary)
+
+      if (savedItinerary) {
+        // Update the original checklist to match the current state
+        setOriginalChecklist(JSON.parse(JSON.stringify(checklist)))
+        setChecklistChanged(false)
+
+        toast({
+          title: "Success",
+          description: "Itinerary saved successfully!",
+        })
+      } else {
+        throw new Error("Failed to save itinerary")
+      }
     } catch (err) {
       console.error("Error saving itinerary:", err)
       setError("Failed to save itinerary. Please try again.")
+      toast({
+        title: "Error",
+        description: "Failed to save itinerary. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setSaving(false)
     }
@@ -151,7 +187,11 @@ export default function ItineraryEditPage({ params }: ItineraryEditPageProps) {
         </div>
         <div className="flex gap-2">
           <BackToTravelButton />
-          <Button onClick={handleSave} disabled={saving}>
+          <Button
+            onClick={handleSave}
+            disabled={saving || (!checklistChanged && !itinerary.days.length)}
+            variant={checklistChanged ? "default" : "outline"}
+          >
             <Save className="mr-2 h-4 w-4" />
             {saving ? "Saving..." : "Save Changes"}
           </Button>
@@ -175,7 +215,18 @@ export default function ItineraryEditPage({ params }: ItineraryEditPageProps) {
         </TabsContent>
 
         <TabsContent value="checklist">
-          <PreTripChecklist items={checklist} onUpdateItems={handleUpdateChecklist} isAdmin={true} />
+          <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-md">
+            <p className="text-amber-800 text-sm">
+              <strong>Note:</strong> Changes to the checklist will only be saved when you click the "Save Changes"
+              button above.
+            </p>
+          </div>
+          <PreTripChecklist
+            items={checklist}
+            onUpdateItems={handleUpdateChecklist}
+            isAdmin={true}
+            destination={itinerary.destination}
+          />
         </TabsContent>
       </Tabs>
     </div>
