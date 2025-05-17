@@ -2,20 +2,21 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, MapPin, Utensils, Hotel, Star, Calendar, Bed, Check, X } from "lucide-react"
+import { ArrowLeft, MapPin, Utensils, Hotel, Star, Calendar, Bed } from "lucide-react"
 import { ItineraryDay } from "@/components/itinerary-day"
 import {
   getItinerary,
   getAccommodations,
   getComments,
   addComment,
+  saveItinerary,
   type Itinerary,
   type Comment,
   type Accommodation,
   type ChecklistItem,
 } from "@/lib/data"
 import { CommentSection } from "@/components/comment-section"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { PreTripChecklist } from "@/components/pre-trip-checklist"
 
 interface ItineraryPageProps {
   params: {
@@ -29,6 +30,7 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
   const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
   const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([])
+  const [savingChecklist, setSavingChecklist] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -47,36 +49,12 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
             console.log("No checklist found in metadata, using default items")
             // Default checklist items
             setChecklistItems([
-              {
-                id: "rooms",
-                title: "Rooms Booked",
-                completed: false,
-                notes: "",
-              },
-              {
-                id: "flights",
-                title: "Flight Tickets Booked",
-                completed: false,
-                notes: "",
-              },
-              {
-                id: "trains",
-                title: "Train Bookings",
-                completed: false,
-                notes: "",
-              },
-              {
-                id: "cars",
-                title: "Car Rentals",
-                completed: false,
-                notes: "",
-              },
-              {
-                id: "other",
-                title: "Other Notes",
-                completed: false,
-                notes: "",
-              },
+              { id: "rooms", title: "Rooms Booked", completed: false },
+              { id: "flights", title: "Flight Tickets Booked", completed: false },
+              { id: "trains", title: "Train Bookings", completed: false },
+              { id: "car", title: "Car Rentals", completed: false },
+              { id: "visa", title: "Visa Requirements", completed: false },
+              { id: "insurance", title: "Travel Insurance", completed: false },
             ])
           }
 
@@ -116,6 +94,38 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
       }
     } catch (error) {
       console.error("Error adding comment:", error)
+    }
+  }
+
+  const handleToggleChecklistItem = async (id: string) => {
+    if (!itinerary) return
+
+    try {
+      setSavingChecklist(true)
+
+      // Update local state
+      const updatedItems = checklistItems.map((item) =>
+        item.id === id ? { ...item, completed: !item.completed } : item,
+      )
+      setChecklistItems(updatedItems)
+
+      // Save to server
+      const updatedItinerary: Itinerary = {
+        ...itinerary,
+        metadata: {
+          ...itinerary.metadata,
+          checklist: updatedItems,
+        },
+      }
+
+      await saveItinerary(updatedItinerary)
+      console.log("Checklist updated successfully")
+    } catch (error) {
+      console.error("Error updating checklist:", error)
+      // Revert on error
+      setChecklistItems(checklistItems)
+    } finally {
+      setSavingChecklist(false)
     }
   }
 
@@ -240,39 +250,12 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
         {checklistItems.length > 0 && (
           <section className="mb-8">
             <h2 className="mb-4 text-2xl font-semibold">Pre-Trip Checklist</h2>
-            <Card>
-              <CardHeader>
-                <CardTitle>Planning Status</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3">
-                  {checklistItems.map((item) => (
-                    <li
-                      key={item.id}
-                      className={`flex items-start gap-3 p-2 rounded-md ${
-                        item.completed ? "bg-emerald-50 dark:bg-emerald-950/20" : "bg-gray-50 dark:bg-gray-800/20"
-                      }`}
-                    >
-                      <div
-                        className={`mt-0.5 flex-shrink-0 rounded-full p-1 ${
-                          item.completed
-                            ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900 dark:text-emerald-400"
-                            : "bg-gray-200 text-gray-500 dark:bg-gray-700"
-                        }`}
-                      >
-                        {item.completed ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
-                      </div>
-                      <div>
-                        <h4 className={`font-medium ${item.completed ? "text-emerald-700 dark:text-emerald-400" : ""}`}>
-                          {item.title}
-                        </h4>
-                        {item.notes && <p className="text-sm text-muted-foreground mt-1">{item.notes}</p>}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+            <PreTripChecklist
+              destination={itinerary.destination}
+              items={checklistItems}
+              onToggleItem={handleToggleChecklistItem}
+              readOnly={savingChecklist}
+            />
           </section>
         )}
 

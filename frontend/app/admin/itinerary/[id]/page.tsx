@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ItineraryActivitiesManager } from "@/components/itinerary-activities-manager"
-import { PreTripChecklistForm, type ChecklistItem } from "@/components/pre-trip-checklist-form"
+import { PreTripChecklist, type ChecklistItem } from "@/components/pre-trip-checklist"
 import { BackToTravelButton } from "@/components/back-to-travel-button"
 import { getItinerary, saveItinerary, getAuthToken } from "@/lib/data"
-import { ArrowLeft, Save } from "lucide-react"
+import { ArrowLeft, Save, LogOut } from "lucide-react"
 import type { Itinerary } from "@/lib/models"
 
 interface ItineraryEditPageProps {
@@ -41,8 +41,20 @@ export default function ItineraryEditPage({ params }: ItineraryEditPageProps) {
           setItinerary(data)
 
           // Extract checklist from itinerary metadata if it exists
-          if (data.metadata?.checklist) {
+          if (data.metadata?.checklist && data.metadata.checklist.length > 0) {
+            console.log("Found checklist in metadata:", data.metadata.checklist)
             setChecklist(data.metadata.checklist)
+          } else {
+            console.log("No checklist found in metadata, using default items")
+            // Default checklist items
+            setChecklist([
+              { id: "rooms", title: "Rooms Booked", completed: false, notes: "" },
+              { id: "flights", title: "Flight Tickets Booked", completed: false, notes: "" },
+              { id: "trains", title: "Train Bookings", completed: false, notes: "" },
+              { id: "car", title: "Car Rentals", completed: false, notes: "" },
+              { id: "visa", title: "Visa Requirements", completed: false, notes: "" },
+              { id: "insurance", title: "Travel Insurance", completed: false, notes: "" },
+            ])
           }
         } else {
           setError("Itinerary not found")
@@ -95,7 +107,13 @@ export default function ItineraryEditPage({ params }: ItineraryEditPageProps) {
   }
 
   const handleUpdateChecklist = (updatedChecklist: ChecklistItem[]) => {
+    console.log("Updating checklist:", updatedChecklist)
     setChecklist(updatedChecklist)
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem("auth_token")
+    router.push("/")
   }
 
   if (loading) {
@@ -137,6 +155,10 @@ export default function ItineraryEditPage({ params }: ItineraryEditPageProps) {
             <Save className="mr-2 h-4 w-4" />
             {saving ? "Saving..." : "Save Changes"}
           </Button>
+          <Button variant="outline" onClick={handleLogout}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Logout
+          </Button>
         </div>
       </div>
 
@@ -153,7 +175,7 @@ export default function ItineraryEditPage({ params }: ItineraryEditPageProps) {
         </TabsContent>
 
         <TabsContent value="checklist">
-          <PreTripChecklistForm checklist={checklist} onChange={handleUpdateChecklist} />
+          <PreTripChecklist items={checklist} onUpdateItems={handleUpdateChecklist} isAdmin={true} />
         </TabsContent>
       </Tabs>
     </div>
