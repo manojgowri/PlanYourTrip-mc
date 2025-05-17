@@ -17,6 +17,7 @@ import {
 } from "@/lib/data"
 import { CommentSection } from "@/components/comment-section"
 import { PreTripChecklist } from "@/components/pre-trip-checklist"
+import { toast } from "@/hooks/use-toast"
 
 interface ItineraryPageProps {
   params: {
@@ -46,16 +47,8 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
             console.log("Found checklist in metadata:", itineraryData.metadata.checklist)
             setChecklistItems(itineraryData.metadata.checklist)
           } else {
-            console.log("No checklist found in metadata, using default items")
-            // Default checklist items
-            setChecklistItems([
-              { id: "rooms", title: "Rooms Booked", completed: false },
-              { id: "flights", title: "Flight Tickets Booked", completed: false },
-              { id: "trains", title: "Train Bookings", completed: false },
-              { id: "car", title: "Car Rentals", completed: false },
-              { id: "visa", title: "Visa Requirements", completed: false },
-              { id: "insurance", title: "Travel Insurance", completed: false },
-            ])
+            console.log("No checklist found in metadata, using empty array")
+            setChecklistItems([])
           }
 
           // Fetch related data
@@ -70,6 +63,11 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
         }
       } catch (error) {
         console.error("Error fetching itinerary data:", error)
+        toast({
+          title: "Error",
+          description: "Failed to load itinerary data. Please try again.",
+          variant: "destructive",
+        })
       } finally {
         setLoading(false)
       }
@@ -94,6 +92,11 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
       }
     } catch (error) {
       console.error("Error adding comment:", error)
+      toast({
+        title: "Error",
+        description: "Failed to add comment. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -118,12 +121,24 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
         },
       }
 
-      await saveItinerary(updatedItinerary)
-      console.log("Checklist updated successfully")
+      const savedItinerary = await saveItinerary(updatedItinerary)
+
+      if (savedItinerary) {
+        console.log("Checklist updated successfully")
+        // Update the itinerary with the saved data
+        setItinerary(savedItinerary)
+      } else {
+        throw new Error("Failed to save checklist")
+      }
     } catch (error) {
       console.error("Error updating checklist:", error)
       // Revert on error
       setChecklistItems(checklistItems)
+      toast({
+        title: "Error",
+        description: "Failed to update checklist. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setSavingChecklist(false)
     }
