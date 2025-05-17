@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Calendar, MapPin, CreditCard } from "lucide-react"
+import { Calendar, MapPin, CreditCard, CheckSquare } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { SafeImage } from "@/components/safe-image"
@@ -43,13 +43,18 @@ export function TravelCard({
     image ||
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' fontFamily='Arial' fontSize='24' fill='%23999' textAnchor='middle' dominantBaseline='middle'%3EImage Placeholder%3C/text%3E%3C/svg%3E"
 
-  // Calculate total expenses for this itinerary
-  const hasExpenses = days && days > 0
+  // Calculate total expenses for this itinerary (hardcoded for now)
+  const totalExpenses = 12500
 
-  // Check if pre-trip checklist exists
+  // Check if pre-trip checklist exists and calculate completion
   const hasChecklist = metadata?.checklist && metadata.checklist.length > 0
   const completedItems = metadata?.checklist ? metadata.checklist.filter((item) => item.completed).length : 0
   const totalItems = metadata?.checklist ? metadata.checklist.length : 0
+
+  console.log("Travel Card Metadata:", metadata)
+  console.log("Has Checklist:", hasChecklist)
+  console.log("Completed Items:", completedItems)
+  console.log("Total Items:", totalItems)
 
   return (
     <Card className="overflow-hidden transition-all hover:shadow-md">
@@ -88,18 +93,19 @@ export function TravelCard({
         )}
         <p className="mb-4 line-clamp-2 text-sm text-muted-foreground">{description}</p>
 
-        {/* Display total expenses if available */}
-        {hasExpenses && (
-          <div className="mb-3 flex items-center gap-1 text-sm font-medium">
-            <CreditCard className="h-3.5 w-3.5 text-emerald-600" />
-            <span>Total: ₹12,500</span>
-          </div>
-        )}
+        {/* Display total expenses */}
+        <div className="mb-3 flex items-center gap-1 text-sm font-medium">
+          <CreditCard className="h-3.5 w-3.5 text-emerald-600" />
+          <span>Total: ₹{totalExpenses.toLocaleString()}</span>
+        </div>
 
         {/* Display pre-trip checklist status if available */}
         {hasChecklist && (
           <div className="mb-4">
-            <div className="text-xs text-muted-foreground">Pre-trip checklist</div>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <CheckSquare className="h-3.5 w-3.5" />
+              <span>Pre-trip checklist</span>
+            </div>
             <div className="mt-1 h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
               <div
                 className="h-full bg-emerald-500 rounded-full"

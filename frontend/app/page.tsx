@@ -16,6 +16,7 @@ export default function HomePage() {
       try {
         setLoading(true)
         const data = await getItineraries()
+        console.log("Fetched itineraries:", data)
         setItineraries(data)
       } catch (error) {
         console.error("Error fetching itineraries:", error)
@@ -58,27 +59,30 @@ export default function HomePage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {itineraries.map((itinerary) => (
-                <TravelCard
-                  key={itinerary.id}
-                  id={itinerary.id}
-                  destination={itinerary.destination}
-                  image={itinerary.image}
-                  description={itinerary.description}
-                  startDate={itinerary.startDate}
-                  endDate={itinerary.endDate}
-                  locations={itinerary.locations}
-                  status={itinerary.status}
-                  season={itinerary.season}
-                  days={Math.ceil(
-                    (new Date(itinerary.endDate).getTime() - new Date(itinerary.startDate).getTime()) /
-                      (1000 * 60 * 60 * 24),
-                  )}
-                  rating={itinerary.rating}
-                  reviewCount={itinerary.reviewCount}
-                  metadata={itinerary.metadata}
-                />
-              ))}
+              {itineraries.map((itinerary) => {
+                console.log(`Itinerary ${itinerary.id} metadata:`, itinerary.metadata)
+                return (
+                  <TravelCard
+                    key={itinerary.id}
+                    id={itinerary.id}
+                    destination={itinerary.destination}
+                    image={itinerary.image}
+                    description={itinerary.description}
+                    startDate={itinerary.startDate}
+                    endDate={itinerary.endDate}
+                    locations={itinerary.locations}
+                    status={itinerary.status}
+                    season={itinerary.season}
+                    days={Math.ceil(
+                      (new Date(itinerary.endDate).getTime() - new Date(itinerary.startDate).getTime()) /
+                        (1000 * 60 * 60 * 24),
+                    )}
+                    rating={itinerary.rating}
+                    reviewCount={itinerary.reviewCount}
+                    metadata={itinerary.metadata}
+                  />
+                )
+              })}
 
               {itineraries.length === 0 && (
                 <div className="col-span-full rounded-lg border p-8 text-center">
@@ -137,7 +141,7 @@ export default function HomePage() {
               <div className="flex items-center justify-center">
                 <div className="relative h-64 w-full overflow-hidden rounded-lg sm:h-80">
                   <SafeImage
-                    src="/images/budget_travel_planning.JPG"
+                    src="/images/budget_travel_planning.jpg"
                     alt="Budget travel planning"
                     className="h-full w-full object-cover"
                   />
