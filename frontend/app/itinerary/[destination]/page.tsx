@@ -40,43 +40,40 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
           setItinerary(itineraryData)
 
           // Set checklist items from metadata if available
-          if (itineraryData.metadata?.checklist) {
+          if (itineraryData.metadata?.checklist && itineraryData.metadata.checklist.length > 0) {
+            console.log("Found checklist in metadata:", itineraryData.metadata.checklist)
             setChecklistItems(itineraryData.metadata.checklist)
           } else {
+            console.log("No checklist found in metadata, using default items")
             // Default checklist items
             setChecklistItems([
               {
-                id: "visa",
-                title: "Check Visa Requirements",
-                description: "Research and apply for necessary visas.",
+                id: "rooms",
+                title: "Rooms Booked",
                 completed: false,
                 notes: "",
               },
               {
                 id: "flights",
-                title: "Book Flights",
-                description: "Compare prices and book flights.",
+                title: "Flight Tickets Booked",
                 completed: false,
                 notes: "",
               },
               {
-                id: "accommodation",
-                title: "Reserve Accommodations",
-                description: "Book hotels or hostels for your stay.",
+                id: "trains",
+                title: "Train Bookings",
                 completed: false,
                 notes: "",
               },
               {
-                id: "insurance",
-                title: "Get Travel Insurance",
-                description: "Purchase travel insurance for your trip.",
+                id: "cars",
+                title: "Car Rentals",
                 completed: false,
                 notes: "",
               },
               {
-                id: "currency",
-                title: "Exchange Currency",
-                description: "Get local currency for your trip.",
+                id: "other",
+                title: "Other Notes",
                 completed: false,
                 notes: "",
               },
@@ -240,7 +237,7 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
           </section>
         )}
 
-        {itinerary.status === "online" && checklistItems.length > 0 && (
+        {checklistItems.length > 0 && (
           <section className="mb-8">
             <h2 className="mb-4 text-2xl font-semibold">Pre-Trip Checklist</h2>
             <Card>
