@@ -93,11 +93,7 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
       }
     } catch (error) {
       console.error("Error adding comment:", error)
-      toast({
-        title: "Error",
-        description: "Failed to add comment. Please try again.",
-        variant: "destructive",
-      })
+      toast.error("Failed to add comment. Please try again.")
     }
   }
 
@@ -135,11 +131,7 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
       console.error("Error updating checklist:", error)
       // Revert on error
       setChecklistItems(checklistItems)
-      toast({
-        title: "Error",
-        description: "Failed to update checklist. Please try again.",
-        variant: "destructive",
-      })
+      toast.error("Failed to update checklist. Please try again.")
     } finally {
       setSavingChecklist(false)
     }

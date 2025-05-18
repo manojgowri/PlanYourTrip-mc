@@ -119,6 +119,7 @@ export default function ItineraryEditPage({ params }: ItineraryEditPageProps) {
           title: "Success",
           description: "Itinerary saved successfully!",
         })
+        toast.success("Success", "Itinerary saved successfully!")
       } else {
         throw new Error("Failed to save itinerary")
       }
@@ -130,6 +131,7 @@ export default function ItineraryEditPage({ params }: ItineraryEditPageProps) {
         description: "Failed to save itinerary. Please try again.",
         variant: "destructive",
       })
+      toast.error("Error", "Failed to save itinerary. Please try again.")
     } finally {
       setSaving(false)
     }
