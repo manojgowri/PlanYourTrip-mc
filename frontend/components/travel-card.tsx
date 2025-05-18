@@ -5,6 +5,7 @@ import { Calendar, MapPin, CreditCard, CheckSquare } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { SafeImage } from "@/components/safe-image"
+import { calculateTotalExpenses } from "@/lib/data"
 import type { Itinerary } from "@/lib/models"
 
 interface TravelCardProps {
@@ -21,6 +22,7 @@ interface TravelCardProps {
   rating?: number
   reviewCount?: number
   metadata?: Itinerary["metadata"]
+  itinerary: Itinerary
 }
 
 export function TravelCard({
@@ -37,24 +39,20 @@ export function TravelCard({
   rating,
   reviewCount,
   metadata,
+  itinerary,
 }: TravelCardProps) {
   // Use a placeholder image if none is provided
   const imageUrl =
     image ||
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' fontFamily='Arial' fontSize='24' fill='%23999' textAnchor='middle' dominantBaseline='middle'%3EImage Placeholder%3C/text%3E%3C/svg%3E"
 
-  // Calculate total expenses for this itinerary (hardcoded for now)
-  const totalExpenses = 12500
+  // Calculate total expenses for this itinerary dynamically
+  const { amount: totalExpenses } = calculateTotalExpenses(itinerary)
 
   // Check if pre-trip checklist exists and calculate completion
   const hasChecklist = metadata?.checklist && metadata.checklist.length > 0
   const completedItems = metadata?.checklist ? metadata.checklist.filter((item) => item.completed).length : 0
   const totalItems = metadata?.checklist ? metadata.checklist.length : 0
-
-  console.log("Travel Card Metadata:", metadata)
-  console.log("Has Checklist:", hasChecklist)
-  console.log("Completed Items:", completedItems)
-  console.log("Total Items:", totalItems)
 
   return (
     <Card className="overflow-hidden transition-all hover:shadow-md">
@@ -93,7 +91,7 @@ export function TravelCard({
         )}
         <p className="mb-4 line-clamp-2 text-sm text-muted-foreground">{description}</p>
 
-        {/* Display total expenses */}
+        {/* Display total expenses dynamically */}
         <div className="mb-3 flex items-center gap-1 text-sm font-medium">
           <CreditCard className="h-3.5 w-3.5 text-emerald-600" />
           <span>Total: ₹{totalExpenses.toLocaleString()}</span>

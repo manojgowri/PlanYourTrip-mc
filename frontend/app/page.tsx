@@ -1,156 +1,95 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { MapPin } from "lucide-react"
-import { TravelCard } from "@/components/travel-card"
+import { useState, useEffect } from "react"
 import { getItineraries } from "@/lib/data"
-import { SafeImage } from "@/components/safe-image"
+import { TravelCard } from "@/components/travel-card"
+import { Compass } from "lucide-react"
 import type { Itinerary } from "@/lib/models"
 
-export default function HomePage() {
+export default function Home() {
   const [itineraries, setItineraries] = useState<Itinerary[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchItineraries = async () => {
       try {
         setLoading(true)
         const data = await getItineraries()
-        console.log("Fetched itineraries:", data)
         setItineraries(data)
-      } catch (error) {
-        console.error("Error fetching itineraries:", error)
+      } catch (err) {
+        console.error("Error fetching itineraries:", err)
+        setError("Failed to load itineraries. Please try again.")
       } finally {
         setLoading(false)
       }
     }
 
-    fetchData()
+    fetchItineraries()
   }, [])
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <div className="container mx-auto flex-1 px-4 py-8">
-        <section className="mb-12">
-          <div className="relative mb-12 rounded-xl overflow-hidden">
-            {/* Background image container - 1200x400px recommended */}
-            <div className="h-[400px] w-full">
-              <SafeImage
-                src="/images/travel-adventures-bg.jpg"
-                alt="Travel adventures background"
-                className="h-full w-full object-cover"
-              />
-              <div className="absolute inset-0 bg-black/40"></div>
-            </div>
+    <main className="flex min-h-screen flex-col">
+      {/* Hero Section */}
+      <section className="bg-gradient-to-b from-emerald-50 to-white py-16 dark:from-emerald-950 dark:to-gray-900">
+        <div className="container mx-auto px-4 text-center">
+          <h1 className="mb-6 text-4xl font-bold tracking-tight text-gray-900 dark:text-white md:text-5xl lg:text-6xl">
+            <span className="text-emerald-600 dark:text-emerald-400">Plan Your Trip</span>{" "}
+            <span className="text-amber-500">Amigos</span>
+          </h1>
+          <p className="mx-auto mb-8 max-w-2xl text-lg text-gray-600 dark:text-gray-300">
+            <span className="font-medium text-gray-900 dark:text-white">Budget Travel Made Easy</span> - Create detailed
+            itineraries, track expenses, and share your adventures with friends and family.
+          </p>
+        </div>
+      </section>
 
-            {/* Content overlay */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-4">
-              <h2 className="mb-3 text-4xl font-bold text-center">Our Travel Adventures</h2>
-              <p className="mx-auto max-w-2xl text-center text-white/90">
-                We're a group of budget travelers exploring the world together. Follow our journeys and discover how we
-                experience amazing destinations without breaking the bank!
-              </p>
-            </div>
+      {/* Itineraries Section */}
+      <section className="py-12">
+        <div className="container mx-auto px-4">
+          <div className="mb-8 flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Travel Adventures</h2>
           </div>
 
           {loading ? (
-            <div className="flex justify-center py-12">
-              <p>Loading itineraries...</p>
+            <div className="text-center">
+              <p className="text-gray-600 dark:text-gray-300">Loading itineraries...</p>
+            </div>
+          ) : error ? (
+            <div className="rounded-md bg-red-50 p-4 dark:bg-red-900/20">
+              <p className="text-red-800 dark:text-red-300">{error}</p>
+            </div>
+          ) : itineraries.length === 0 ? (
+            <div className="rounded-md bg-amber-50 p-8 text-center dark:bg-amber-900/20">
+              <Compass className="mx-auto mb-4 h-12 w-12 text-amber-500" />
+              <h3 className="mb-2 text-xl font-semibold text-amber-800 dark:text-amber-300">No adventures yet</h3>
+              <p className="text-amber-700 dark:text-amber-400">
+                Your travel adventures will appear here once you create them.
+              </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {itineraries.map((itinerary) => {
-                console.log(`Itinerary ${itinerary.id} metadata:`, itinerary.metadata)
-                return (
-                  <TravelCard
-                    key={itinerary.id}
-                    id={itinerary.id}
-                    destination={itinerary.destination}
-                    image={itinerary.image}
-                    description={itinerary.description}
-                    startDate={itinerary.startDate}
-                    endDate={itinerary.endDate}
-                    locations={itinerary.locations}
-                    status={itinerary.status}
-                    season={itinerary.season}
-                    days={Math.ceil(
-                      (new Date(itinerary.endDate).getTime() - new Date(itinerary.startDate).getTime()) /
-                        (1000 * 60 * 60 * 24),
-                    )}
-                    rating={itinerary.rating}
-                    reviewCount={itinerary.reviewCount}
-                    metadata={itinerary.metadata}
-                  />
-                )
-              })}
-
-              {itineraries.length === 0 && (
-                <div className="col-span-full rounded-lg border p-8 text-center">
-                  <p className="text-muted-foreground">No travel plans have been added yet.</p>
-                </div>
-              )}
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {itineraries.map((itinerary) => (
+                <TravelCard
+                  key={itinerary.id}
+                  id={itinerary.id}
+                  destination={itinerary.destination}
+                  image={itinerary.image}
+                  description={itinerary.description}
+                  startDate={itinerary.startDate}
+                  endDate={itinerary.endDate}
+                  status={itinerary.status}
+                  season={itinerary.season}
+                  locations={itinerary.locations}
+                  days={itinerary.days.length}
+                  metadata={itinerary.metadata}
+                  itinerary={itinerary}
+                />
+              ))}
             </div>
           )}
-        </section>
-
-        <section className="mb-12">
-          <div className="rounded-xl bg-emerald-50 p-8">
-            <div className="grid gap-8 md:grid-cols-2">
-              <div>
-                <h2 className="mb-4 text-2xl font-bold">Budget Travel Made Easy</h2>
-                <p className="mb-6 text-muted-foreground">
-                  We know the struggle of traveling on a budget. That's why we share our detailed itineraries,
-                  affordable accommodations, and money-saving tips to help fellow budget travelers explore the world.
-                </p>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="rounded-full bg-emerald-100 p-2">
-                      <MapPin className="h-5 w-5 text-emerald-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium">Affordable Accommodations</h3>
-                      <p className="text-sm text-muted-foreground">
-                        We find and share the best budget-friendly places to stay.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="rounded-full bg-emerald-100 p-2">
-                      <MapPin className="h-5 w-5 text-emerald-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium">Local Food Recommendations</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Discover delicious and inexpensive local eateries.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="rounded-full bg-emerald-100 p-2">
-                      <MapPin className="h-5 w-5 text-emerald-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium">Hidden Gems</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Explore off-the-beaten-path locations that tourists often miss.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center justify-center">
-                <div className="relative h-64 w-full overflow-hidden rounded-lg sm:h-80">
-                  <SafeImage
-                    src="/images/budget_travel_planning.jpg"
-                    alt="Budget travel planning"
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-    </div>
+        </div>
+      </section>
+    </main>
   )
 }
