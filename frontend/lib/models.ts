@@ -1,3 +1,5 @@
+// Type definitions for the application
+
 export interface Activity {
   id: string
   time: string
@@ -7,7 +9,7 @@ export interface Activity {
   expense?: {
     amount: number
     currency: string
-    category: string
+    category?: string
   }
   image?: string
 }
@@ -20,30 +22,37 @@ export interface ItineraryDay {
   activities: Activity[]
 }
 
+export interface ChecklistItem {
+  id: string
+  title: string
+  completed: boolean
+  notes?: string
+}
+
 export interface Itinerary {
   id: string
   destination: string
-  image: string
+  image?: string
   description: string
   startDate: string
   endDate: string
-  days: ItineraryDay[]
   status: "online" | "completed"
-  season: string
+  season?: string
   rating: number
   reviewCount: number
   locations: string[]
+  days: ItineraryDay[]
   metadata?: {
     checklist?: ChecklistItem[]
     [key: string]: any
   }
 }
 
-export interface ChecklistItem {
+export interface Location {
   id: string
-  title: string
-  completed: boolean
-  notes: string
+  name: string
+  dates: string
+  destinationId: string
 }
 
 export interface Accommodation {
@@ -59,7 +68,7 @@ export interface Companion {
   name: string
   relationship: string
   bio: string
-  image: string
+  image?: string
 }
 
 export interface Comment {
@@ -71,15 +80,7 @@ export interface Comment {
   itineraryId: string
 }
 
-export interface Location {
-  id: string
-  name: string
-  dates: string
-  destinationId: string
-}
-
 export interface User {
-  id: string
   username: string
   isAdmin: boolean
 }

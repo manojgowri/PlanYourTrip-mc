@@ -17,7 +17,7 @@ import {
 } from "@/lib/data"
 import { CommentSection } from "@/components/comment-section"
 import { PreTripChecklist } from "@/components/pre-trip-checklist"
-import { toast } from "@/hooks/use-toast"
+import { useToast } from "@/hooks/use-toast"
 
 interface ItineraryPageProps {
   params: {
@@ -26,6 +26,7 @@ interface ItineraryPageProps {
 }
 
 export default function ItineraryPage({ params }: ItineraryPageProps) {
+  const { toast } = useToast()
   const [itinerary, setItinerary] = useState<Itinerary | null>(null)
   const [accommodations, setAccommodations] = useState<Accommodation[]>([])
   const [comments, setComments] = useState<Comment[]>([])
@@ -74,7 +75,7 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
     }
 
     fetchData()
-  }, [params.destination])
+  }, [params.destination, toast])
 
   const handleAddComment = async (comment: Omit<Comment, "id" | "date">) => {
     if (!itinerary) return
