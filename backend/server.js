@@ -119,6 +119,7 @@ const daySchema = new mongoose.Schema({
   activities: [activitySchema],
 })
 
+// Update the itinerary schema to include metadata for the checklist
 const itinerarySchema = new mongoose.Schema({
   id: {
     type: String,
@@ -149,6 +150,10 @@ const itinerarySchema = new mongoose.Schema({
   },
   locations: [String],
   days: [daySchema],
+  metadata: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {},
+  },
 })
 
 const locationSchema = new mongoose.Schema({

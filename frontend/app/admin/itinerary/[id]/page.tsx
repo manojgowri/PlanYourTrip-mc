@@ -10,7 +10,7 @@ import { BackToTravelButton } from "@/components/back-to-travel-button"
 import { getItinerary, saveItinerary, getAuthToken } from "@/lib/data"
 import { ArrowLeft, Save, LogOut } from "lucide-react"
 import type { Itinerary } from "@/lib/models"
-import { toast } from "@/hooks/use-toast"
+import { useToast } from "@/hooks/use-toast"
 
 interface ItineraryEditPageProps {
   params: {
@@ -20,6 +20,7 @@ interface ItineraryEditPageProps {
 
 export default function ItineraryEditPage({ params }: ItineraryEditPageProps) {
   const router = useRouter()
+  const { toast } = useToast()
   const [itinerary, setItinerary] = useState<Itinerary | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -118,6 +119,7 @@ export default function ItineraryEditPage({ params }: ItineraryEditPageProps) {
           title: "Success",
           description: "Itinerary saved successfully!",
         })
+        toast.success("Success", "Itinerary saved successfully!")
       } else {
         throw new Error("Failed to save itinerary")
       }
@@ -129,6 +131,7 @@ export default function ItineraryEditPage({ params }: ItineraryEditPageProps) {
         description: "Failed to save itinerary. Please try again.",
         variant: "destructive",
       })
+      toast.error("Error", "Failed to save itinerary. Please try again.")
     } finally {
       setSaving(false)
     }

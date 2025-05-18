@@ -34,3 +34,28 @@ export function useToast() {
 
   return { toast, dismiss, toasts }
 }
+
+// Export a standalone toast function for easier usage in server components
+export const toast = {
+  success: (title: string, description?: string) => {
+    console.log(`Toast success: ${title} - ${description}`)
+    // This is just a placeholder for server components
+    // The actual toast will be shown by the client component
+    return { id: Math.random().toString(36).substring(2, 9) }
+  },
+  error: (title: string, description?: string) => {
+    console.log(`Toast error: ${title} - ${description}`)
+    // This is just a placeholder for server components
+    return { id: Math.random().toString(36).substring(2, 9) }
+  },
+  warning: (title: string, description?: string) => {
+    console.log(`Toast warning: ${title} - ${description}`)
+    // This is just a placeholder for server components
+    return { id: Math.random().toString(36).substring(2, 9) }
+  },
+  info: (title: string, description?: string) => {
+    console.log(`Toast info: ${title} - ${description}`)
+    // This is just a placeholder for server components
+    return { id: Math.random().toString(36).substring(2, 9) }
+  },
+}
