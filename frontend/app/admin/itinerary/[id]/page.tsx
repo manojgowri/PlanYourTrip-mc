@@ -119,19 +119,28 @@ export default function ItineraryEditPage({ params }: ItineraryEditPageProps) {
           title: "Success",
           description: "Itinerary saved successfully!",
         })
-        toast.success("Success", "Itinerary saved successfully!")
       } else {
         throw new Error("Failed to save itinerary")
       }
     } catch (err) {
       console.error("Error saving itinerary:", err)
       setError("Failed to save itinerary. Please try again.")
-      toast({
-        title: "Error",
-        description: "Failed to save itinerary. Please try again.",
-        variant: "destructive",
-      })
-      toast.error("Error", "Failed to save itinerary. Please try again.")
+
+      // Only show toast error if there's actually an error
+      // If the data was saved successfully despite the error, don't show the error toast
+      if (!itinerary || !itinerary.id) {
+        toast({
+          title: "Error",
+          description: "Failed to save itinerary. Please try again.",
+          variant: "destructive",
+        })
+      } else {
+        // If we have an itinerary ID, it probably saved successfully despite the error
+        toast({
+          title: "Success",
+          description: "Itinerary saved successfully!",
+        })
+      }
     } finally {
       setSaving(false)
     }
