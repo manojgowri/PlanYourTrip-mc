@@ -53,56 +53,56 @@ export function ItineraryDay({ day, date, location, activities }: ItineraryDayPr
   return (
     <div className="rounded-lg border shadow-sm">
       <div
-        className="flex cursor-pointer items-center justify-between p-4"
+        className="flex cursor-pointer items-center justify-between p-3"
         onClick={toggleExpand}
         role="button"
         tabIndex={0}
       >
         <div>
-          <h3 className="text-lg font-medium">
+          <h3 className="text-base font-medium">
             Day {day}: {location}
           </h3>
-          <p className="text-sm text-muted-foreground">{formattedDate}</p>
+          <p className="text-xs text-muted-foreground">{formattedDate}</p>
         </div>
         <div className="flex items-center gap-4">
           {totalExpenses > 0 && (
-            <div className="flex items-center gap-1 text-sm font-medium">
-              <IndianRupee className="h-3.5 w-3.5" />
+            <div className="flex items-center gap-1 text-xs font-medium">
+              <IndianRupee className="h-3 w-3" />
               <span>{totalExpenses.toFixed(2)}</span>
             </div>
           )}
           <button className="rounded-full p-1 hover:bg-gray-100">
-            {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </button>
         </div>
       </div>
 
       {isExpanded && (
-        <div className="border-t px-4 py-3">
+        <div className="border-t px-3 py-2">
           {activities.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {activities.map((activity) => (
-                <div key={activity.id} className="flex gap-4">
-                  <div className="w-16 shrink-0 text-center">
-                    <span className="text-sm font-medium">{activity.time}</span>
+                <div key={activity.id} className="flex gap-2">
+                  <div className="w-12 shrink-0 text-center">
+                    <span className="text-xs font-medium">{activity.time}</span>
                   </div>
-                  <div className="flex-1 rounded-lg border p-3">
-                    <div className="mb-2 flex items-center justify-between">
-                      <h4 className="font-medium">{activity.title}</h4>
+                  <div className="flex-1 rounded-lg border p-2">
+                    <div className="mb-1 flex items-center justify-between">
+                      <h4 className="text-sm font-medium">{activity.title}</h4>
                       <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${getActivityTypeColor(activity.type)}`}
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${getActivityTypeColor(activity.type)}`}
                       >
                         {activity.type}
                       </span>
                     </div>
-                    <p className="text-sm text-muted-foreground">{activity.description}</p>
+                    <p className="text-xs text-muted-foreground">{activity.description}</p>
 
                     {activity.image && (
-                      <div className="mt-3 overflow-hidden rounded-md">
+                      <div className="mt-2 overflow-hidden rounded-md">
                         <img
                           src={activity.image || getPlaceholderImage(400, 160)}
                           alt={activity.title}
-                          className="h-40 w-full object-cover"
+                          className="h-32 w-full object-cover"
                           onError={(e) => {
                             // If image fails to load, replace with placeholder
                             e.currentTarget.src = getPlaceholderImage(400, 160)
@@ -112,14 +112,14 @@ export function ItineraryDay({ day, date, location, activities }: ItineraryDayPr
                     )}
 
                     {activity.expense && activity.expense.amount > 0 && (
-                      <div className="mt-2 text-sm">
+                      <div className="mt-1 text-xs">
                         <span className="font-medium">Cost: </span>
                         <span className="flex items-center gap-1 inline-flex">
-                          <IndianRupee className="h-3 w-3" />
+                          <IndianRupee className="h-2.5 w-2.5" />
                           {activity.expense.amount.toFixed(2)}
                         </span>
                         {activity.expense.category && (
-                          <span className="ml-2 text-xs text-muted-foreground">({activity.expense.category})</span>
+                          <span className="ml-2 text-[10px] text-muted-foreground">({activity.expense.category})</span>
                         )}
                       </div>
                     )}
@@ -128,7 +128,7 @@ export function ItineraryDay({ day, date, location, activities }: ItineraryDayPr
               ))}
             </div>
           ) : (
-            <p className="py-2 text-center text-sm text-muted-foreground">No activities planned for this day yet.</p>
+            <p className="py-2 text-center text-xs text-muted-foreground">No activities planned for this day yet.</p>
           )}
         </div>
       )}
