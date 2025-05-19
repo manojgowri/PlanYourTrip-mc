@@ -178,7 +178,7 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
                 {new Date(itinerary.endDate).toLocaleDateString()} • Detailed travel plan
               </p>
             </div>
-            <div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2">
+            <div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2 dark:bg-emerald-900/20">
               <div className="flex items-center">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Star
@@ -261,13 +261,13 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
             <PreTripChecklist
               destination={itinerary.destination}
               items={checklistItems}
-              onToggleItem={handleToggleChecklistItem}
-              readOnly={savingChecklist}
+              readOnly={true}
+              isAdmin={false}
             />
           </section>
         )}
 
-        <section className="space-y-6">
+        <section className="space-y-4">
           <h2 className="text-2xl font-semibold">Daily Itinerary</h2>
 
           {itinerary.days.length > 0 ? (
