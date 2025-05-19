@@ -53,7 +53,7 @@ export function PreTripChecklist({
                 >
                   {item.completed ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
                 </div>
-                <span className={item.completed ? "text-muted-foreground line-through" : ""}>{item.title}</span>
+                <span className={item.completed ? "text-emerald-700 dark:text-emerald-400" : ""}>{item.title}</span>
               </div>
 
               {isAdmin && onToggleItem && (
