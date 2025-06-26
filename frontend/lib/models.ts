@@ -29,6 +29,14 @@ export interface ChecklistItem {
   notes?: string
 }
 
+export interface TipItem {
+  id: string
+  title: string
+  description: string
+  category: "money-saving" | "safety" | "cultural" | "transportation" | "accommodation" | "general"
+  icon?: string
+}
+
 export interface Itinerary {
   id: string
   destination: string
@@ -36,14 +44,18 @@ export interface Itinerary {
   description: string
   startDate: string
   endDate: string
+  startTime?: string
+  endTime?: string
   status: "online" | "completed"
   season?: string
   rating: number
   reviewCount: number
   locations: string[]
   days: ItineraryDay[]
+  travellersCount?: number
   metadata?: {
     checklist?: ChecklistItem[]
+    tips?: TipItem[]
     [key: string]: any
   }
 }
@@ -69,6 +81,9 @@ export interface Companion {
   relationship: string
   bio: string
   image?: string
+  instagramUrl?: string
+  location?: string
+  travelsSince?: string
 }
 
 export interface Comment {
