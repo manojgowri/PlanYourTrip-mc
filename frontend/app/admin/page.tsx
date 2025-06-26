@@ -39,11 +39,14 @@ export default function AdminPage() {
     description: "",
     startDate: "",
     endDate: "",
+    startTime: "",
+    endTime: "",
     image: "",
     locations: [],
     season: "summer",
     status: "online",
     days: [],
+    travellersCount: 1,
   })
 
   const [newCompanion, setNewCompanion] = useState<Partial<Companion>>({
@@ -51,6 +54,9 @@ export default function AdminPage() {
     relationship: "",
     bio: "",
     image: "",
+    instagramUrl: "",
+    location: "",
+    travelsSince: "",
   })
 
   const [editingItinerary, setEditingItinerary] = useState<Itinerary | null>(null)
@@ -116,11 +122,14 @@ export default function AdminPage() {
         description: "",
         startDate: "",
         endDate: "",
+        startTime: "",
+        endTime: "",
         image: "",
         locations: [],
         season: "summer",
         status: "online",
         days: [],
+        travellersCount: 1,
       })
       setEditingItinerary(null)
       await loadData()
@@ -157,6 +166,9 @@ export default function AdminPage() {
         relationship: "",
         bio: "",
         image: "",
+        instagramUrl: "",
+        location: "",
+        travelsSince: "",
       })
       setEditingCompanion(null)
       await loadData()
@@ -176,10 +188,13 @@ export default function AdminPage() {
       description: itinerary.description || "",
       startDate: itinerary.startDate,
       endDate: itinerary.endDate,
+      startTime: itinerary.startTime || "",
+      endTime: itinerary.endTime || "",
       image: itinerary.image || "",
       locations: itinerary.locations || [],
       season: itinerary.season || "summer",
       status: itinerary.status || "online",
+      travellersCount: itinerary.travellersCount || 1,
     })
   }
 
@@ -191,6 +206,9 @@ export default function AdminPage() {
       relationship: companion.relationship || "",
       bio: companion.bio || "",
       image: companion.image || "",
+      instagramUrl: companion.instagramUrl || "",
+      location: companion.location || "",
+      travelsSince: companion.travelsSince || "",
     })
   }
 
@@ -342,6 +360,41 @@ export default function AdminPage() {
                     </div>
                   </div>
 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="startTime">Start Time</Label>
+                      <Input
+                        id="startTime"
+                        type="time"
+                        value={newItinerary.startTime}
+                        onChange={(e) => setNewItinerary({ ...newItinerary, startTime: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="endTime">End Time</Label>
+                      <Input
+                        id="endTime"
+                        type="time"
+                        value={newItinerary.endTime}
+                        onChange={(e) => setNewItinerary({ ...newItinerary, endTime: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="travellersCount">Number of Travellers</Label>
+                    <Input
+                      id="travellersCount"
+                      type="number"
+                      min="1"
+                      value={newItinerary.travellersCount}
+                      onChange={(e) =>
+                        setNewItinerary({ ...newItinerary, travellersCount: Number.parseInt(e.target.value) || 1 })
+                      }
+                    />
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="locations">Locations (comma separated)</Label>
                     <Input
@@ -410,11 +463,14 @@ export default function AdminPage() {
                             description: "",
                             startDate: "",
                             endDate: "",
+                            startTime: "",
+                            endTime: "",
                             image: "",
                             locations: [],
                             season: "summer",
                             status: "online",
                             days: [],
+                            travellersCount: 1,
                           })
                         }}
                       >
@@ -450,10 +506,13 @@ export default function AdminPage() {
                     </div>
                     <CardContent className="p-4">
                       <h3 className="text-xl font-bold">{itinerary.destination}</h3>
-                      <p className="text-sm text-gray-500 mb-4">
+                      <p className="text-sm text-gray-500 mb-2">
                         {new Date(itinerary.startDate).toLocaleDateString()} -{" "}
                         {new Date(itinerary.endDate).toLocaleDateString()}
                       </p>
+                      {itinerary.travellersCount && itinerary.travellersCount > 1 && (
+                        <p className="text-sm text-gray-500 mb-4">{itinerary.travellersCount} travellers</p>
+                      )}
 
                       <div className="flex flex-wrap gap-2 mb-4">
                         <Button size="sm" variant="outline" onClick={() => handleEditItinerary(itinerary)}>
@@ -526,6 +585,36 @@ export default function AdminPage() {
                   </div>
 
                   <div className="space-y-2">
+                    <Label htmlFor="location">Location</Label>
+                    <Input
+                      id="location"
+                      value={newCompanion.location}
+                      onChange={(e) => setNewCompanion({ ...newCompanion, location: e.target.value })}
+                      placeholder="e.g. New York, USA"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="travelsSince">Travels Since</Label>
+                    <Input
+                      id="travelsSince"
+                      value={newCompanion.travelsSince}
+                      onChange={(e) => setNewCompanion({ ...newCompanion, travelsSince: e.target.value })}
+                      placeholder="e.g. 2020"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="instagramUrl">Instagram URL</Label>
+                    <Input
+                      id="instagramUrl"
+                      value={newCompanion.instagramUrl}
+                      onChange={(e) => setNewCompanion({ ...newCompanion, instagramUrl: e.target.value })}
+                      placeholder="https://instagram.com/username"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
                     <Label>Image</Label>
                     <ImageUpload
                       initialImage={newCompanion.image}
@@ -545,6 +634,9 @@ export default function AdminPage() {
                             relationship: "",
                             bio: "",
                             image: "",
+                            instagramUrl: "",
+                            location: "",
+                            travelsSince: "",
                           })
                         }}
                       >
