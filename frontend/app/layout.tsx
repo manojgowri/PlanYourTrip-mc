@@ -7,6 +7,8 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ToastContainer } from "@/components/toast-container"
 import { OfflineIndicator } from "@/components/offline-indicator"
+import { LoadingProvider } from "@/contexts/loading-context"
+import { GlobalLoader } from "@/components/global-loader"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -31,15 +33,18 @@ export default function RootLayout({
         <link rel="manifest" href="/site.webmanifest" />
       </head>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <div className="flex min-h-screen flex-col">
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </div>
-          <ToastContainer />
-          <OfflineIndicator />
-        </ThemeProvider>
+        <LoadingProvider>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+            <div className="flex min-h-screen flex-col">
+              <Header />
+              <main className="flex-1">{children}</main>
+              <Footer />
+            </div>
+            <ToastContainer />
+            <OfflineIndicator />
+            <GlobalLoader />
+          </ThemeProvider>
+        </LoadingProvider>
       </body>
     </html>
   )

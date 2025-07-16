@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Check, X, Trash2, Edit, Save, Plus } from "lucide-react"
+import { Check, Trash2, Edit, Save, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -155,14 +155,14 @@ export function PreTripChecklist({
                 <>
                   <div className="flex items-center gap-3">
                     <div
-                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full cursor-pointer ${
+                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full cursor-pointer transition-colors ${
                         isAdmin
                           ? selectedItems.has(item.id)
                             ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400"
                             : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
                           : item.completed
                             ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400"
-                            : "bg-red-100 text-red-600 dark:bg-red-900/50 dark:text-red-400"
+                            : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
                       }`}
                       onClick={() => handleToggle(item.id)}
                     >
@@ -170,12 +170,12 @@ export function PreTripChecklist({
                         selectedItems.has(item.id) ? (
                           <Check className="h-4 w-4" />
                         ) : (
-                          <X className="h-4 w-4" />
+                          <div className="h-4 w-4" />
                         )
                       ) : item.completed ? (
                         <Check className="h-4 w-4" />
                       ) : (
-                        <X className="h-4 w-4" />
+                        <div className="h-4 w-4" />
                       )}
                     </div>
                     <div>

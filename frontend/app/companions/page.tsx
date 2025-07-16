@@ -3,113 +3,107 @@
 import { useState, useEffect } from "react"
 import { Instagram } from "lucide-react"
 import { getCompanions } from "@/lib/data"
+import { useLoading } from "@/contexts/loading-context"
 import type { Companion } from "@/lib/models"
-import { getPlaceholderImage } from "@/lib/image-utils"
-import { SafeImage } from "@/components/safe-image"
 
 export default function CompanionsPage() {
   const [companions, setCompanions] = useState<Companion[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [activeCompanion, setActiveCompanion] = useState<string | null>(null)
+  const [selectedCompanion, setSelectedCompanion] = useState<Companion | null>(null)
+  const { setLoading, setLoadingMessage } = useLoading()
 
   useEffect(() => {
     const loadCompanions = async () => {
       try {
         setLoading(true)
+        setLoadingMessage("Loading travel companions...")
         const data = await getCompanions()
         setCompanions(data)
         if (data.length > 0) {
-          setActiveCompanion(data[0].id)
+          setSelectedCompanion(data[0])
         }
-        setError(null)
-      } catch (err) {
-        console.error("Error fetching companions:", err)
-        setError("Failed to load travel companions. Please try again later.")
+      } catch (error) {
+        console.error("Error loading companions:", error)
       } finally {
         setLoading(false)
       }
     }
 
     loadCompanions()
-  }, [])
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="animate-pulse text-gray-400">Loading companions...</div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-red-400">{error}</div>
-      </div>
-    )
-  }
+  }, [setLoading, setLoadingMessage])
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="flex">
-        {/* Left sidebar - Companion list */}
-        <div className="w-1/2 border-r border-gray-800">
-          <div className="h-screen overflow-y-auto">
-            {companions.length === 0 ? (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-gray-400">No travel companions available</p>
-              </div>
-            ) : (
-              companions.map((companion, index) => (
+      <div className="container mx-auto py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[calc(100vh-8rem)]">
+          {/* Left Panel - Companions List */}
+          <div className="border border-gray-800 rounded-lg overflow-hidden">
+            <div className="h-full overflow-y-auto max-h-[600px] lg:max-h-full">
+              {companions.map((companion, index) => (
                 <div
                   key={companion.id}
-                  className={`border-b border-gray-800 p-6 cursor-pointer transition-colors ${
-                    activeCompanion === companion.id ? "bg-gray-900" : "hover:bg-gray-900/50"
+                  className={`border-b border-gray-800 p-6 cursor-pointer transition-colors hover:bg-gray-900/50 ${
+                    selectedCompanion?.id === companion.id ? "bg-gray-900/50" : ""
                   }`}
-                  onClick={() => setActiveCompanion(companion.id)}
+                  onClick={() => setSelectedCompanion(companion)}
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-lg font-light tracking-wide text-gray-300 uppercase">{companion.name}</h2>
-                      {companion.relationship && (
-                        <p className="text-sm text-gray-500 mt-1 uppercase tracking-wider">{companion.relationship}</p>
+                      <h3 className="text-lg font-bold tracking-wide uppercase">{companion.name}</h3>
+                      {companion.role && (
+                        <p className="text-sm text-gray-400 mt-1 uppercase tracking-wider">{companion.role}</p>
                       )}
                     </div>
-                    {companion.instagramUrl && (
-                      <a
-                        href={companion.instagramUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-gray-400 hover:text-white transition-colors"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Instagram className="h-5 w-5" />
-                      </a>
-                    )}
+                    <div className="flex gap-3">
+                      {companion.instagramId && (
+                        <a
+                          href={`https://instagram.com/${companion.instagramId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-gray-400 hover:text-white transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Instagram className="h-5 w-5" />
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
-              ))
+              ))}
+            </div>
+          </div>
+
+          {/* Right Panel - Selected Companion Image */}
+          <div className="flex items-center justify-center bg-gray-900/20 rounded-lg overflow-hidden">
+            {selectedCompanion ? (
+              <div className="w-full h-full flex items-center justify-center p-8">
+                <div className="relative w-full max-w-md aspect-square">
+                  <img
+                    src={selectedCompanion.image || "/placeholder.svg?height=400&width=400"}
+                    alt={selectedCompanion.name}
+                    className="w-full h-full object-cover rounded-lg grayscale hover:grayscale-0 transition-all duration-500"
+                    onError={(e) => {
+                      e.currentTarget.src = "/placeholder.svg?height=400&width=400"
+                    }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="text-center text-gray-500">
+                <p>Select a companion to view their photo</p>
+              </div>
             )}
           </div>
         </div>
 
-        {/* Right side - Companion image */}
-        <div className="w-1/2 bg-black">
-          <div className="h-screen flex items-center justify-center p-8">
-            {activeCompanion && companions.length > 0 ? (
-              <div className="w-full h-full flex items-center justify-center">
-                <SafeImage
-                  src={companions.find((c) => c.id === activeCompanion)?.image || getPlaceholderImage(600, 800)}
-                  alt={companions.find((c) => c.id === activeCompanion)?.name || "Companion"}
-                  className="max-w-full max-h-full object-cover rounded-lg filter grayscale hover:grayscale-0 transition-all duration-500"
-                />
-              </div>
-            ) : (
-              <div className="text-gray-600">Select a companion to view their photo</div>
-            )}
-          </div>
-        </div>
+        {/* Mobile-specific adjustments */}
+        <style jsx>{`
+          @media (max-width: 1024px) {
+            .grid {
+              grid-template-rows: auto 1fr;
+              height: auto;
+            }
+          }
+        `}</style>
       </div>
     </div>
   )

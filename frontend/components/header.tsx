@@ -57,9 +57,16 @@ export function Header() {
           <Link href="/" className="text-sm font-medium hover:underline">
             Home
           </Link>
-          <Link href="/companions" className="text-sm font-medium hover:underline">
-            Travel Companions
-          </Link>
+          <div className="relative">
+            <Link href="/companions" className="text-sm font-medium hover:underline flex items-center gap-1">
+              Travel Companions
+            </Link>
+            <div className="absolute -bottom-6 left-0 right-0">
+              <p className="text-xs text-emerald-600 animate-pulse font-medium whitespace-nowrap">
+                Curious about who is traveling with us?
+              </p>
+            </div>
+          </div>
           <Link href="/contact" className="text-sm font-medium hover:underline">
             Contact
           </Link>
@@ -79,13 +86,18 @@ export function Header() {
               <Link href="/" className="text-sm font-medium hover:underline" onClick={() => setIsMenuOpen(false)}>
                 Home
               </Link>
-              <Link
-                href="/companions"
-                className="text-sm font-medium hover:underline"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Travel Companions
-              </Link>
+              <div>
+                <Link
+                  href="/companions"
+                  className="text-sm font-medium hover:underline"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Travel Companions
+                </Link>
+                <p className="text-xs text-emerald-600 animate-pulse font-medium mt-1">
+                  Curious about who is traveling with us?
+                </p>
+              </div>
               <Link
                 href="/contact"
                 className="text-sm font-medium hover:underline"

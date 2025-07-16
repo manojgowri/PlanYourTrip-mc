@@ -1,17 +1,16 @@
-// Type definitions for the application
-
 export interface Activity {
   id: string
-  time: string
   title: string
   description: string
+  time: string
   type: "food" | "activity" | "travel" | "accommodation" | "must-visit"
+  location?: string
+  image?: string
   expense?: {
     amount: number
     currency: string
     category?: string
   }
-  image?: string
 }
 
 export interface ItineraryDay {
@@ -25,8 +24,8 @@ export interface ItineraryDay {
 export interface ChecklistItem {
   id: string
   title: string
-  completed: boolean
   notes?: string
+  completed: boolean
 }
 
 export interface TipItem {
@@ -34,68 +33,68 @@ export interface TipItem {
   title: string
   description: string
   category: "money-saving" | "safety" | "cultural" | "transportation" | "accommodation" | "general"
-  icon?: string
 }
 
 export interface Itinerary {
   id: string
   destination: string
-  image?: string
   description: string
+  image?: string
   startDate: string
   endDate: string
   startTime?: string
   endTime?: string
   status: "online" | "completed"
   season?: string
-  rating: number
-  reviewCount: number
   locations: string[]
   days: ItineraryDay[]
   travellersCount?: number
   metadata?: {
     checklist?: ChecklistItem[]
     tips?: TipItem[]
-    [key: string]: any
   }
-}
-
-export interface Location {
-  id: string
-  name: string
-  dates: string
-  destinationId: string
 }
 
 export interface Accommodation {
   id: string
   name: string
+  type: "hotel" | "hostel" | "apartment" | "resort" | "guesthouse"
   location: string
-  dates: string
-  destinationId: string
+  pricePerNight: number
+  currency: string
+  rating: number
+  amenities: string[]
+  image?: string
+  destinationId?: string
+}
+
+export interface Location {
+  id: string
+  name: string
+  type: "city" | "landmark" | "beach" | "mountain" | "park" | "museum"
+  description: string
+  coordinates?: {
+    lat: number
+    lng: number
+  }
+  image?: string
+  destinationId?: string
 }
 
 export interface Companion {
   id: string
   name: string
-  relationship: string
-  bio: string
+  role?: string
+  bio?: string
   image?: string
-  instagramUrl?: string
-  location?: string
-  travelsSince?: string
+  instagramId?: string
 }
 
 export interface Comment {
   id: string
-  name: string
-  date: string
-  content: string
-  rating: number
   itineraryId: string
-}
-
-export interface User {
-  username: string
-  isAdmin: boolean
+  author: string
+  content: string
+  date: string
+  rating?: number
 }

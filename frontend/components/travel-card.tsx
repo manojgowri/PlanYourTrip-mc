@@ -1,11 +1,11 @@
 "use client"
 
 import Link from "next/link"
-import { Calendar, MapPin, CreditCard, Users } from "lucide-react"
+import { Calendar, MapPin, CreditCard, Users, Heart } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { SafeImage } from "@/components/safe-image"
-import { calculateTotalExpenses } from "@/lib/data"
+import { calculateTotalExpenses, generateSlug } from "@/lib/data"
 import type { Itinerary } from "@/lib/models"
 
 interface TravelCardProps {
@@ -50,7 +50,8 @@ export function TravelCard({
 
   // Calculate total expenses for this itinerary dynamically
   const { amount: totalExpenses } = calculateTotalExpenses(itinerary)
-  const perPersonCost = travellersCount > 1 ? totalExpenses / travellersCount : totalExpenses
+  const actualTravellersCount = itinerary.travellersCount || travellersCount || 1
+  const perPersonCost = totalExpenses / actualTravellersCount
 
   // Calculate trip duration
   const calculateDuration = (start: string, end: string) => {
@@ -80,6 +81,22 @@ export function TravelCard({
         return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
     }
   }
+
+  // Generate URL-friendly slug
+  const slug = generateSlug(destination)
+
+  // Determine travel recommendation
+  const getTravelRecommendation = () => {
+    if (actualTravellersCount === 1) {
+      return { text: "Perfect for solo travel", icon: "👤", color: "text-blue-600" }
+    } else if (actualTravellersCount <= 3) {
+      return { text: "Great for couples/small groups", icon: "💑", color: "text-pink-600" }
+    } else {
+      return { text: "Recommended with friends", icon: "👥", color: "text-emerald-600" }
+    }
+  }
+
+  const travelRec = getTravelRecommendation()
 
   return (
     <Card className="overflow-hidden transition-all hover:shadow-md">
@@ -121,24 +138,32 @@ export function TravelCard({
         )}
         <p className="mb-3 line-clamp-2 text-xs text-muted-foreground">{description}</p>
 
+        {/* Travel Recommendation */}
+        <div className="mb-2 flex items-center gap-1 text-xs">
+          <Heart className="h-3 w-3 text-red-500" />
+          <span className={`font-medium ${travelRec.color}`}>
+            {travelRec.icon} {travelRec.text}
+          </span>
+        </div>
+
         {/* Display total and per-person expenses */}
         <div className="mb-3 space-y-1">
           <div className="flex items-center gap-1 text-xs font-medium">
             <CreditCard className="h-3 w-3 text-emerald-600" />
             <span>Total: ₹{totalExpenses.toLocaleString()}</span>
           </div>
-          {travellersCount > 1 && (
+          {actualTravellersCount > 1 && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Users className="h-3 w-3 text-emerald-600" />
               <span>
-                Per Person: ₹{perPersonCost.toLocaleString()} ({travellersCount} travellers)
+                Per Person: ₹{Math.round(perPersonCost).toLocaleString()} ({actualTravellersCount} travellers)
               </span>
             </div>
           )}
         </div>
 
         <Link
-          href={`/itinerary/${encodeURIComponent(id)}`}
+          href={`/itinerary/${slug}`}
           className="inline-flex items-center justify-center rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 w-full"
         >
           View Itinerary

@@ -13,7 +13,7 @@ interface ItineraryDayProps {
 }
 
 export function ItineraryDay({ day, date, location, activities }: ItineraryDayProps) {
-  const [isExpanded, setIsExpanded] = useState(true)
+  const [isExpanded, setIsExpanded] = useState(false) // Changed to false for collapsed by default
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded)
@@ -53,16 +53,25 @@ export function ItineraryDay({ day, date, location, activities }: ItineraryDayPr
   return (
     <div className="rounded-lg border shadow-sm">
       <div
-        className="flex cursor-pointer items-center justify-between p-3"
+        className="flex cursor-pointer items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
         onClick={toggleExpand}
         role="button"
         tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault()
+            toggleExpand()
+          }
+        }}
       >
         <div>
           <h3 className="text-base font-medium">
             Day {day}: {location}
           </h3>
           <p className="text-xs text-muted-foreground">{formattedDate}</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {activities.length} {activities.length === 1 ? "activity" : "activities"} planned
+          </p>
         </div>
         <div className="flex items-center gap-4">
           {totalExpenses > 0 && (
@@ -71,14 +80,14 @@ export function ItineraryDay({ day, date, location, activities }: ItineraryDayPr
               <span>{totalExpenses.toFixed(2)}</span>
             </div>
           )}
-          <button className="rounded-full p-1 hover:bg-gray-100">
+          <button className="rounded-full p-1 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </button>
         </div>
       </div>
 
       {isExpanded && (
-        <div className="border-t px-3 py-2">
+        <div className="border-t px-3 py-2 bg-gray-50/50 dark:bg-gray-800/20">
           {activities.length > 0 ? (
             <div className="space-y-3">
               {activities.map((activity) => (
@@ -86,7 +95,7 @@ export function ItineraryDay({ day, date, location, activities }: ItineraryDayPr
                   <div className="w-12 shrink-0 text-center">
                     <span className="text-xs font-medium">{activity.time}</span>
                   </div>
-                  <div className="flex-1 rounded-lg border p-2">
+                  <div className="flex-1 rounded-lg border p-2 bg-white dark:bg-gray-900">
                     <div className="mb-1 flex items-center justify-between">
                       <h4 className="text-sm font-medium">{activity.title}</h4>
                       <span

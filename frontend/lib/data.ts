@@ -16,7 +16,7 @@ export function getAuthToken(): string | null {
   return localStorage.getItem("auth_token")
 }
 
-// Helper function for API requests with enhanced error handling and logging
+// Helper function for API requests with enhanced error handling and loading
 async function apiRequest(endpoint: string, options: RequestInit = {}) {
   const token = getAuthToken()
   console.log(`API Request: ${options.method || "GET"} ${endpoint}`, {
@@ -84,6 +84,27 @@ export async function getItinerary(id: string): Promise<Itinerary | undefined> {
     return data
   } catch (error) {
     console.error(`Error fetching itinerary ${id}:`, error)
+    return undefined
+  }
+}
+
+// Helper function to generate URL-friendly slug
+export function generateSlug(destination: string): string {
+  return (
+    destination
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "") + "Itinerary"
+  )
+}
+
+// Helper function to find itinerary by slug
+export async function getItineraryBySlug(slug: string): Promise<Itinerary | undefined> {
+  try {
+    const itineraries = await getItineraries()
+    return itineraries.find((itinerary) => generateSlug(itinerary.destination) === slug)
+  } catch (error) {
+    console.error(`Error fetching itinerary by slug ${slug}:`, error)
     return undefined
   }
 }

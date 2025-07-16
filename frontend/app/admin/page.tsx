@@ -1,17 +1,18 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { Plus, Trash2, Save, Calendar, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ImageUpload } from "@/components/image-upload"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BackToTravelButton } from "@/components/back-to-travel-button"
+import { AdminNav } from "@/components/admin/admin-nav"
+import { PreTripChecklist } from "@/components/pre-trip-checklist"
 import {
   getItineraries,
   saveItinerary,
@@ -19,677 +20,594 @@ import {
   getCompanions,
   saveCompanion,
   deleteCompanion,
-  getAuthToken,
 } from "@/lib/data"
-import type { Itinerary, Companion } from "@/lib/models"
-import { getPlaceholderImage } from "@/lib/image-utils"
+import type { Itinerary, Companion, ChecklistItem, TipItem } from "@/lib/models"
+
+// Default checklist items
+const DEFAULT_CHECKLIST_ITEMS: ChecklistItem[] = [
+  {
+    id: "1",
+    title: "Check passport validity (6+ months)",
+    notes: "Ensure passport is valid for at least 6 months from travel date",
+    completed: false,
+  },
+  {
+    id: "2",
+    title: "Apply for visa if required",
+    notes: "Check visa requirements for destination country",
+    completed: false,
+  },
+  { id: "3", title: "Book flights", notes: "Compare prices and book flights in advance", completed: false },
+  { id: "4", title: "Book accommodation", notes: "Reserve hotels or other accommodations", completed: false },
+  { id: "5", title: "Get travel insurance", notes: "Purchase comprehensive travel insurance", completed: false },
+  { id: "6", title: "Notify bank of travel plans", notes: "Inform bank to avoid card blocks abroad", completed: false },
+  { id: "7", title: "Pack essentials", notes: "Pack clothes, medications, and travel documents", completed: false },
+  {
+    id: "8",
+    title: "Check weather forecast",
+    notes: "Pack appropriate clothing for destination weather",
+    completed: false,
+  },
+  { id: "9", title: "Download offline maps", notes: "Download maps for offline use", completed: false },
+  { id: "10", title: "Arrange airport transportation", notes: "Book taxi, uber, or arrange pickup", completed: false },
+]
 
 export default function AdminPage() {
-  const router = useRouter()
-  const [activeTab, setActiveTab] = useState("itineraries")
   const [itineraries, setItineraries] = useState<Itinerary[]>([])
   const [companions, setCompanions] = useState<Companion[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [selectedItinerary, setSelectedItinerary] = useState<Itinerary | null>(null)
+  const [selectedCompanion, setSelectedCompanion] = useState<Companion | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
+  const [activeTab, setActiveTab] = useState("itineraries")
 
   // Form states
-  const [newItinerary, setNewItinerary] = useState<Partial<Itinerary>>({
-    destination: "",
-    description: "",
-    startDate: "",
-    endDate: "",
-    startTime: "",
-    endTime: "",
-    image: "",
-    locations: [],
-    season: "summer",
-    status: "online",
-    days: [],
-    travellersCount: 1,
-  })
+  const [destination, setDestination] = useState("")
+  const [description, setDescription] = useState("")
+  const [image, setImage] = useState("")
+  const [startDate, setStartDate] = useState("")
+  const [endDate, setEndDate] = useState("")
+  const [startTime, setStartTime] = useState("")
+  const [endTime, setEndTime] = useState("")
+  const [status, setStatus] = useState<"online" | "completed">("online")
+  const [season, setSeason] = useState("")
+  const [locations, setLocations] = useState("")
+  const [travellersCount, setTravellersCount] = useState(1)
+  const [checklist, setChecklist] = useState<ChecklistItem[]>(DEFAULT_CHECKLIST_ITEMS)
+  const [tips, setTips] = useState<TipItem[]>([])
 
-  const [newCompanion, setNewCompanion] = useState<Partial<Companion>>({
-    name: "",
-    relationship: "",
-    bio: "",
-    image: "",
-    instagramUrl: "",
-    location: "",
-    travelsSince: "",
-  })
+  // Companion form states
+  const [companionName, setCompanionName] = useState("")
+  const [companionRole, setCompanionRole] = useState("")
+  const [companionBio, setCompanionBio] = useState("")
+  const [companionImage, setCompanionImage] = useState("")
+  const [companionInstagram, setCompanionInstagram] = useState("")
 
-  const [editingItinerary, setEditingItinerary] = useState<Itinerary | null>(null)
-  const [editingCompanion, setEditingCompanion] = useState<Companion | null>(null)
-
-  // Check authentication
   useEffect(() => {
-    const token = getAuthToken()
-    if (!token) {
-      router.push("/login")
-    } else {
-      setIsAuthenticated(true)
-      loadData()
-    }
-  }, [router])
+    loadData()
+  }, [])
 
-  // Load data
   const loadData = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      const [itinerariesData, companionsData] = await Promise.all([getItineraries(), getCompanions()])
-
-      setItineraries(itinerariesData)
-      setCompanions(companionsData)
-    } catch (err) {
-      console.error("Error loading data:", err)
-      setError("Failed to load data. Please try again.")
-    } finally {
-      setLoading(false)
-    }
+    const [itinerariesData, companionsData] = await Promise.all([getItineraries(), getCompanions()])
+    setItineraries(itinerariesData)
+    setCompanions(companionsData)
   }
 
-  // Handle itinerary form submission
-  const handleItinerarySubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    try {
-      setLoading(true)
-      setError(null)
-
-      if (editingItinerary) {
-        // Update existing itinerary
-        await saveItinerary({
-          ...editingItinerary,
-          ...newItinerary,
-          locations: newItinerary.locations || [],
-          days: editingItinerary.days || [],
-        } as Itinerary)
-      } else {
-        // Create new itinerary
-        await saveItinerary({
-          ...newItinerary,
-          locations: newItinerary.locations || [],
-          days: [],
-        } as Itinerary)
-      }
-
-      // Reset form and reload data
-      setNewItinerary({
-        destination: "",
-        description: "",
-        startDate: "",
-        endDate: "",
-        startTime: "",
-        endTime: "",
-        image: "",
-        locations: [],
-        season: "summer",
-        status: "online",
-        days: [],
-        travellersCount: 1,
-      })
-      setEditingItinerary(null)
-      await loadData()
-    } catch (err) {
-      console.error("Error saving itinerary:", err)
-      setError("Failed to save itinerary. Please try again.")
-    } finally {
-      setLoading(false)
-    }
+  const resetForm = () => {
+    setDestination("")
+    setDescription("")
+    setImage("")
+    setStartDate("")
+    setEndDate("")
+    setStartTime("")
+    setEndTime("")
+    setStatus("online")
+    setSeason("")
+    setLocations("")
+    setTravellersCount(1)
+    setChecklist(DEFAULT_CHECKLIST_ITEMS)
+    setTips([])
+    setSelectedItinerary(null)
+    setIsEditing(false)
   }
 
-  // Handle companion form submission
-  const handleCompanionSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    try {
-      setLoading(true)
-      setError(null)
-
-      if (editingCompanion) {
-        // Update existing companion
-        await saveCompanion({
-          ...editingCompanion,
-          ...newCompanion,
-        } as Companion)
-      } else {
-        // Create new companion
-        await saveCompanion(newCompanion as Companion)
-      }
-
-      // Reset form and reload data
-      setNewCompanion({
-        name: "",
-        relationship: "",
-        bio: "",
-        image: "",
-        instagramUrl: "",
-        location: "",
-        travelsSince: "",
-      })
-      setEditingCompanion(null)
-      await loadData()
-    } catch (err) {
-      console.error("Error saving companion:", err)
-      setError("Failed to save companion. Please try again.")
-    } finally {
-      setLoading(false)
-    }
+  const resetCompanionForm = () => {
+    setCompanionName("")
+    setCompanionRole("")
+    setCompanionBio("")
+    setCompanionImage("")
+    setCompanionInstagram("")
+    setSelectedCompanion(null)
   }
 
-  // Handle itinerary edit
   const handleEditItinerary = (itinerary: Itinerary) => {
-    setEditingItinerary(itinerary)
-    setNewItinerary({
-      destination: itinerary.destination,
-      description: itinerary.description || "",
-      startDate: itinerary.startDate,
-      endDate: itinerary.endDate,
-      startTime: itinerary.startTime || "",
-      endTime: itinerary.endTime || "",
-      image: itinerary.image || "",
-      locations: itinerary.locations || [],
-      season: itinerary.season || "summer",
-      status: itinerary.status || "online",
-      travellersCount: itinerary.travellersCount || 1,
-    })
+    setSelectedItinerary(itinerary)
+    setDestination(itinerary.destination)
+    setDescription(itinerary.description)
+    setImage(itinerary.image || "")
+    setStartDate(itinerary.startDate)
+    setEndDate(itinerary.endDate)
+    setStartTime(itinerary.startTime || "")
+    setEndTime(itinerary.endTime || "")
+    setStatus(itinerary.status)
+    setSeason(itinerary.season || "")
+    setLocations(itinerary.locations.join(", "))
+    setTravellersCount(itinerary.travellersCount || 1)
+    setChecklist(itinerary.metadata?.checklist || DEFAULT_CHECKLIST_ITEMS)
+    setTips(itinerary.metadata?.tips || [])
+    setIsEditing(true)
   }
 
-  // Handle companion edit
   const handleEditCompanion = (companion: Companion) => {
-    setEditingCompanion(companion)
-    setNewCompanion({
-      name: companion.name,
-      relationship: companion.relationship || "",
-      bio: companion.bio || "",
-      image: companion.image || "",
-      instagramUrl: companion.instagramUrl || "",
-      location: companion.location || "",
-      travelsSince: companion.travelsSince || "",
-    })
+    setSelectedCompanion(companion)
+    setCompanionName(companion.name)
+    setCompanionRole(companion.role || "")
+    setCompanionBio(companion.bio || "")
+    setCompanionImage(companion.image || "")
+    setCompanionInstagram(companion.instagramId || "")
   }
 
-  // Handle itinerary delete
-  const handleDeleteItinerary = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this itinerary?")) {
-      return
+  const handleSaveItinerary = async () => {
+    const itineraryData: Itinerary = {
+      id: selectedItinerary?.id || "",
+      destination,
+      description,
+      image,
+      startDate,
+      endDate,
+      startTime,
+      endTime,
+      status,
+      season,
+      locations: locations
+        .split(",")
+        .map((loc) => loc.trim())
+        .filter(Boolean),
+      days: selectedItinerary?.days || [],
+      travellersCount,
+      metadata: {
+        checklist,
+        tips,
+      },
     }
 
-    try {
-      setLoading(true)
+    const saved = await saveItinerary(itineraryData)
+    if (saved) {
+      await loadData()
+      resetForm()
+    }
+  }
+
+  const handleSaveCompanion = async () => {
+    const companionData: Companion = {
+      id: selectedCompanion?.id || "",
+      name: companionName,
+      role: companionRole,
+      bio: companionBio,
+      image: companionImage,
+      instagramId: companionInstagram,
+    }
+
+    const saved = await saveCompanion(companionData)
+    if (saved) {
+      await loadData()
+      resetCompanionForm()
+    }
+  }
+
+  const handleDeleteItinerary = async (id: string) => {
+    if (confirm("Are you sure you want to delete this itinerary?")) {
       await deleteItinerary(id)
       await loadData()
-    } catch (err) {
-      console.error("Error deleting itinerary:", err)
-      setError("Failed to delete itinerary. Please try again.")
-    } finally {
-      setLoading(false)
+      if (selectedItinerary?.id === id) {
+        resetForm()
+      }
     }
   }
 
-  // Handle companion delete
   const handleDeleteCompanion = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this companion?")) {
-      return
-    }
-
-    try {
-      setLoading(true)
+    if (confirm("Are you sure you want to delete this companion?")) {
       await deleteCompanion(id)
       await loadData()
-    } catch (err) {
-      console.error("Error deleting companion:", err)
-      setError("Failed to delete companion. Please try again.")
-    } finally {
-      setLoading(false)
+      if (selectedCompanion?.id === id) {
+        resetCompanionForm()
+      }
     }
   }
 
-  // Handle locations input
-  const handleLocationsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const locationsString = e.target.value
-    const locationsArray = locationsString
-      .split(",")
-      .map((loc) => loc.trim())
-      .filter(Boolean)
-
-    setNewItinerary({
-      ...newItinerary,
-      locations: locationsArray,
-    })
+  const addNewTip = () => {
+    const newTip: TipItem = {
+      id: Date.now().toString(),
+      title: "",
+      description: "",
+      category: "general",
+    }
+    setTips([...tips, newTip])
   }
 
-  if (!isAuthenticated) {
-    return null // Will redirect to login
+  const updateTip = (id: string, field: keyof TipItem, value: string) => {
+    setTips(tips.map((tip) => (tip.id === id ? { ...tip, [field]: value } : tip)))
+  }
+
+  const deleteTip = (id: string) => {
+    setTips(tips.filter((tip) => tip.id !== id))
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-6">
+    <div className="container mx-auto py-8 space-y-8">
+      <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => {
-              localStorage.removeItem("authToken")
-              router.push("/")
-            }}
-          >
-            Logout
-          </Button>
-          <BackToTravelButton />
-        </div>
+        <BackToTravelButton />
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-6">
-        <Button
-          variant={activeTab === "itineraries" ? "default" : "outline"}
-          onClick={() => setActiveTab("itineraries")}
-        >
-          Itineraries
-        </Button>
-        <Button variant={activeTab === "companions" ? "default" : "outline"} onClick={() => setActiveTab("companions")}>
-          Companions
-        </Button>
-        <Button
-          variant={activeTab === "database" ? "default" : "outline"}
-          onClick={() => router.push("/admin/db-test")}
-        >
-          Test Database
-        </Button>
-        <Button variant="outline" onClick={() => router.push("/")}>
-          Back to Site
-        </Button>
-      </div>
+      <AdminNav />
 
-      {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="itineraries">Manage Itineraries</TabsTrigger>
+          <TabsTrigger value="companions">Manage Companions</TabsTrigger>
+        </TabsList>
 
-      <div className="mt-6">
-        {activeTab === "itineraries" && (
-          <div className="space-y-6">
+        <TabsContent value="itineraries" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Itinerary Form */}
             <Card>
               <CardHeader>
-                <CardTitle>{editingItinerary ? "Edit Itinerary" : "Add New Itinerary"}</CardTitle>
+                <CardTitle>{isEditing ? "Edit Itinerary" : "Create New Itinerary"}</CardTitle>
               </CardHeader>
-              <CardContent>
-                <form onSubmit={handleItinerarySubmit} className="space-y-4">
-                  <div className="space-y-2">
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
                     <Label htmlFor="destination">Destination</Label>
                     <Input
                       id="destination"
-                      value={newItinerary.destination}
-                      onChange={(e) => setNewItinerary({ ...newItinerary, destination: e.target.value })}
-                      required
+                      value={destination}
+                      onChange={(e) => setDestination(e.target.value)}
+                      placeholder="e.g., Vietnam"
                     />
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      value={newItinerary.description}
-                      onChange={(e) => setNewItinerary({ ...newItinerary, description: e.target.value })}
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="startDate">Start Date</Label>
-                      <Input
-                        id="startDate"
-                        type="date"
-                        value={newItinerary.startDate}
-                        onChange={(e) => setNewItinerary({ ...newItinerary, startDate: e.target.value })}
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="endDate">End Date</Label>
-                      <Input
-                        id="endDate"
-                        type="date"
-                        value={newItinerary.endDate}
-                        onChange={(e) => setNewItinerary({ ...newItinerary, endDate: e.target.value })}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="startTime">Start Time</Label>
-                      <Input
-                        id="startTime"
-                        type="time"
-                        value={newItinerary.startTime}
-                        onChange={(e) => setNewItinerary({ ...newItinerary, startTime: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="endTime">End Time</Label>
-                      <Input
-                        id="endTime"
-                        type="time"
-                        value={newItinerary.endTime}
-                        onChange={(e) => setNewItinerary({ ...newItinerary, endTime: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
+                  <div>
                     <Label htmlFor="travellersCount">Number of Travellers</Label>
                     <Input
                       id="travellersCount"
                       type="number"
                       min="1"
-                      value={newItinerary.travellersCount}
-                      onChange={(e) =>
-                        setNewItinerary({ ...newItinerary, travellersCount: Number.parseInt(e.target.value) || 1 })
-                      }
+                      value={travellersCount}
+                      onChange={(e) => setTravellersCount(Number.parseInt(e.target.value) || 1)}
                     />
                   </div>
+                </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="locations">Locations (comma separated)</Label>
+                <div>
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Brief description of the trip"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="image">Image URL</Label>
+                  <Input
+                    id="image"
+                    value={image}
+                    onChange={(e) => setImage(e.target.value)}
+                    placeholder="https://example.com/image.jpg"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="startDate">Start Date</Label>
                     <Input
-                      id="locations"
-                      value={newItinerary.locations?.join(", ") || ""}
-                      onChange={handleLocationsChange}
-                      placeholder="e.g. Paris, Rome, Barcelona"
+                      id="startDate"
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
                     />
                   </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="season">Season</Label>
-                      <Select
-                        value={newItinerary.season}
-                        onValueChange={(value) => setNewItinerary({ ...newItinerary, season: value })}
-                      >
-                        <SelectTrigger id="season">
-                          <SelectValue placeholder="Select season" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="spring">Spring</SelectItem>
-                          <SelectItem value="summer">Summer</SelectItem>
-                          <SelectItem value="fall">Fall</SelectItem>
-                          <SelectItem value="winter">Winter</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="status">Status</Label>
-                      <Select
-                        value={newItinerary.status}
-                        onValueChange={(value: "online" | "completed") =>
-                          setNewItinerary({ ...newItinerary, status: value })
-                        }
-                      >
-                        <SelectTrigger id="status">
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="online">Planned</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  <div>
+                    <Label htmlFor="endDate">End Date</Label>
+                    <Input id="endDate" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
                   </div>
+                </div>
 
-                  <div className="space-y-2">
-                    <Label>Image</Label>
-                    <ImageUpload
-                      initialImage={newItinerary.image}
-                      onImageChange={(imageData) => setNewItinerary({ ...newItinerary, image: imageData })}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="startTime">Start Time</Label>
+                    <Input
+                      id="startTime"
+                      type="time"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
                     />
                   </div>
+                  <div>
+                    <Label htmlFor="endTime">End Time</Label>
+                    <Input id="endTime" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+                  </div>
+                </div>
 
-                  <div className="flex justify-end gap-2 pt-4">
-                    {editingItinerary && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          setEditingItinerary(null)
-                          setNewItinerary({
-                            destination: "",
-                            description: "",
-                            startDate: "",
-                            endDate: "",
-                            startTime: "",
-                            endTime: "",
-                            image: "",
-                            locations: [],
-                            season: "summer",
-                            status: "online",
-                            days: [],
-                            travellersCount: 1,
-                          })
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    )}
-                    <Button type="submit" disabled={loading}>
-                      {editingItinerary ? "Update Itinerary" : "Add Itinerary"}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="status">Status</Label>
+                    <Select value={status} onValueChange={(value: "online" | "completed") => setStatus(value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="online">Online</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="season">Season</Label>
+                    <Select value={season} onValueChange={setSeason}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select season" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="spring">Spring</SelectItem>
+                        <SelectItem value="summer">Summer</SelectItem>
+                        <SelectItem value="fall">Fall</SelectItem>
+                        <SelectItem value="winter">Winter</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="locations">Locations (comma-separated)</Label>
+                  <Input
+                    id="locations"
+                    value={locations}
+                    onChange={(e) => setLocations(e.target.value)}
+                    placeholder="Ho Chi Minh City, Hanoi, Da Nang"
+                  />
+                </div>
+
+                {/* Pre-Trip Checklist Management */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Pre-Trip Checklist</h3>
+                  <PreTripChecklist
+                    destination={destination}
+                    items={checklist}
+                    onUpdateItems={setChecklist}
+                    isAdmin={true}
+                  />
+                </div>
+
+                {/* Tips Management */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">Travel Tips</h3>
+                    <Button onClick={addNewTip} size="sm">
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add Tip
                     </Button>
                   </div>
-                </form>
+
+                  {tips.map((tip) => (
+                    <Card key={tip.id} className="p-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Input
+                            value={tip.title}
+                            onChange={(e) => updateTip(tip.id, "title", e.target.value)}
+                            placeholder="Tip title"
+                            className="flex-1 mr-2"
+                          />
+                          <Select value={tip.category} onValueChange={(value) => updateTip(tip.id, "category", value)}>
+                            <SelectTrigger className="w-40">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="money-saving">Money Saving</SelectItem>
+                              <SelectItem value="safety">Safety</SelectItem>
+                              <SelectItem value="cultural">Cultural</SelectItem>
+                              <SelectItem value="transportation">Transportation</SelectItem>
+                              <SelectItem value="accommodation">Accommodation</SelectItem>
+                              <SelectItem value="general">General</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => deleteTip(tip.id)}
+                            className="ml-2 text-red-500 hover:text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <Textarea
+                          value={tip.description}
+                          onChange={(e) => updateTip(tip.id, "description", e.target.value)}
+                          placeholder="Tip description"
+                          className="h-20"
+                        />
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+
+                <div className="flex gap-2">
+                  <Button onClick={handleSaveItinerary} className="flex-1">
+                    <Save className="h-4 w-4 mr-2" />
+                    {isEditing ? "Update" : "Create"} Itinerary
+                  </Button>
+                  {isEditing && (
+                    <Button variant="outline" onClick={resetForm}>
+                      Cancel
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
-            <h2 className="text-2xl font-bold mt-8 mb-4">Manage Itineraries</h2>
-
-            {itineraries.length === 0 ? (
-              <p className="text-gray-500">No itineraries found.</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {itineraries.map((itinerary) => (
-                  <Card key={itinerary.id} className="overflow-hidden">
-                    <div className="aspect-video bg-gray-100 relative">
-                      <img
-                        src={itinerary.image || getPlaceholderImage(400, 300)}
-                        alt={itinerary.destination}
-                        className="object-cover w-full h-full"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement
-                          target.src = getPlaceholderImage(400, 300)
-                        }}
-                      />
-                    </div>
-                    <CardContent className="p-4">
-                      <h3 className="text-xl font-bold">{itinerary.destination}</h3>
-                      <p className="text-sm text-gray-500 mb-2">
-                        {new Date(itinerary.startDate).toLocaleDateString()} -{" "}
-                        {new Date(itinerary.endDate).toLocaleDateString()}
-                      </p>
-                      {itinerary.travellersCount && itinerary.travellersCount > 1 && (
-                        <p className="text-sm text-gray-500 mb-4">{itinerary.travellersCount} travellers</p>
-                      )}
-
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        <Button size="sm" variant="outline" onClick={() => handleEditItinerary(itinerary)}>
-                          Edit Details
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => router.push(`/admin/itinerary/${itinerary.id}`)}
-                        >
-                          Edit Days
-                        </Button>
-                        <Button size="sm" variant="destructive" onClick={() => handleDeleteItinerary(itinerary.id)}>
-                          Delete
-                        </Button>
-                      </div>
-
-                      <Button
-                        size="sm"
-                        variant="link"
-                        className="p-0"
-                        onClick={() => router.push(`/itinerary/${itinerary.id}`)}
-                      >
-                        View Itinerary
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === "companions" && (
-          <div className="space-y-6">
+            {/* Itineraries List */}
             <Card>
               <CardHeader>
-                <CardTitle>{editingCompanion ? "Edit Companion" : "Add New Companion"}</CardTitle>
+                <CardTitle>Existing Itineraries</CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleCompanionSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
-                    <Input
-                      id="name"
-                      value={newCompanion.name}
-                      onChange={(e) => setNewCompanion({ ...newCompanion, name: e.target.value })}
-                      required
-                    />
-                  </div>
+                <div className="space-y-4 max-h-96 overflow-y-auto">
+                  {itineraries.map((itinerary) => (
+                    <div key={itinerary.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <h4 className="font-medium">{itinerary.destination}</h4>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="h-3 w-3" />
+                          <span>{new Date(itinerary.startDate).toLocaleDateString()}</span>
+                          {itinerary.travellersCount && (
+                            <>
+                              <Users className="h-3 w-3 ml-2" />
+                              <span>{itinerary.travellersCount} travellers</span>
+                            </>
+                          )}
+                        </div>
+                        <Badge variant={itinerary.status === "completed" ? "secondary" : "default"} className="mt-1">
+                          {itinerary.status}
+                        </Badge>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handleEditItinerary(itinerary)}>
+                          Edit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteItinerary(itinerary.id)}
+                          className="text-red-500 hover:text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="relationship">Relationship</Label>
-                    <Input
-                      id="relationship"
-                      value={newCompanion.relationship}
-                      onChange={(e) => setNewCompanion({ ...newCompanion, relationship: e.target.value })}
-                      placeholder="e.g. Friend, Family, Tour Guide"
-                    />
-                  </div>
+        <TabsContent value="companions" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Companion Form */}
+            <Card>
+              <CardHeader>
+                <CardTitle>{selectedCompanion ? "Edit Companion" : "Add New Companion"}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="companionName">Name</Label>
+                  <Input
+                    id="companionName"
+                    value={companionName}
+                    onChange={(e) => setCompanionName(e.target.value)}
+                    placeholder="Full name"
+                  />
+                </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="bio">Bio</Label>
-                    <Textarea
-                      id="bio"
-                      value={newCompanion.bio}
-                      onChange={(e) => setNewCompanion({ ...newCompanion, bio: e.target.value })}
-                      rows={3}
-                    />
-                  </div>
+                <div>
+                  <Label htmlFor="companionRole">Role</Label>
+                  <Input
+                    id="companionRole"
+                    value={companionRole}
+                    onChange={(e) => setCompanionRole(e.target.value)}
+                    placeholder="e.g., Travel Guide, Photographer"
+                  />
+                </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Location</Label>
-                    <Input
-                      id="location"
-                      value={newCompanion.location}
-                      onChange={(e) => setNewCompanion({ ...newCompanion, location: e.target.value })}
-                      placeholder="e.g. New York, USA"
-                    />
-                  </div>
+                <div>
+                  <Label htmlFor="companionBio">Bio</Label>
+                  <Textarea
+                    id="companionBio"
+                    value={companionBio}
+                    onChange={(e) => setCompanionBio(e.target.value)}
+                    placeholder="Brief bio"
+                  />
+                </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="travelsSince">Travels Since</Label>
-                    <Input
-                      id="travelsSince"
-                      value={newCompanion.travelsSince}
-                      onChange={(e) => setNewCompanion({ ...newCompanion, travelsSince: e.target.value })}
-                      placeholder="e.g. 2020"
-                    />
-                  </div>
+                <div>
+                  <Label htmlFor="companionImage">Image URL</Label>
+                  <Input
+                    id="companionImage"
+                    value={companionImage}
+                    onChange={(e) => setCompanionImage(e.target.value)}
+                    placeholder="https://example.com/image.jpg"
+                  />
+                </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="instagramUrl">Instagram URL</Label>
-                    <Input
-                      id="instagramUrl"
-                      value={newCompanion.instagramUrl}
-                      onChange={(e) => setNewCompanion({ ...newCompanion, instagramUrl: e.target.value })}
-                      placeholder="https://instagram.com/username"
-                    />
-                  </div>
+                <div>
+                  <Label htmlFor="companionInstagram">Instagram Username</Label>
+                  <Input
+                    id="companionInstagram"
+                    value={companionInstagram}
+                    onChange={(e) => setCompanionInstagram(e.target.value)}
+                    placeholder="username (without @)"
+                  />
+                </div>
 
-                  <div className="space-y-2">
-                    <Label>Image</Label>
-                    <ImageUpload
-                      initialImage={newCompanion.image}
-                      onImageChange={(imageData) => setNewCompanion({ ...newCompanion, image: imageData })}
-                    />
-                  </div>
-
-                  <div className="flex justify-end gap-2 pt-4">
-                    {editingCompanion && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          setEditingCompanion(null)
-                          setNewCompanion({
-                            name: "",
-                            relationship: "",
-                            bio: "",
-                            image: "",
-                            instagramUrl: "",
-                            location: "",
-                            travelsSince: "",
-                          })
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    )}
-                    <Button type="submit" disabled={loading}>
-                      {editingCompanion ? "Update Companion" : "Add Companion"}
+                <div className="flex gap-2">
+                  <Button onClick={handleSaveCompanion} className="flex-1">
+                    <Save className="h-4 w-4 mr-2" />
+                    {selectedCompanion ? "Update" : "Add"} Companion
+                  </Button>
+                  {selectedCompanion && (
+                    <Button variant="outline" onClick={resetCompanionForm}>
+                      Cancel
                     </Button>
-                  </div>
-                </form>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
-            <h2 className="text-2xl font-bold mt-8 mb-4">Manage Companions</h2>
-
-            {companions.length === 0 ? (
-              <p className="text-gray-500">No companions found.</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {companions.map((companion) => (
-                  <Card key={companion.id} className="overflow-hidden">
-                    <div className="aspect-square bg-gray-100 relative">
-                      <img
-                        src={companion.image || getPlaceholderImage(300, 300)}
-                        alt={companion.name}
-                        className="object-cover w-full h-full"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement
-                          target.src = getPlaceholderImage(300, 300)
-                        }}
-                      />
-                    </div>
-                    <CardContent className="p-4">
-                      <h3 className="text-xl font-bold">{companion.name}</h3>
-                      <p className="text-sm text-gray-500 mb-4">{companion.relationship}</p>
-
-                      <div className="flex flex-wrap gap-2">
-                        <Button size="sm" variant="outline" onClick={() => handleEditCompanion(companion)}>
+            {/* Companions List */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Travel Companions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4 max-h-96 overflow-y-auto">
+                  {companions.map((companion) => (
+                    <div key={companion.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        {companion.image && (
+                          <img
+                            src={companion.image || "/placeholder.svg"}
+                            alt={companion.name}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        )}
+                        <div>
+                          <h4 className="font-medium">{companion.name}</h4>
+                          {companion.role && <p className="text-sm text-muted-foreground">{companion.role}</p>}
+                          {companion.instagramId && <p className="text-xs text-blue-600">@{companion.instagramId}</p>}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handleEditCompanion(companion)}>
                           Edit
                         </Button>
-                        <Button size="sm" variant="destructive" onClick={() => handleDeleteCompanion(companion.id)}>
-                          Delete
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteCompanion(companion.id)}
+                          className="text-red-500 hover:text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        )}
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
