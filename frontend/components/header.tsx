@@ -1,20 +1,13 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
-import { useState, useEffect } from "react"
+import { Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "./theme-toggle"
-import { Menu, X, Settings } from "lucide-react"
-import { getAuthToken } from "@/lib/data"
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-
-  useEffect(() => {
-    const token = getAuthToken()
-    setIsAuthenticated(!!token)
-  }, [])
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
@@ -22,107 +15,72 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Link href="/" className="flex items-center gap-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="lucide lucide-compass h-8 w-8 text-emerald-600"
-            >
-              <circle cx="12" cy="12" r="10"></circle>
-              <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
-            </svg>
-            <span className="text-xl font-bold">
-              Plan Your Trip <span className="text-emerald-600">Amigos</span>
-            </span>
-          </Link>
-        </div>
+      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+        <Link href="/" className="flex items-center space-x-2">
+          <span className="text-2xl font-bold">
+            Plan Your Trip <span className="text-emerald-600">Amigos</span>
+          </span>
+        </Link>
 
-        {/* Mobile menu button */}
-        <Button variant="ghost" size="icon" className="md:hidden" onClick={toggleMenu}>
-          {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          <span className="sr-only">Toggle menu</span>
-        </Button>
-
-        {/* Desktop navigation */}
-        <nav className="hidden md:flex items-center gap-6">
-          <Link href="/" className="text-sm font-medium hover:underline">
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center space-x-6">
+          <Link href="/" className="text-sm font-medium transition-colors hover:text-emerald-600">
             Home
           </Link>
+          <Link href="/companions" className="text-sm font-medium transition-colors hover:text-emerald-600">
+            Travel Companions
+          </Link>
           <div className="relative">
-            <Link href="/companions" className="text-sm font-medium hover:underline flex items-center gap-1">
-              Travel Companions
-            </Link>
-            <div className="absolute -bottom-6 left-0 right-0">
-              <p className="text-xs text-emerald-600 animate-pulse font-medium whitespace-nowrap">
-                Curious about who is traveling with us?
-              </p>
+            <div className="animate-pulse text-xs text-emerald-600 font-medium absolute -bottom-5 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+              Curious about who is traveling with us?
             </div>
           </div>
-          <Link href="/contact" className="text-sm font-medium hover:underline">
+          <Link href="/contact" className="text-sm font-medium transition-colors hover:text-emerald-600">
             Contact
           </Link>
-          {isAuthenticated && (
-            <Link href="/admin" className="text-sm font-medium hover:underline flex items-center gap-1">
-              <Settings className="h-4 w-4" />
-              Admin
-            </Link>
-          )}
           <ThemeToggle />
         </nav>
 
-        {/* Mobile navigation */}
-        {isMenuOpen && (
-          <div className="absolute top-16 left-0 right-0 bg-background border-b shadow-lg md:hidden">
-            <div className="container py-4 flex flex-col gap-4">
-              <Link href="/" className="text-sm font-medium hover:underline" onClick={() => setIsMenuOpen(false)}>
-                Home
-              </Link>
-              <div>
-                <Link
-                  href="/companions"
-                  className="text-sm font-medium hover:underline"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Travel Companions
-                </Link>
-                <p className="text-xs text-emerald-600 animate-pulse font-medium mt-1">
-                  Curious about who is traveling with us?
-                </p>
-              </div>
-              <Link
-                href="/contact"
-                className="text-sm font-medium hover:underline"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Contact
-              </Link>
-              {isAuthenticated && (
-                <Link
-                  href="/admin"
-                  className="text-sm font-medium hover:underline flex items-center gap-1"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <Settings className="h-4 w-4" />
-                  Admin
-                </Link>
-              )}
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Theme</span>
-                <ThemeToggle />
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Mobile Menu Button */}
+        <div className="flex items-center gap-2 md:hidden">
+          <ThemeToggle />
+          <Button variant="ghost" size="sm" onClick={toggleMenu} className="h-9 w-9 p-0">
+            {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          </Button>
+        </div>
       </div>
+
+      {/* Mobile Navigation */}
+      {isMenuOpen && (
+        <div className="border-t bg-background md:hidden">
+          <nav className="container mx-auto flex flex-col space-y-4 px-4 py-4">
+            <Link
+              href="/"
+              className="text-sm font-medium transition-colors hover:text-emerald-600"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Home
+            </Link>
+            <Link
+              href="/companions"
+              className="text-sm font-medium transition-colors hover:text-emerald-600"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Travel Companions
+            </Link>
+            <div className="text-xs text-emerald-600 font-medium animate-pulse">
+              Curious about who is traveling with us?
+            </div>
+            <Link
+              href="/contact"
+              className="text-sm font-medium transition-colors hover:text-emerald-600"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Contact
+            </Link>
+          </nav>
+        </div>
+      )}
     </header>
   )
 }

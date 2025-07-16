@@ -1,16 +1,12 @@
 export interface Activity {
   id: string
-  title: string
-  description: string
-  time: string
-  type: "food" | "activity" | "travel" | "accommodation" | "must-visit"
+  name: string
+  description?: string
+  time?: string
   location?: string
+  type: "sightseeing" | "food" | "transport" | "accommodation" | "flight" | "must-visit"
   image?: string
-  expense?: {
-    amount: number
-    currency: string
-    category?: string
-  }
+  expense?: number
 }
 
 export interface ItineraryDay {
@@ -23,8 +19,7 @@ export interface ItineraryDay {
 
 export interface ChecklistItem {
   id: string
-  title: string
-  notes?: string
+  text: string
   completed: boolean
 }
 
@@ -32,62 +27,35 @@ export interface TipItem {
   id: string
   title: string
   description: string
-  category: "money-saving" | "safety" | "cultural" | "transportation" | "accommodation" | "general"
+  category: "money-saving" | "safety" | "cultural" | "navigation" | "photography" | "food" | "timing" | "general"
+}
+
+export interface ItineraryMetadata {
+  checklist?: ChecklistItem[]
+  tips?: TipItem[]
+  customFields?: Record<string, any>
 }
 
 export interface Itinerary {
   id: string
   destination: string
-  description: string
-  image?: string
+  slug: string
+  description?: string
   startDate: string
   endDate: string
   startTime?: string
   endTime?: string
-  status: "online" | "completed"
-  season?: string
   locations: string[]
   days: ItineraryDay[]
-  travellersCount?: number
-  metadata?: {
-    checklist?: ChecklistItem[]
-    tips?: TipItem[]
-  }
-}
-
-export interface Accommodation {
-  id: string
-  name: string
-  type: "hotel" | "hostel" | "apartment" | "resort" | "guesthouse"
-  location: string
-  pricePerNight: number
-  currency: string
+  image?: string
   rating: number
-  amenities: string[]
-  image?: string
-  destinationId?: string
-}
-
-export interface Location {
-  id: string
-  name: string
-  type: "city" | "landmark" | "beach" | "mountain" | "park" | "museum"
-  description: string
-  coordinates?: {
-    lat: number
-    lng: number
-  }
-  image?: string
-  destinationId?: string
-}
-
-export interface Companion {
-  id: string
-  name: string
-  role?: string
-  bio?: string
-  image?: string
-  instagramId?: string
+  reviewCount: number
+  status: "upcoming" | "completed"
+  season?: "spring" | "summer" | "autumn" | "winter"
+  totalBudget?: number
+  travellersCount?: number
+  travelStyle?: "solo" | "couple" | "friends" | "family" | "group"
+  metadata?: ItineraryMetadata
 }
 
 export interface Comment {
@@ -97,4 +65,23 @@ export interface Comment {
   content: string
   date: string
   rating?: number
+}
+
+export interface Accommodation {
+  id: string
+  itineraryId: string
+  name: string
+  location: string
+  dates: string
+  image?: string
+}
+
+export interface Companion {
+  id: string
+  name: string
+  role?: string
+  bio?: string
+  image?: string
+  instagramId?: string
+  isActive: boolean
 }

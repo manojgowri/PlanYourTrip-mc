@@ -1,20 +1,34 @@
 "use client"
 
 import { useState } from "react"
-import { Check, Trash2, Edit, Save, Plus } from "lucide-react"
+import { Check, Plus, X, Edit2, Trash2, Save } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
 import type { ChecklistItem } from "@/lib/models"
 
 interface PreTripChecklistProps {
-  destination?: string
+  destination: string
   items: ChecklistItem[]
-  onToggleItem?: (id: string) => void
+  onToggleItem?: (itemId: string) => void
   onUpdateItems?: (items: ChecklistItem[]) => void
   readOnly?: boolean
   isAdmin?: boolean
 }
+
+const defaultChecklistItems = [
+  "Check passport validity (6+ months)",
+  "Apply for visa if required",
+  "Book flights and accommodation",
+  "Get travel insurance",
+  "Notify bank of travel plans",
+  "Pack essentials and medications",
+  "Download offline maps",
+  "Check weather forecast",
+  "Exchange currency",
+  "Backup important documents",
+]
 
 export function PreTripChecklist({
   destination,
@@ -24,205 +38,195 @@ export function PreTripChecklist({
   readOnly = false,
   isAdmin = false,
 }: PreTripChecklistProps) {
-  const [editingItemId, setEditingItemId] = useState<string | null>(null)
-  const [editingTitle, setEditingTitle] = useState("")
-  const [editingNotes, setEditingNotes] = useState("")
-  const [newItemTitle, setNewItemTitle] = useState("")
-  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set(items.map((item) => item.id)))
+  const [isEditing, setIsEditing] = useState(false)
+  const [editableItems, setEditableItems] = useState<ChecklistItem[]>(items)
+  const [newItemText, setNewItemText] = useState("")
 
-  const handleToggle = (id: string) => {
-    if (readOnly) return
+  const handleToggleItem = (itemId: string) => {
+    if (onToggleItem && !readOnly) {
+      onToggleItem(itemId)
+    }
+  }
 
-    if (isAdmin && onUpdateItems) {
-      // Admin can select/deselect items for inclusion
-      const newSelectedItems = new Set(selectedItems)
-      if (newSelectedItems.has(id)) {
-        newSelectedItems.delete(id)
-      } else {
-        newSelectedItems.add(id)
+  const handleAddItem = () => {
+    if (newItemText.trim()) {
+      const newItem: ChecklistItem = {
+        id: Date.now().toString(),
+        text: newItemText.trim(),
+        completed: false,
       }
-      setSelectedItems(newSelectedItems)
-    } else if (onToggleItem) {
-      // User can toggle completion status
-      onToggleItem(id)
+      const updatedItems = [...editableItems, newItem]
+      setEditableItems(updatedItems)
+      setNewItemText("")
     }
   }
 
-  const handleSaveSelection = () => {
-    if (!onUpdateItems) return
-
-    const selectedItemsList = items.filter((item) => selectedItems.has(item.id))
-    onUpdateItems(selectedItemsList)
+  const handleRemoveItem = (itemId: string) => {
+    const updatedItems = editableItems.filter((item) => item.id !== itemId)
+    setEditableItems(updatedItems)
   }
 
-  const startEditing = (item: ChecklistItem) => {
-    setEditingItemId(item.id)
-    setEditingTitle(item.title)
-    setEditingNotes(item.notes || "")
-  }
-
-  const saveEditing = () => {
-    if (!editingItemId || !onUpdateItems) return
-
-    const updatedItems = items.map((item) =>
-      item.id === editingItemId ? { ...item, title: editingTitle, notes: editingNotes } : item,
+  const handleToggleEditItem = (itemId: string) => {
+    const updatedItems = editableItems.map((item) =>
+      item.id === itemId ? { ...item, completed: !item.completed } : item,
     )
-
-    onUpdateItems(updatedItems)
-    setEditingItemId(null)
+    setEditableItems(updatedItems)
   }
 
-  const deleteItem = (id: string) => {
-    if (!onUpdateItems) return
-
-    const updatedItems = items.filter((item) => item.id !== id)
-    onUpdateItems(updatedItems)
-
-    // Remove from selected items if it was selected
-    const newSelectedItems = new Set(selectedItems)
-    newSelectedItems.delete(id)
-    setSelectedItems(newSelectedItems)
-  }
-
-  const addNewItem = () => {
-    if (!newItemTitle.trim() || !onUpdateItems) return
-
-    const newItem: ChecklistItem = {
-      id: Date.now().toString(),
-      title: newItemTitle,
-      notes: "",
-      completed: false,
+  const handleSaveChanges = () => {
+    if (onUpdateItems) {
+      onUpdateItems(editableItems)
     }
+    setIsEditing(false)
+  }
 
-    onUpdateItems([...items, newItem])
-    setSelectedItems((prev) => new Set([...prev, newItem.id]))
-    setNewItemTitle("")
+  const handleAddDefaultItems = () => {
+    const existingTexts = editableItems.map((item) => item.text.toLowerCase())
+    const newItems = defaultChecklistItems
+      .filter((text) => !existingTexts.includes(text.toLowerCase()))
+      .map((text) => ({
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        text,
+        completed: false,
+      }))
+
+    setEditableItems([...editableItems, ...newItems])
+  }
+
+  const completedCount = items.filter((item) => item.completed).length
+  const totalCount = items.length
+
+  if (items.length === 0 && !isAdmin) {
+    return null
   }
 
   return (
-    <div className="rounded-lg border bg-card p-4 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-medium">
-          {destination ? `${destination} Pre-Trip Checklist` : "Pre-Trip Checklist"}
-        </h3>
-        {isAdmin && onUpdateItems && (
-          <Button onClick={handleSaveSelection} size="sm">
-            Save Selected Items
-          </Button>
-        )}
-      </div>
-
-      {items.length === 0 ? (
-        <p className="text-center text-sm text-muted-foreground">No checklist items have been added yet.</p>
-      ) : (
-        <ul className="space-y-2">
-          {items.map((item) => (
-            <li
-              key={item.id}
-              className={`flex items-center justify-between rounded-md border p-3 ${
-                isAdmin
-                  ? selectedItems.has(item.id)
-                    ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800"
-                    : "bg-gray-50 dark:bg-gray-800/20"
-                  : item.completed
-                    ? "bg-emerald-50 dark:bg-emerald-950/20"
-                    : ""
-              }`}
-            >
-              {editingItemId === item.id ? (
-                <div className="w-full space-y-2">
-                  <Input
-                    value={editingTitle}
-                    onChange={(e) => setEditingTitle(e.target.value)}
-                    placeholder="Item title"
-                  />
-                  <Textarea
-                    value={editingNotes}
-                    onChange={(e) => setEditingNotes(e.target.value)}
-                    placeholder="Notes"
-                    className="h-20"
-                  />
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setEditingItemId(null)}>
-                      Cancel
-                    </Button>
-                    <Button size="sm" onClick={saveEditing}>
-                      <Save className="h-4 w-4 mr-1" /> Save
-                    </Button>
-                  </div>
-                </div>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Check className="h-5 w-5 text-emerald-600" />
+            Pre-Trip Checklist for {destination}
+          </CardTitle>
+          {isAdmin && (
+            <div className="flex items-center gap-2">
+              {!isEditing ? (
+                <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                  <Edit2 className="h-4 w-4 mr-1" />
+                  Edit
+                </Button>
               ) : (
-                <>
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full cursor-pointer transition-colors ${
-                        isAdmin
-                          ? selectedItems.has(item.id)
-                            ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400"
-                            : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
-                          : item.completed
-                            ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400"
-                            : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
-                      }`}
-                      onClick={() => handleToggle(item.id)}
-                    >
-                      {isAdmin ? (
-                        selectedItems.has(item.id) ? (
-                          <Check className="h-4 w-4" />
-                        ) : (
-                          <div className="h-4 w-4" />
-                        )
-                      ) : item.completed ? (
-                        <Check className="h-4 w-4" />
-                      ) : (
-                        <div className="h-4 w-4" />
-                      )}
-                    </div>
-                    <div>
-                      <span className={item.completed && !isAdmin ? "text-emerald-700 dark:text-emerald-400" : ""}>
-                        {item.title}
-                      </span>
-                      {item.notes && <p className="text-sm text-muted-foreground mt-1">{item.notes}</p>}
-                    </div>
-                  </div>
-
-                  {isAdmin && onUpdateItems && (
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => startEditing(item)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-red-500 hover:text-red-600"
-                        onClick={() => deleteItem(item.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
-                </>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setEditableItems(items)
+                      setIsEditing(false)
+                    }}
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Cancel
+                  </Button>
+                  <Button size="sm" onClick={handleSaveChanges}>
+                    <Save className="h-4 w-4 mr-1" />
+                    Save
+                  </Button>
+                </div>
               )}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {isAdmin && onUpdateItems && (
-        <div className="mt-4 flex gap-2">
-          <Input
-            value={newItemTitle}
-            onChange={(e) => setNewItemTitle(e.target.value)}
-            placeholder="Add new checklist item"
-            className="flex-1"
-            onKeyPress={(e) => e.key === "Enter" && addNewItem()}
-          />
-          <Button onClick={addNewItem}>
-            <Plus className="h-4 w-4 mr-1" />
-            Add
-          </Button>
+            </div>
+          )}
         </div>
-      )}
-    </div>
+        {totalCount > 0 && (
+          <div className="text-sm text-muted-foreground">
+            {completedCount} of {totalCount} items completed
+          </div>
+        )}
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {isAdmin && isEditing ? (
+          <>
+            {/* Admin Edit Mode */}
+            <div className="space-y-3">
+              {editableItems.map((item) => (
+                <div key={item.id} className="flex items-center gap-3 p-2 rounded-lg border">
+                  <Checkbox checked={item.completed} onCheckedChange={() => handleToggleEditItem(item.id)} />
+                  <span className="flex-1">{item.text}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemoveItem(item.id)}
+                    className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+
+            {/* Add new item */}
+            <div className="flex gap-2 pt-4 border-t">
+              <Input
+                placeholder="Add new checklist item..."
+                value={newItemText}
+                onChange={(e) => setNewItemText(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleAddItem()}
+              />
+              <Button onClick={handleAddItem} size="sm">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Add default items button */}
+            {editableItems.length === 0 && (
+              <Button variant="outline" onClick={handleAddDefaultItems} className="w-full bg-transparent">
+                Add Default Checklist Items
+              </Button>
+            )}
+          </>
+        ) : (
+          <>
+            {/* User View Mode */}
+            {items.length > 0 ? (
+              <div className="space-y-3">
+                {items.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+                      item.completed
+                        ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800"
+                        : "hover:bg-muted/50"
+                    }`}
+                  >
+                    <button
+                      onClick={() => handleToggleItem(item.id)}
+                      disabled={readOnly}
+                      className={`flex h-5 w-5 items-center justify-center rounded border-2 transition-colors ${
+                        item.completed
+                          ? "bg-emerald-600 border-emerald-600 text-white"
+                          : "border-gray-300 hover:border-emerald-600"
+                      } ${readOnly ? "cursor-default" : "cursor-pointer"}`}
+                    >
+                      {item.completed && <Check className="h-3 w-3" />}
+                    </button>
+                    <span
+                      className={`flex-1 ${
+                        item.completed ? "text-emerald-700 dark:text-emerald-300" : "text-gray-700 dark:text-gray-300"
+                      }`}
+                    >
+                      {item.text}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No checklist items have been added yet.</p>
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
   )
 }

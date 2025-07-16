@@ -1,17 +1,18 @@
 "use client"
 
+import type React from "react"
 import { createContext, useContext, useState, type ReactNode } from "react"
 
 interface LoadingContextType {
   isLoading: boolean
-  setLoading: (loading: boolean) => void
   loadingMessage: string
+  setLoading: (loading: boolean) => void
   setLoadingMessage: (message: string) => void
 }
 
 const LoadingContext = createContext<LoadingContextType | undefined>(undefined)
 
-export function LoadingProvider({ children }: { children: ReactNode }) {
+export const LoadingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false)
   const [loadingMessage, setLoadingMessage] = useState("Loading...")
 
@@ -19,14 +20,25 @@ export function LoadingProvider({ children }: { children: ReactNode }) {
     setIsLoading(loading)
   }
 
+  const setLoadingMessageState = (message: string) => {
+    setLoadingMessage(message)
+  }
+
   return (
-    <LoadingContext.Provider value={{ isLoading, setLoading, loadingMessage, setLoadingMessage }}>
+    <LoadingContext.Provider
+      value={{
+        isLoading,
+        loadingMessage,
+        setLoading,
+        setLoadingMessage: setLoadingMessageState,
+      }}
+    >
       {children}
     </LoadingContext.Provider>
   )
 }
 
-export function useLoading() {
+export const useLoading = () => {
   const context = useContext(LoadingContext)
   if (context === undefined) {
     throw new Error("useLoading must be used within a LoadingProvider")

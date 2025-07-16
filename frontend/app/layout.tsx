@@ -3,48 +3,78 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { LoadingProvider } from "@/contexts/loading-context"
+import { GlobalLoader } from "@/components/global-loader"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ToastContainer } from "@/components/toast-container"
-import { OfflineIndicator } from "@/components/offline-indicator"
-import { LoadingProvider } from "@/contexts/loading-context"
-import { GlobalLoader } from "@/components/global-loader"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Plan Your Trip Amigos",
-  description: "Your personal travel planner and itinerary manager",
+  title: "Plan Your Trip Amigos - Vietnam Travel Adventures",
+  description:
+    "Discover amazing travel itineraries and plan your perfect Vietnam adventure with detailed guides, tips, and local insights.",
+  keywords: "Vietnam travel, travel planning, itinerary, adventure, tourism, travel guide",
+  authors: [{ name: "Plan Your Trip Amigos" }],
+  creator: "Plan Your Trip Amigos",
+  publisher: "Plan Your Trip Amigos",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  icons: {
+    icon: [{ url: "/favicon.ico" }, { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" }],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    other: [
+      {
+        rel: "android-chrome-192x192",
+        url: "/android-chrome-192x192.png",
+      },
+      {
+        rel: "android-chrome-512x512",
+        url: "/android-chrome-512x512.png",
+      },
+    ],
+  },
+  manifest: "/site.webmanifest",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://planyourtripamigos.vercel.app",
+    title: "Plan Your Trip Amigos - Vietnam Travel Adventures",
+    description:
+      "Discover amazing travel itineraries and plan your perfect Vietnam adventure with detailed guides, tips, and local insights.",
+    siteName: "Plan Your Trip Amigos",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Plan Your Trip Amigos - Vietnam Travel Adventures",
+    description:
+      "Discover amazing travel itineraries and plan your perfect Vietnam adventure with detailed guides, tips, and local insights.",
+  },
 }
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="shortcut icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-        <meta name="apple-mobile-web-app-title" content="Plan Your Trip Amigos" />
-        <link rel="manifest" href="/site.webmanifest" />
-      </head>
       <body className={inter.className}>
-        <LoadingProvider>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-            <div className="flex min-h-screen flex-col">
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <LoadingProvider>
+            <div className="relative flex min-h-screen flex-col">
               <Header />
               <main className="flex-1">{children}</main>
               <Footer />
             </div>
-            <ToastContainer />
-            <OfflineIndicator />
             <GlobalLoader />
-          </ThemeProvider>
-        </LoadingProvider>
+            <ToastContainer />
+          </LoadingProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
