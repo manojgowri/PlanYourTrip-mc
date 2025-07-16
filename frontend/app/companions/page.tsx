@@ -1,70 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Instagram, Users } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Instagram, Linkedin } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { SafeImage } from "@/components/safe-image"
+import { Badge } from "@/components/ui/badge"
+import { getCompanions, type Companion } from "@/lib/data"
 import { useLoading } from "@/contexts/loading-context"
-import type { Companion } from "@/lib/models"
-
-// Mock data - replace with actual API call
-const mockCompanions: Companion[] = [
-  {
-    id: "1",
-    name: "GUILLERMO RAUCH",
-    role: "",
-    bio: "Travel enthusiast and adventure seeker",
-    image: "/placeholder.svg?height=400&width=400",
-    instagramId: "",
-    isActive: true,
-  },
-  {
-    id: "2",
-    name: "JEANNE GROSSER",
-    role: "COO, VERCEL",
-    bio: "Passionate about exploring new cultures and destinations",
-    image: "/placeholder.svg?height=400&width=400",
-    instagramId: "jeannegrosser",
-    isActive: true,
-  },
-  {
-    id: "3",
-    name: "PEPTIJN SENDERS",
-    role: "",
-    bio: "Photography and travel blogger",
-    image: "/placeholder.svg?height=400&width=400",
-    instagramId: "",
-    isActive: true,
-  },
-  {
-    id: "4",
-    name: "MALAVIKA BALACHANDRAN TADEUSZ",
-    role: "",
-    bio: "Cultural explorer and food enthusiast",
-    image: "/placeholder.svg?height=400&width=400",
-    instagramId: "",
-    isActive: true,
-  },
-  {
-    id: "5",
-    name: "TOMAS JANSSON",
-    role: "",
-    bio: "Adventure sports and nature lover",
-    image: "/placeholder.svg?height=400&width=400",
-    instagramId: "",
-    isActive: true,
-  },
-  {
-    id: "6",
-    name: "JOE ZENG",
-    role: "",
-    bio: "Tech traveler and digital nomad",
-    image: "/placeholder.svg?height=400&width=400",
-    instagramId: "",
-    isActive: true,
-  },
-]
+import { SafeImage } from "@/components/safe-image"
 
 export default function CompanionsPage() {
   const { setLoading, setLoadingMessage } = useLoading()
@@ -79,11 +22,11 @@ export default function CompanionsPage() {
         setLoadingMessage("Loading travel companions...")
         setLocalLoading(true)
 
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-
-        setCompanions(mockCompanions)
-        setSelectedCompanion(mockCompanions[1]) // Default to Jeanne Grosser
+        const data = await getCompanions()
+        setCompanions(data)
+        if (data.length > 0) {
+          setSelectedCompanion(data[0])
+        }
       } catch (error) {
         console.error("Error fetching companions:", error)
       } finally {
@@ -101,138 +44,210 @@ export default function CompanionsPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Users className="h-8 w-8 text-white" />
-            <h1 className="text-4xl font-bold">Travel Companions</h1>
-          </div>
+      <div className="container mx-auto py-8 px-4">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold mb-4">Travel Companions</h1>
           <p className="text-gray-400 max-w-2xl mx-auto">
-            Meet our amazing travel companions who make every journey unforgettable. Each brings their unique
-            perspective and expertise to create extraordinary experiences.
+            Meet our experienced travel companions who will make your journey unforgettable. Each brings unique
+            expertise and local knowledge to enhance your travel experience.
           </p>
         </div>
 
-        {/* Desktop Layout */}
-        <div className="hidden lg:flex gap-8 h-[600px]">
-          {/* Left Panel - Companions List */}
-          <div className="w-1/2">
-            <Card className="bg-gray-900 border-gray-800 h-full">
-              <CardContent className="p-0">
-                <div className="h-full overflow-y-auto">
-                  {companions.map((companion) => (
-                    <div
-                      key={companion.id}
-                      onClick={() => setSelectedCompanion(companion)}
-                      className={`p-6 border-b border-gray-800 cursor-pointer transition-colors hover:bg-gray-800 ${
-                        selectedCompanion?.id === companion.id ? "bg-gray-800" : ""
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-lg font-bold text-white tracking-wide">{companion.name}</h3>
-                          {companion.role && <p className="text-sm text-gray-400 mt-1">{companion.role}</p>}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {companion.instagramId && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-gray-400 hover:text-white"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                window.open(`https://instagram.com/${companion.instagramId}`, "_blank")
-                              }}
-                            >
-                              <Instagram className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Panel - Selected Companion */}
-          <div className="w-1/2">
-            {selectedCompanion && (
-              <Card className="bg-gray-900 border-gray-800 h-full">
-                <CardContent className="p-0 h-full">
-                  <div className="relative h-full overflow-hidden rounded-lg">
-                    <SafeImage
-                      src={selectedCompanion.image || "/placeholder.svg?height=600&width=600"}
-                      alt={selectedCompanion.name}
-                      className="h-full w-full object-cover filter grayscale hover:grayscale-0 transition-all duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-6">
-                      <h2 className="text-2xl font-bold text-white mb-2">{selectedCompanion.name}</h2>
-                      {selectedCompanion.role && <p className="text-gray-300 mb-3">{selectedCompanion.role}</p>}
-                      {selectedCompanion.bio && (
-                        <p className="text-gray-400 text-sm leading-relaxed">{selectedCompanion.bio}</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
+          {/* Companions List */}
+          <div className="space-y-4">
+            <h2 className="text-2xl font-semibold mb-4">Our Team</h2>
+            <div className="max-h-[600px] overflow-y-auto space-y-2 pr-2 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+              {companions.map((companion) => (
+                <div
+                  key={companion.id}
+                  className={`p-4 border border-gray-700 rounded-lg cursor-pointer transition-all duration-200 hover:border-gray-500 ${
+                    selectedCompanion?.id === companion.id ? "bg-gray-800 border-gray-500" : "bg-gray-900/50"
+                  }`}
+                  onClick={() => setSelectedCompanion(companion)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">{companion.name}</h3>
+                      {companion.role && (
+                        <p className="text-sm text-gray-400 uppercase tracking-wide">{companion.role}</p>
                       )}
-                      {selectedCompanion.instagramId && (
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      {companion.socialMedia?.instagram && (
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           size="sm"
-                          className="mt-4 bg-transparent border-white text-white hover:bg-white hover:text-black"
-                          onClick={() =>
-                            window.open(`https://instagram.com/${selectedCompanion.instagramId}`, "_blank")
-                          }
+                          className="p-1 h-8 w-8 text-gray-400 hover:text-pink-400"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            window.open(`https://instagram.com/${companion.socialMedia.instagram}`, "_blank")
+                          }}
                         >
-                          <Instagram className="h-4 w-4 mr-2" />
-                          Follow on Instagram
+                          <Instagram className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {companion.socialMedia?.linkedin && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="p-1 h-8 w-8 text-gray-400 hover:text-blue-400"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            window.open(`https://linkedin.com/in/${companion.socialMedia.linkedin}`, "_blank")
+                          }}
+                        >
+                          <Linkedin className="h-4 w-4" />
                         </Button>
                       )}
                     </div>
                   </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Selected Companion Details */}
+          <div className="lg:sticky lg:top-8">
+            {selectedCompanion ? (
+              <Card className="bg-gray-900 border-gray-700 overflow-hidden">
+                <CardContent className="p-0">
+                  <div className="aspect-square relative overflow-hidden">
+                    <SafeImage
+                      src={selectedCompanion.image || "/placeholder.svg?height=400&width=400"}
+                      alt={selectedCompanion.name}
+                      className="w-full h-full object-cover transition-all duration-500 filter grayscale hover:grayscale-0"
+                      width={400}
+                      height={400}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                    <div className="absolute bottom-4 left-4 right-4">
+                      <h2 className="text-2xl font-bold text-white mb-1">{selectedCompanion.name}</h2>
+                      {selectedCompanion.role && (
+                        <p className="text-gray-300 uppercase tracking-wide text-sm">{selectedCompanion.role}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="p-6 space-y-6">
+                    {selectedCompanion.bio && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-white mb-2">About</h3>
+                        <p className="text-gray-300 leading-relaxed">{selectedCompanion.bio}</p>
+                      </div>
+                    )}
+
+                    {selectedCompanion.expertise && selectedCompanion.expertise.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-white mb-3">Expertise</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedCompanion.expertise.map((skill, index) => (
+                            <Badge
+                              key={index}
+                              variant="secondary"
+                              className="bg-gray-800 text-gray-300 hover:bg-gray-700"
+                            >
+                              {skill}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedCompanion.languages && selectedCompanion.languages.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-white mb-3">Languages</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedCompanion.languages.map((language, index) => (
+                            <Badge key={index} variant="outline" className="border-gray-600 text-gray-300">
+                              {language}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedCompanion.socialMedia && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-white mb-3">Connect</h3>
+                        <div className="flex space-x-3">
+                          {selectedCompanion.socialMedia.instagram && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="border-gray-600 text-gray-300 hover:bg-pink-600 hover:border-pink-600 hover:text-white bg-transparent"
+                              onClick={() =>
+                                window.open(
+                                  `https://instagram.com/${selectedCompanion.socialMedia?.instagram}`,
+                                  "_blank",
+                                )
+                              }
+                            >
+                              <Instagram className="h-4 w-4 mr-2" />
+                              Instagram
+                            </Button>
+                          )}
+                          {selectedCompanion.socialMedia.linkedin && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="border-gray-600 text-gray-300 hover:bg-blue-600 hover:border-blue-600 hover:text-white bg-transparent"
+                              onClick={() =>
+                                window.open(
+                                  `https://linkedin.com/in/${selectedCompanion.socialMedia?.linkedin}`,
+                                  "_blank",
+                                )
+                              }
+                            >
+                              <Linkedin className="h-4 w-4 mr-2" />
+                              LinkedIn
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-gray-400">Select a companion to view details</p>
+              </div>
             )}
           </div>
         </div>
 
-        {/* Mobile Layout */}
-        <div className="lg:hidden space-y-6">
-          {companions.map((companion) => (
-            <Card key={companion.id} className="bg-gray-900 border-gray-800">
-              <CardContent className="p-0">
-                <div className="flex">
-                  {/* Left side - Info */}
-                  <div className="flex-1 p-6">
-                    <h3 className="text-xl font-bold text-white tracking-wide mb-2">{companion.name}</h3>
-                    {companion.role && <p className="text-sm text-gray-400 mb-3">{companion.role}</p>}
-                    {companion.bio && <p className="text-gray-400 text-sm leading-relaxed mb-4">{companion.bio}</p>}
-                    {companion.instagramId && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="bg-transparent border-white text-white hover:bg-white hover:text-black"
-                        onClick={() => window.open(`https://instagram.com/${companion.instagramId}`, "_blank")}
-                      >
-                        <Instagram className="h-4 w-4 mr-2" />
-                        Follow
-                      </Button>
-                    )}
-                  </div>
-
-                  {/* Right side - Image */}
-                  <div className="w-32 h-32 flex-shrink-0">
-                    <SafeImage
-                      src={companion.image || "/placeholder.svg?height=128&width=128"}
-                      alt={companion.name}
-                      className="h-full w-full object-cover filter grayscale hover:grayscale-0 transition-all duration-500 rounded-r-lg"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {/* Mobile Responsive Adjustments */}
+        <style jsx>{`
+          @media (max-width: 1024px) {
+            .grid-cols-1.lg\\:grid-cols-2 {
+              grid-template-columns: 1fr;
+            }
+            .lg\\:sticky {
+              position: static;
+            }
+            .max-h-\\[600px\\] {
+              max-height: 400px;
+            }
+          }
+          
+          .scrollbar-thin {
+            scrollbar-width: thin;
+          }
+          
+          .scrollbar-thumb-gray-600::-webkit-scrollbar-thumb {
+            background-color: #4b5563;
+            border-radius: 4px;
+          }
+          
+          .scrollbar-track-gray-800::-webkit-scrollbar-track {
+            background-color: #1f2937;
+          }
+          
+          .scrollbar-thin::-webkit-scrollbar {
+            width: 6px;
+          }
+        `}</style>
       </div>
     </div>
   )

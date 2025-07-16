@@ -2,22 +2,19 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Menu, X } from "lucide-react"
+import { Menu, X, Plane } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "./theme-toggle"
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen)
-  }
-
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+      <div className="container flex h-16 items-center justify-between">
         <Link href="/" className="flex items-center space-x-2">
-          <span className="text-2xl font-bold">
+          <Plane className="h-6 w-6 text-emerald-600" />
+          <span className="text-xl font-bold">
             Plan Your Trip <span className="text-emerald-600">Amigos</span>
           </span>
         </Link>
@@ -27,56 +24,70 @@ export function Header() {
           <Link href="/" className="text-sm font-medium transition-colors hover:text-emerald-600">
             Home
           </Link>
-          <Link href="/companions" className="text-sm font-medium transition-colors hover:text-emerald-600">
-            Travel Companions
-          </Link>
           <div className="relative">
-            <div className="animate-pulse text-xs text-emerald-600 font-medium absolute -bottom-5 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
-              Curious about who is traveling with us?
+            <Link href="/companions" className="text-sm font-medium transition-colors hover:text-emerald-600">
+              Travel Companions
+            </Link>
+            <div className="absolute -bottom-6 left-0 right-0">
+              <p className="text-xs text-emerald-600 animate-pulse font-medium whitespace-nowrap">
+                Curious about who is traveling with us?
+              </p>
             </div>
           </div>
           <Link href="/contact" className="text-sm font-medium transition-colors hover:text-emerald-600">
             Contact
           </Link>
+          <Link href="/admin" className="text-sm font-medium transition-colors hover:text-emerald-600">
+            Admin
+          </Link>
           <ThemeToggle />
         </nav>
 
         {/* Mobile Menu Button */}
-        <div className="flex items-center gap-2 md:hidden">
+        <div className="md:hidden flex items-center space-x-2">
           <ThemeToggle />
-          <Button variant="ghost" size="sm" onClick={toggleMenu} className="h-9 w-9 p-0">
-            {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          <Button variant="ghost" size="sm" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         </div>
       </div>
 
       {/* Mobile Navigation */}
       {isMenuOpen && (
-        <div className="border-t bg-background md:hidden">
-          <nav className="container mx-auto flex flex-col space-y-4 px-4 py-4">
+        <div className="md:hidden border-t bg-background">
+          <nav className="container py-4 space-y-4">
             <Link
               href="/"
-              className="text-sm font-medium transition-colors hover:text-emerald-600"
+              className="block text-sm font-medium transition-colors hover:text-emerald-600"
               onClick={() => setIsMenuOpen(false)}
             >
               Home
             </Link>
-            <Link
-              href="/companions"
-              className="text-sm font-medium transition-colors hover:text-emerald-600"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Travel Companions
-            </Link>
-            <div className="text-xs text-emerald-600 font-medium animate-pulse">
-              Curious about who is traveling with us?
+            <div>
+              <Link
+                href="/companions"
+                className="block text-sm font-medium transition-colors hover:text-emerald-600"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Travel Companions
+              </Link>
+              <p className="text-xs text-emerald-600 animate-pulse font-medium mt-1">
+                Curious about who is traveling with us?
+              </p>
             </div>
             <Link
               href="/contact"
-              className="text-sm font-medium transition-colors hover:text-emerald-600"
+              className="block text-sm font-medium transition-colors hover:text-emerald-600"
               onClick={() => setIsMenuOpen(false)}
             >
               Contact
+            </Link>
+            <Link
+              href="/admin"
+              className="block text-sm font-medium transition-colors hover:text-emerald-600"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Admin
             </Link>
           </nav>
         </div>

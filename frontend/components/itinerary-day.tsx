@@ -1,11 +1,22 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronDown, ChevronUp, MapPin, Clock, DollarSign, Camera, Utensils, Car, Plane, Hotel } from "lucide-react"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import {
+  ChevronDown,
+  ChevronUp,
+  MapPin,
+  Clock,
+  DollarSign,
+  Camera,
+  Utensils,
+  Car,
+  Plane,
+  Hotel,
+  Star,
+} from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { SafeImage } from "./safe-image"
 import type { Activity } from "@/lib/models"
 
 interface ItineraryDayProps {
@@ -16,7 +27,7 @@ interface ItineraryDayProps {
 }
 
 const getActivityIcon = (type: string) => {
-  switch (type) {
+  switch (type.toLowerCase()) {
     case "food":
       return <Utensils className="h-4 w-4" />
     case "transport":
@@ -28,12 +39,12 @@ const getActivityIcon = (type: string) => {
     case "sightseeing":
       return <Camera className="h-4 w-4" />
     default:
-      return <MapPin className="h-4 w-4" />
+      return <Star className="h-4 w-4" />
   }
 }
 
 const getActivityColor = (type: string) => {
-  switch (type) {
+  switch (type.toLowerCase()) {
     case "food":
       return "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300"
     case "transport":
@@ -49,134 +60,139 @@ const getActivityColor = (type: string) => {
   }
 }
 
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString)
-  const options: Intl.DateTimeFormatOptions = {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
+const formatTime = (time: string) => {
+  if (!time) return ""
+  try {
+    const [hours, minutes] = time.split(":")
+    const hour = Number.parseInt(hours)
+    const ampm = hour >= 12 ? "PM" : "AM"
+    const displayHour = hour % 12 || 12
+    return `${displayHour}:${minutes} ${ampm}`
+  } catch {
+    return time
   }
-  return date.toLocaleDateString("en-US", options)
+}
+
+const getWeekday = (dateString: string) => {
+  try {
+    const date = new Date(dateString)
+    return date.toLocaleDateString("en-US", { weekday: "long" })
+  } catch {
+    return ""
+  }
 }
 
 export function ItineraryDay({ day, date, location, activities }: ItineraryDayProps) {
   const [isExpanded, setIsExpanded] = useState(false)
 
-  const totalExpenses = activities.reduce((sum, activity) => sum + (activity.expense || 0), 0)
-  const activityCount = activities.length
+  const totalExpenses = activities.reduce((sum, activity) => {
+    return sum + (activity.expense?.amount || 0)
+  }, 0)
+
+  const weekday = getWeekday(date)
+  const dayLabel = day === 0 ? "D0" : `Day ${day}`
 
   return (
-    <Card className="w-full">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300">
-                <span className="text-sm font-bold">{day === 0 ? "D0" : `D${day}`}</span>
+    <Card className="overflow-hidden">
+      <div className="cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex flex-col items-center">
+                <div
+                  className={`rounded-full px-3 py-1 text-sm font-semibold ${
+                    day === 0
+                      ? "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300"
+                      : "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300"
+                  }`}
+                >
+                  {dayLabel}
+                </div>
+                {day === 0 && <span className="text-xs text-muted-foreground mt-1">Departure</span>}
               </div>
               <div>
-                <h3 className="text-lg font-semibold">{day === 0 ? "Departure Day" : `Day ${day}`}</h3>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>{formatDate(date)}</span>
-                  {location && (
-                    <>
-                      <span>•</span>
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        <span>{location}</span>
-                      </div>
-                    </>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold">{date}</h3>
+                  {weekday && (
+                    <Badge variant="outline" className="text-xs">
+                      {weekday}
+                    </Badge>
                   )}
                 </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
-                <span>
-                  {activityCount} {activityCount === 1 ? "activity" : "activities"}
-                </span>
-              </div>
-              {totalExpenses > 0 && (
-                <div className="flex items-center gap-1">
-                  <DollarSign className="h-4 w-4" />
-                  <span>₹{totalExpenses.toLocaleString()}</span>
+                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                  <MapPin className="h-4 w-4" />
+                  <span>{location}</span>
                 </div>
-              )}
+              </div>
             </div>
 
-            <Button variant="ghost" size="sm" onClick={() => setIsExpanded(!isExpanded)} className="h-8 w-8 p-0">
-              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <div className="text-sm text-muted-foreground">
+                  {activities.length} {activities.length === 1 ? "Activity" : "Activities"}
+                </div>
+                {totalExpenses > 0 && (
+                  <div className="text-sm font-medium text-emerald-600">₹{totalExpenses.toLocaleString()}</div>
+                )}
+              </div>
+              <Button variant="ghost" size="sm">
+                {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
+            </div>
           </div>
-        </div>
-      </CardHeader>
+        </CardContent>
+      </div>
 
       {isExpanded && (
-        <CardContent className="pt-0">
-          {activities.length > 0 ? (
-            <div className="space-y-4">
-              {activities.map((activity) => (
-                <div key={activity.id} className="flex gap-4 rounded-lg border p-4 transition-colors hover:bg-muted/50">
-                  <div className="flex-shrink-0">
-                    {activity.image && (
-                      <div className="h-16 w-16 overflow-hidden rounded-lg">
-                        <SafeImage src={activity.image} alt={activity.name} className="h-full w-full object-cover" />
-                      </div>
-                    )}
+        <CardContent className="border-t bg-gray-50/50 dark:bg-gray-900/20 p-4">
+          <div className="space-y-4">
+            {activities.length > 0 ? (
+              activities.map((activity) => (
+                <div
+                  key={activity.id}
+                  className="flex items-start gap-3 rounded-lg border bg-white dark:bg-gray-800 p-3"
+                >
+                  <div className={`rounded-full p-2 ${getActivityColor(activity.type)}`}>
+                    {getActivityIcon(activity.type)}
                   </div>
-
-                  <div className="flex-1 space-y-2">
+                  <div className="flex-1">
                     <div className="flex items-start justify-between">
                       <div>
                         <h4 className="font-medium">{activity.name}</h4>
                         {activity.description && (
-                          <p className="text-sm text-muted-foreground">{activity.description}</p>
+                          <p className="text-sm text-muted-foreground mt-1">{activity.description}</p>
                         )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className={getActivityColor(activity.type)}>
-                          <div className="flex items-center gap-1">
-                            {getActivityIcon(activity.type)}
-                            <span className="capitalize">{activity.type}</span>
-                          </div>
-                        </Badge>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      {activity.time && (
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          <span>{activity.time}</span>
+                        <div className="flex items-center gap-4 mt-2">
+                          {activity.time && (
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <Clock className="h-3 w-3" />
+                              <span>{formatTime(activity.time)}</span>
+                            </div>
+                          )}
+                          {activity.location && (
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <MapPin className="h-3 w-3" />
+                              <span>{activity.location}</span>
+                            </div>
+                          )}
                         </div>
-                      )}
-                      {activity.location && (
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          <span>{activity.location}</span>
-                        </div>
-                      )}
-                      {activity.expense && activity.expense > 0 && (
-                        <div className="flex items-center gap-1">
+                      </div>
+                      {activity.expense && activity.expense.amount > 0 && (
+                        <div className="flex items-center gap-1 text-sm font-medium text-emerald-600">
                           <DollarSign className="h-3 w-3" />
-                          <span>₹{activity.expense.toLocaleString()}</span>
+                          <span>₹{activity.expense.amount.toLocaleString()}</span>
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="py-8 text-center text-muted-foreground">
-              <p>No activities planned for this day yet.</p>
-            </div>
-          )}
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No activities planned for this day</p>
+              </div>
+            )}
+          </div>
         </CardContent>
       )}
     </Card>

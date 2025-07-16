@@ -6,6 +6,7 @@ import { ArrowLeft, MapPin, Utensils, Hotel, Star, Calendar, Bed, Users, Clock }
 import { ItineraryDay } from "@/components/itinerary-day"
 import {
   getItinerary,
+  getItineraries,
   getAccommodations,
   getComments,
   addComment,
@@ -57,6 +58,50 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
     return "Perfect for group adventures"
   }
 
+  // Helper function to find itinerary by slug-like destination
+  const findItineraryBySlug = async (slug: string): Promise<Itinerary | null> => {
+    try {
+      // First try direct ID lookup
+      const directItinerary = await getItinerary(slug)
+      if (directItinerary) return directItinerary
+
+      // Then try to find by slug-like matching
+      const allItineraries = await getItineraries()
+
+      // Convert slug back to possible destination names
+      const possibleNames = [
+        slug,
+        slug
+          .replace(/([A-Z])/g, " $1")
+          .trim(), // camelCase to words
+        slug.replace(/([a-z])([A-Z])/g, "$1 $2"), // camelCase to spaced
+        slug.charAt(0).toUpperCase() + slug.slice(1), // capitalize first letter
+        slug
+          .replace(/itinerary$/i, "")
+          .trim(), // remove "itinerary" suffix
+        decodeURIComponent(slug), // decode URL encoding
+      ]
+
+      for (const itinerary of allItineraries) {
+        // Check if destination matches any possible name
+        for (const name of possibleNames) {
+          if (
+            itinerary.destination.toLowerCase().replace(/\s+/g, "") === name.toLowerCase().replace(/\s+/g, "") ||
+            itinerary.destination.toLowerCase() === name.toLowerCase() ||
+            itinerary.id === name
+          ) {
+            return itinerary
+          }
+        }
+      }
+
+      return null
+    } catch (error) {
+      console.error("Error finding itinerary by slug:", error)
+      return null
+    }
+  }
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -64,9 +109,7 @@ export default function ItineraryPage({ params }: ItineraryPageProps) {
         setLoadingMessage("Loading itinerary details...")
         setLocalLoading(true)
 
-        // Convert destination slug to proper format for lookup
-        const destinationSlug = params.destination.toLowerCase().replace(/\s+/g, "")
-        const itineraryData = await getItinerary(destinationSlug)
+        const itineraryData = await findItineraryBySlug(params.destination)
 
         if (itineraryData) {
           setItinerary(itineraryData)

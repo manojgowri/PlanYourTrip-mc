@@ -12,10 +12,9 @@ import { ToastContainer } from "@/components/toast-container"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Plan Your Trip Amigos - Vietnam Travel Adventures",
-  description:
-    "Discover amazing travel itineraries and plan your perfect Vietnam adventure with detailed guides, tips, and local insights.",
-  keywords: "Vietnam travel, travel planning, itinerary, adventure, tourism, travel guide",
+  title: "Plan Your Trip Amigos - Travel Itinerary Planner",
+  description: "Plan your perfect trip with detailed itineraries, travel companions, and expert tips.",
+  keywords: "travel, itinerary, planning, vacation, trip, travel companions",
   authors: [{ name: "Plan Your Trip Amigos" }],
   creator: "Plan Your Trip Amigos",
   publisher: "Plan Your Trip Amigos",
@@ -25,34 +24,32 @@ export const metadata: Metadata = {
     telephone: false,
   },
   icons: {
-    icon: [{ url: "/favicon.ico" }, { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" }],
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+    ],
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
     other: [
-      {
-        rel: "android-chrome-192x192",
-        url: "/android-chrome-192x192.png",
-      },
-      {
-        rel: "android-chrome-512x512",
-        url: "/android-chrome-512x512.png",
-      },
+      { url: "/android-chrome-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/android-chrome-512x512.png", sizes: "512x512", type: "image/png" },
     ],
   },
   manifest: "/site.webmanifest",
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    url: "https://planyourtripamigos.vercel.app",
-    title: "Plan Your Trip Amigos - Vietnam Travel Adventures",
-    description:
-      "Discover amazing travel itineraries and plan your perfect Vietnam adventure with detailed guides, tips, and local insights.",
-    siteName: "Plan Your Trip Amigos",
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "Plan Your Trip Amigos - Vietnam Travel Adventures",
-    description:
-      "Discover amazing travel itineraries and plan your perfect Vietnam adventure with detailed guides, tips, and local insights.",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 }
 
@@ -66,7 +63,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <LoadingProvider>
-            <div className="relative flex min-h-screen flex-col">
+            <div className="min-h-screen flex flex-col">
               <Header />
               <main className="flex-1">{children}</main>
               <Footer />
