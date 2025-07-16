@@ -4,9 +4,9 @@ import { useLoading } from "@/contexts/loading-context"
 import { CustomLoader } from "./custom-loader"
 
 export function GlobalLoader() {
-  const { isLoading } = useLoading()
+  const { isLoading, loadingMessage } = useLoading()
 
   if (!isLoading) return null
 
-  return <CustomLoader />
+  return <CustomLoader message={loadingMessage} />
 }

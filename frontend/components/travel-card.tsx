@@ -5,7 +5,7 @@ import { Calendar, MapPin, CreditCard, Users, Heart } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { SafeImage } from "@/components/safe-image"
-import { calculateTotalExpenses, generateSlug } from "@/lib/data"
+import { calculateTotalExpenses } from "@/lib/data"
 import type { Itinerary } from "@/lib/models"
 
 interface TravelCardProps {
@@ -82,17 +82,16 @@ export function TravelCard({
     }
   }
 
-  // Generate URL-friendly slug
-  const slug = generateSlug(destination)
-
   // Determine travel recommendation
   const getTravelRecommendation = () => {
     if (actualTravellersCount === 1) {
       return { text: "Perfect for solo travel", icon: "👤", color: "text-blue-600" }
-    } else if (actualTravellersCount <= 3) {
-      return { text: "Great for couples/small groups", icon: "💑", color: "text-pink-600" }
-    } else {
+    } else if (actualTravellersCount === 2) {
+      return { text: "Great for couples", icon: "💑", color: "text-pink-600" }
+    } else if (actualTravellersCount <= 4) {
       return { text: "Recommended with friends", icon: "👥", color: "text-emerald-600" }
+    } else {
+      return { text: "Perfect for group adventures", icon: "🎉", color: "text-purple-600" }
     }
   }
 
@@ -163,7 +162,7 @@ export function TravelCard({
         </div>
 
         <Link
-          href={`/itinerary/${slug}`}
+          href={`/itinerary/${encodeURIComponent(id)}`}
           className="inline-flex items-center justify-center rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 w-full"
         >
           View Itinerary

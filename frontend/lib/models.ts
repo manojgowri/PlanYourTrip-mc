@@ -1,31 +1,16 @@
-export interface ChecklistItem {
-  id: string
-  text: string
-  completed: boolean
-  category: string
-}
-
-export interface TravelTip {
-  id: string
-  title: string
-  content: string
-  category: "money-saving" | "safety" | "cultural" | "navigation" | "photography" | "food" | "timing" | "general"
-}
-
-export interface Expense {
-  amount: number
-  currency: string
-  description?: string
-}
+// Type definitions for the application
 
 export interface Activity {
   id: string
-  name: string
-  type: string
   time: string
-  location: string
-  description?: string
-  expense?: Expense
+  title: string
+  description: string
+  type: "food" | "activity" | "travel" | "accommodation" | "must-visit"
+  expense?: {
+    amount: number
+    currency: string
+    category?: string
+  }
   image?: string
 }
 
@@ -37,86 +22,79 @@ export interface ItineraryDay {
   activities: Activity[]
 }
 
+export interface ChecklistItem {
+  id: string
+  title: string
+  completed: boolean
+  notes?: string
+}
+
+export interface TipItem {
+  id: string
+  title: string
+  description: string
+  category: "money-saving" | "safety" | "cultural" | "transportation" | "accommodation" | "general"
+  icon?: string
+}
+
 export interface Itinerary {
   id: string
   destination: string
+  image?: string
   description: string
   startDate: string
   endDate: string
   startTime?: string
   endTime?: string
-  totalBudget?: number
-  travellersCount?: number
-  travelStyle?: "solo" | "couple" | "group" | "family"
-  image: string
+  status: "online" | "completed"
+  season?: string
   rating: number
   reviewCount: number
   locations: string[]
   days: ItineraryDay[]
-  status: "draft" | "published" | "completed"
-  season?: string
+  travellersCount?: number
+  totalBudget?: number
   metadata?: {
     checklist?: ChecklistItem[]
-    tips?: TravelTip[]
+    tips?: TipItem[]
     [key: string]: any
   }
-}
-
-export interface Accommodation {
-  id: string
-  name: string
-  type: string
-  location: string
-  dates: string
-  price?: number
-  rating?: number
-  image?: string
-  destinationId?: string
 }
 
 export interface Location {
   id: string
   name: string
-  type: string
-  description?: string
-  coordinates?: {
-    lat: number
-    lng: number
-  }
-  destinationId?: string
+  dates: string
+  destinationId: string
+}
+
+export interface Accommodation {
+  id: string
+  name: string
+  location: string
+  dates: string
+  destinationId: string
 }
 
 export interface Companion {
   id: string
   name: string
-  role?: string
-  bio?: string
+  relationship: string
+  bio: string
   image?: string
-  socialMedia?: {
-    instagram?: string
-    twitter?: string
-    linkedin?: string
-  }
-  expertise?: string[]
-  languages?: string[]
+  instagramId?: string
 }
 
 export interface Comment {
   id: string
-  author: string
-  content: string
+  name: string
   date: string
-  rating?: number
+  content: string
+  rating: number
   itineraryId: string
 }
 
 export interface User {
-  id: string
   username: string
-  email: string
-  role: "admin" | "user"
-  profile?: {
-    name: string
-    avatar?: string
-  }
+  isAdmin: boolean
 }

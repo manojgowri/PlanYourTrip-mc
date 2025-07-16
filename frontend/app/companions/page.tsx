@@ -1,106 +1,73 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Instagram, Linkedin } from "lucide-react"
+import { Instagram, MapPin, Calendar } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { SafeImage } from "@/components/safe-image"
 import { getCompanions, type Companion } from "@/lib/data"
 import { useLoading } from "@/contexts/loading-context"
-import { SafeImage } from "@/components/safe-image"
 
 export default function CompanionsPage() {
-  const { setLoading, setLoadingMessage } = useLoading()
   const [companions, setCompanions] = useState<Companion[]>([])
   const [selectedCompanion, setSelectedCompanion] = useState<Companion | null>(null)
-  const [loading, setLocalLoading] = useState(true)
+  const { setLoading, setLoadingMessage } = useLoading()
 
   useEffect(() => {
     const fetchCompanions = async () => {
       try {
         setLoading(true)
         setLoadingMessage("Loading travel companions...")
-        setLocalLoading(true)
-
-        const data = await getCompanions()
-        setCompanions(data)
-        if (data.length > 0) {
-          setSelectedCompanion(data[0])
+        const companionsData = await getCompanions()
+        setCompanions(companionsData)
+        if (companionsData.length > 0) {
+          setSelectedCompanion(companionsData[0])
         }
       } catch (error) {
         console.error("Error fetching companions:", error)
       } finally {
         setLoading(false)
-        setLocalLoading(false)
       }
     }
 
     fetchCompanions()
   }, [setLoading, setLoadingMessage])
 
-  if (loading) {
-    return null // Loading handled by global loader
-  }
-
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="container mx-auto py-8 px-4">
-        <div className="text-center mb-8">
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4">Travel Companions</h1>
-          <p className="text-gray-400 max-w-2xl mx-auto">
-            Meet our experienced travel companions who will make your journey unforgettable. Each brings unique
-            expertise and local knowledge to enhance your travel experience.
-          </p>
+          <p className="text-gray-400 text-lg">Meet the amazing people who make our journeys unforgettable</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
-          {/* Companions List */}
-          <div className="space-y-4">
-            <h2 className="text-2xl font-semibold mb-4">Our Team</h2>
-            <div className="max-h-[600px] overflow-y-auto space-y-2 pr-2 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-[600px]">
+          {/* Companions List - Scrollable */}
+          <div className="lg:col-span-1">
+            <div className="h-full overflow-y-auto pr-2 space-y-2">
               {companions.map((companion) => (
                 <div
                   key={companion.id}
-                  className={`p-4 border border-gray-700 rounded-lg cursor-pointer transition-all duration-200 hover:border-gray-500 ${
-                    selectedCompanion?.id === companion.id ? "bg-gray-800 border-gray-500" : "bg-gray-900/50"
+                  className={`p-4 border border-gray-800 cursor-pointer transition-all duration-200 ${
+                    selectedCompanion?.id === companion.id
+                      ? "bg-gray-900 border-emerald-600"
+                      : "hover:bg-gray-900/50 hover:border-gray-700"
                   }`}
                   onClick={() => setSelectedCompanion(companion)}
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-white">{companion.name}</h3>
-                      {companion.role && (
-                        <p className="text-sm text-gray-400 uppercase tracking-wide">{companion.role}</p>
-                      )}
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+                      <SafeImage
+                        src={companion.image || "/placeholder.svg?height=48&width=48"}
+                        alt={companion.name}
+                        className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-300"
+                      />
                     </div>
-                    <div className="flex items-center space-x-2">
-                      {companion.socialMedia?.instagram && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="p-1 h-8 w-8 text-gray-400 hover:text-pink-400"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            window.open(`https://instagram.com/${companion.socialMedia.instagram}`, "_blank")
-                          }}
-                        >
-                          <Instagram className="h-4 w-4" />
-                        </Button>
-                      )}
-                      {companion.socialMedia?.linkedin && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="p-1 h-8 w-8 text-gray-400 hover:text-blue-400"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            window.open(`https://linkedin.com/in/${companion.socialMedia.linkedin}`, "_blank")
-                          }}
-                        >
-                          <Linkedin className="h-4 w-4" />
-                        </Button>
-                      )}
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-white truncate">{companion.name}</h3>
+                      <p className="text-sm text-gray-400 truncate">{companion.relationship}</p>
                     </div>
+                    {companion.instagramId && <Instagram className="h-4 w-4 text-gray-500" />}
                   </div>
                 </div>
               ))}
@@ -108,146 +75,116 @@ export default function CompanionsPage() {
           </div>
 
           {/* Selected Companion Details */}
-          <div className="lg:sticky lg:top-8">
+          <div className="lg:col-span-2">
             {selectedCompanion ? (
-              <Card className="bg-gray-900 border-gray-700 overflow-hidden">
-                <CardContent className="p-0">
-                  <div className="aspect-square relative overflow-hidden">
-                    <SafeImage
-                      src={selectedCompanion.image || "/placeholder.svg?height=400&width=400"}
-                      alt={selectedCompanion.name}
-                      className="w-full h-full object-cover transition-all duration-500 filter grayscale hover:grayscale-0"
-                      width={400}
-                      height={400}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                    <div className="absolute bottom-4 left-4 right-4">
-                      <h2 className="text-2xl font-bold text-white mb-1">{selectedCompanion.name}</h2>
-                      {selectedCompanion.role && (
-                        <p className="text-gray-300 uppercase tracking-wide text-sm">{selectedCompanion.role}</p>
-                      )}
+              <Card className="bg-gray-900 border-gray-800 h-full">
+                <CardContent className="p-0 h-full">
+                  <div className="grid grid-cols-1 md:grid-cols-2 h-full">
+                    {/* Image */}
+                    <div className="relative overflow-hidden">
+                      <SafeImage
+                        src={selectedCompanion.image || "/placeholder.svg?height=600&width=400"}
+                        alt={selectedCompanion.name}
+                        className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     </div>
-                  </div>
 
-                  <div className="p-6 space-y-6">
-                    {selectedCompanion.bio && (
-                      <div>
-                        <h3 className="text-lg font-semibold text-white mb-2">About</h3>
-                        <p className="text-gray-300 leading-relaxed">{selectedCompanion.bio}</p>
-                      </div>
-                    )}
-
-                    {selectedCompanion.expertise && selectedCompanion.expertise.length > 0 && (
-                      <div>
-                        <h3 className="text-lg font-semibold text-white mb-3">Expertise</h3>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedCompanion.expertise.map((skill, index) => (
-                            <Badge
-                              key={index}
-                              variant="secondary"
-                              className="bg-gray-800 text-gray-300 hover:bg-gray-700"
-                            >
-                              {skill}
-                            </Badge>
-                          ))}
+                    {/* Details */}
+                    <div className="p-8 flex flex-col justify-center">
+                      <div className="space-y-6">
+                        <div>
+                          <h2 className="text-3xl font-bold text-white mb-2">{selectedCompanion.name}</h2>
+                          <p className="text-emerald-400 font-medium text-lg">{selectedCompanion.relationship}</p>
                         </div>
-                      </div>
-                    )}
 
-                    {selectedCompanion.languages && selectedCompanion.languages.length > 0 && (
-                      <div>
-                        <h3 className="text-lg font-semibold text-white mb-3">Languages</h3>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedCompanion.languages.map((language, index) => (
-                            <Badge key={index} variant="outline" className="border-gray-600 text-gray-300">
-                              {language}
-                            </Badge>
-                          ))}
+                        {selectedCompanion.bio && (
+                          <div>
+                            <h3 className="text-lg font-semibold text-white mb-3">About</h3>
+                            <p className="text-gray-300 leading-relaxed">{selectedCompanion.bio}</p>
+                          </div>
+                        )}
+
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-3">
+                            <MapPin className="h-5 w-5 text-emerald-400" />
+                            <span className="text-gray-300">Travel Enthusiast</span>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <Calendar className="h-5 w-5 text-emerald-400" />
+                            <span className="text-gray-300">Active Traveler</span>
+                          </div>
                         </div>
-                      </div>
-                    )}
 
-                    {selectedCompanion.socialMedia && (
-                      <div>
-                        <h3 className="text-lg font-semibold text-white mb-3">Connect</h3>
-                        <div className="flex space-x-3">
-                          {selectedCompanion.socialMedia.instagram && (
+                        {selectedCompanion.instagramId && (
+                          <div className="pt-4">
                             <Button
                               variant="outline"
-                              size="sm"
-                              className="border-gray-600 text-gray-300 hover:bg-pink-600 hover:border-pink-600 hover:text-white bg-transparent"
+                              className="bg-transparent border-emerald-600 text-emerald-400 hover:bg-emerald-600 hover:text-white"
                               onClick={() =>
-                                window.open(
-                                  `https://instagram.com/${selectedCompanion.socialMedia?.instagram}`,
-                                  "_blank",
-                                )
+                                window.open(`https://instagram.com/${selectedCompanion.instagramId}`, "_blank")
                               }
                             >
                               <Instagram className="h-4 w-4 mr-2" />
-                              Instagram
+                              Follow on Instagram
                             </Button>
-                          )}
-                          {selectedCompanion.socialMedia.linkedin && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="border-gray-600 text-gray-300 hover:bg-blue-600 hover:border-blue-600 hover:text-white bg-transparent"
-                              onClick={() =>
-                                window.open(
-                                  `https://linkedin.com/in/${selectedCompanion.socialMedia?.linkedin}`,
-                                  "_blank",
-                                )
-                              }
-                            >
-                              <Linkedin className="h-4 w-4 mr-2" />
-                              LinkedIn
-                            </Button>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             ) : (
-              <div className="text-center py-12">
-                <p className="text-gray-400">Select a companion to view details</p>
+              <div className="h-full flex items-center justify-center">
+                <div className="text-center">
+                  <h3 className="text-xl font-semibold text-gray-400 mb-2">No Companion Selected</h3>
+                  <p className="text-gray-500">Select a companion from the list to view details</p>
+                </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Mobile Responsive Adjustments */}
-        <style jsx>{`
-          @media (max-width: 1024px) {
-            .grid-cols-1.lg\\:grid-cols-2 {
-              grid-template-columns: 1fr;
-            }
-            .lg\\:sticky {
-              position: static;
-            }
-            .max-h-\\[600px\\] {
-              max-height: 400px;
-            }
-          }
-          
-          .scrollbar-thin {
-            scrollbar-width: thin;
-          }
-          
-          .scrollbar-thumb-gray-600::-webkit-scrollbar-thumb {
-            background-color: #4b5563;
-            border-radius: 4px;
-          }
-          
-          .scrollbar-track-gray-800::-webkit-scrollbar-track {
-            background-color: #1f2937;
-          }
-          
-          .scrollbar-thin::-webkit-scrollbar {
-            width: 6px;
-          }
-        `}</style>
+        {/* Mobile Layout */}
+        <div className="lg:hidden mt-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {companions.map((companion) => (
+              <Card key={companion.id} className="bg-gray-900 border-gray-800">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
+                      <SafeImage
+                        src={companion.image || "/placeholder.svg?height=64&width=64"}
+                        alt={companion.name}
+                        className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-300"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-white">{companion.name}</h3>
+                      <p className="text-sm text-emerald-400">{companion.relationship}</p>
+                    </div>
+                  </div>
+
+                  {companion.bio && <p className="text-gray-300 text-sm mb-4 line-clamp-3">{companion.bio}</p>}
+
+                  {companion.instagramId && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full bg-transparent border-emerald-600 text-emerald-400 hover:bg-emerald-600 hover:text-white"
+                      onClick={() => window.open(`https://instagram.com/${companion.instagramId}`, "_blank")}
+                    >
+                      <Instagram className="h-4 w-4 mr-2" />
+                      Follow
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )

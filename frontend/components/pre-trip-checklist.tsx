@@ -1,10 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { Check, Plus, X, Edit2, Save, Lightbulb } from "lucide-react"
+import { Check, Plus, X, Edit3 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import type { ChecklistItem } from "@/lib/models"
 
@@ -19,40 +20,6 @@ interface PreTripChecklistProps {
   isAdmin?: boolean
 }
 
-const defaultChecklistItems = [
-  { text: "Check passport validity (6+ months)", category: "documents" },
-  { text: "Apply for visa if required", category: "documents" },
-  { text: "Book flight tickets", category: "travel" },
-  { text: "Reserve accommodation", category: "travel" },
-  { text: "Get travel insurance", category: "insurance" },
-  { text: "Notify bank of travel plans", category: "financial" },
-  { text: "Pack essential medications", category: "health" },
-  { text: "Check vaccination requirements", category: "health" },
-  { text: "Download offline maps", category: "preparation" },
-  { text: "Inform family/friends of itinerary", category: "safety" },
-]
-
-const getCategoryColor = (category: string) => {
-  switch (category.toLowerCase()) {
-    case "documents":
-      return "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300"
-    case "travel":
-      return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300"
-    case "insurance":
-      return "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300"
-    case "financial":
-      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300"
-    case "health":
-      return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300"
-    case "preparation":
-      return "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300"
-    case "safety":
-      return "bg-pink-100 text-pink-800 dark:bg-pink-900/20 dark:text-pink-300"
-    default:
-      return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300"
-  }
-}
-
 export function PreTripChecklist({
   destination,
   items,
@@ -63,49 +30,29 @@ export function PreTripChecklist({
   readOnly = false,
   isAdmin = false,
 }: PreTripChecklistProps) {
-  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
-  const [newItemText, setNewItemText] = useState("")
-  const [newItemCategory, setNewItemCategory] = useState("preparation")
+  const [isAddingItem, setIsAddingItem] = useState(false)
+  const [newItemTitle, setNewItemTitle] = useState("")
+  const [newItemNotes, setNewItemNotes] = useState("")
   const [editingItem, setEditingItem] = useState<string | null>(null)
-  const [editText, setEditText] = useState("")
-
-  const handleToggleSelection = (itemId: string) => {
-    if (isAdmin) {
-      const newSelected = new Set(selectedItems)
-      if (newSelected.has(itemId)) {
-        newSelected.delete(itemId)
-      } else {
-        newSelected.add(itemId)
-      }
-      setSelectedItems(newSelected)
-    } else if (onToggleItem) {
-      onToggleItem(itemId)
-    }
-  }
 
   const handleAddItem = () => {
-    if (newItemText.trim() && onAddItem) {
+    if (newItemTitle.trim() && onAddItem) {
       onAddItem({
-        text: newItemText.trim(),
-        category: newItemCategory,
+        title: newItemTitle.trim(),
+        notes: newItemNotes.trim() || undefined,
         completed: false,
       })
-      setNewItemText("")
-      setNewItemCategory("preparation")
+      setNewItemTitle("")
+      setNewItemNotes("")
+      setIsAddingItem(false)
     }
   }
 
-  const handleSaveEdit = (itemId: string) => {
-    if (editText.trim() && onEditItem) {
-      onEditItem(itemId, { text: editText.trim() })
+  const handleEditItem = (id: string, title: string, notes?: string) => {
+    if (onEditItem) {
+      onEditItem(id, { title, notes })
       setEditingItem(null)
-      setEditText("")
     }
-  }
-
-  const startEdit = (item: ChecklistItem) => {
-    setEditingItem(item.id)
-    setEditText(item.text)
   }
 
   const completedCount = items.filter((item) => item.completed).length
@@ -115,183 +62,183 @@ export function PreTripChecklist({
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Lightbulb className="h-5 w-5 text-emerald-600" />
-            <CardTitle>Pre-Trip Checklist for {destination}</CardTitle>
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <span>Pre-Trip Checklist</span>
+              <Badge variant="outline">
+                {completedCount}/{totalCount} completed
+              </Badge>
+            </CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">Essential items to prepare for your {destination} trip</p>
           </div>
-          {!readOnly && (
-            <Badge variant="outline">
-              {completedCount}/{totalCount} completed
-            </Badge>
+          {isAdmin && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsAddingItem(true)}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Add Item
+            </Button>
           )}
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Admin: Default Items Selection */}
-        {isAdmin && (
-          <div className="space-y-4">
-            <h4 className="font-medium text-sm text-muted-foreground">Select items to include in the checklist:</h4>
-            <div className="grid grid-cols-1 gap-2">
-              {defaultChecklistItems.map((item, index) => {
-                const itemId = `default-${index}`
-                const isSelected = selectedItems.has(itemId)
-                return (
-                  <div
-                    key={itemId}
-                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                      isSelected
-                        ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800"
-                        : "hover:bg-gray-50 dark:hover:bg-gray-800"
-                    }`}
-                    onClick={() => handleToggleSelection(itemId)}
-                  >
-                    <div
-                      className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                        isSelected
-                          ? "bg-emerald-600 border-emerald-600 text-white"
-                          : "border-gray-300 dark:border-gray-600"
-                      }`}
+
+      <CardContent className="space-y-3">
+        {/* Progress Bar */}
+        {totalCount > 0 && (
+          <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
+            <div
+              className="bg-emerald-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${(completedCount / totalCount) * 100}%` }}
+            />
+          </div>
+        )}
+
+        {/* Checklist Items */}
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className={`flex items-start gap-3 p-3 rounded-lg border transition-all ${
+              item.completed
+                ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800"
+                : "bg-background hover:bg-muted/50"
+            }`}
+          >
+            {/* Checkbox */}
+            <button
+              onClick={() => !readOnly && onToggleItem?.(item.id)}
+              disabled={readOnly}
+              className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                item.completed
+                  ? "bg-emerald-600 border-emerald-600 text-white"
+                  : "border-gray-300 hover:border-emerald-400 dark:border-gray-600"
+              } ${readOnly ? "cursor-default" : "cursor-pointer"}`}
+            >
+              {item.completed && <Check className="h-3 w-3" />}
+            </button>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              {editingItem === item.id ? (
+                <div className="space-y-2">
+                  <Input
+                    defaultValue={item.title}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const target = e.target as HTMLInputElement
+                        const notesInput = target.parentElement?.querySelector("textarea") as HTMLTextAreaElement
+                        handleEditItem(item.id, target.value, notesInput?.value)
+                      }
+                    }}
+                  />
+                  <Textarea defaultValue={item.notes || ""} placeholder="Add notes (optional)" rows={2} />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        const titleInput = document.querySelector(
+                          `input[defaultValue="${item.title}"]`,
+                        ) as HTMLInputElement
+                        const notesInput = titleInput?.parentElement?.querySelector("textarea") as HTMLTextAreaElement
+                        handleEditItem(item.id, titleInput?.value || item.title, notesInput?.value)
+                      }}
                     >
-                      {isSelected && <Check className="h-3 w-3" />}
-                    </div>
-                    <div className="flex-1">
-                      <span className={isSelected ? "text-emerald-700 dark:text-emerald-300" : ""}>{item.text}</span>
-                      <Badge className={`ml-2 ${getCategoryColor(item.category)}`} variant="secondary">
-                        {item.category}
-                      </Badge>
-                    </div>
+                      Save
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setEditingItem(null)}>
+                      Cancel
+                    </Button>
                   </div>
-                )
-              })}
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <h4 className={`font-medium ${item.completed ? "text-emerald-700 dark:text-emerald-300" : ""}`}>
+                      {item.title}
+                    </h4>
+                    {isAdmin && (
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingItem(item.id)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Edit3 className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onDeleteItem?.(item.id)}
+                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  {item.notes && <p className="text-sm text-muted-foreground mt-1">{item.notes}</p>}
+                </>
+              )}
             </div>
           </div>
-        )}
+        ))}
 
-        {/* User: Saved Checklist Items */}
-        {!isAdmin && items.length > 0 && (
-          <div className="space-y-2">
-            {items.map((item) => (
-              <div
-                key={item.id}
-                className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
-                  item.completed
-                    ? "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800"
-                    : "hover:bg-gray-50 dark:hover:bg-gray-800"
-                }`}
-              >
-                <button
-                  onClick={() => handleToggleSelection(item.id)}
-                  className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                    item.completed
-                      ? "bg-green-600 border-green-600 text-white"
-                      : "border-gray-300 dark:border-gray-600 hover:border-green-400"
-                  }`}
-                  disabled={readOnly}
-                >
-                  {item.completed && <Check className="h-3 w-3" />}
-                </button>
-                <div className="flex-1">
-                  {editingItem === item.id ? (
-                    <div className="flex items-center gap-2">
-                      <Input
-                        value={editText}
-                        onChange={(e) => setEditText(e.target.value)}
-                        className="flex-1"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            handleSaveEdit(item.id)
-                          } else if (e.key === "Escape") {
-                            setEditingItem(null)
-                            setEditText("")
-                          }
-                        }}
-                      />
-                      <Button size="sm" onClick={() => handleSaveEdit(item.id)}>
-                        <Save className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setEditingItem(null)
-                          setEditText("")
-                        }}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className={`${item.completed ? "text-green-700 dark:text-green-300" : ""}`}>
-                          {item.text}
-                        </span>
-                        {item.category && (
-                          <Badge className={`ml-2 ${getCategoryColor(item.category)}`} variant="secondary">
-                            {item.category}
-                          </Badge>
-                        )}
-                      </div>
-                      {!readOnly && (
-                        <div className="flex items-center gap-1">
-                          <Button size="sm" variant="ghost" onClick={() => startEdit(item)}>
-                            <Edit2 className="h-3 w-3" />
-                          </Button>
-                          {onDeleteItem && (
-                            <Button size="sm" variant="ghost" onClick={() => onDeleteItem(item.id)}>
-                              <X className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Add Custom Item */}
-        {!readOnly && onAddItem && (
-          <div className="border-t pt-4">
-            <div className="flex items-center gap-2">
+        {/* Add New Item Form */}
+        {isAddingItem && (
+          <div className="p-3 border rounded-lg bg-muted/50">
+            <div className="space-y-3">
               <Input
-                placeholder="Add custom checklist item..."
-                value={newItemText}
-                onChange={(e) => setNewItemText(e.target.value)}
+                placeholder="Enter checklist item..."
+                value={newItemTitle}
+                onChange={(e) => setNewItemTitle(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault()
                     handleAddItem()
                   }
                 }}
-                className="flex-1"
               />
-              <select
-                value={newItemCategory}
-                onChange={(e) => setNewItemCategory(e.target.value)}
-                className="px-3 py-2 border rounded-md bg-background"
-              >
-                <option value="documents">Documents</option>
-                <option value="travel">Travel</option>
-                <option value="insurance">Insurance</option>
-                <option value="financial">Financial</option>
-                <option value="health">Health</option>
-                <option value="preparation">Preparation</option>
-                <option value="safety">Safety</option>
-              </select>
-              <Button onClick={handleAddItem} disabled={!newItemText.trim()}>
-                <Plus className="h-4 w-4" />
-              </Button>
+              <Textarea
+                placeholder="Add notes (optional)"
+                value={newItemNotes}
+                onChange={(e) => setNewItemNotes(e.target.value)}
+                rows={2}
+              />
+              <div className="flex gap-2">
+                <Button size="sm" onClick={handleAddItem} disabled={!newItemTitle.trim()}>
+                  Add Item
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setIsAddingItem(false)
+                    setNewItemTitle("")
+                    setNewItemNotes("")
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
             </div>
           </div>
         )}
 
-        {items.length === 0 && !isAdmin && (
+        {/* Empty State */}
+        {items.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
-            <Lightbulb className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>No checklist items have been added yet.</p>
-            <p className="text-sm">The admin can add items for this destination.</p>
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+              <Check className="h-8 w-8" />
+            </div>
+            <p className="font-medium">No checklist items yet</p>
+            <p className="text-sm">
+              {isAdmin
+                ? "Add items to help travelers prepare for their trip"
+                : "Check back later for pre-trip preparation items"}
+            </p>
           </div>
         )}
       </CardContent>
