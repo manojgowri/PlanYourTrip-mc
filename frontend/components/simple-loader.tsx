@@ -1,10 +1,8 @@
 "use client"
 
-import Lottie from "lottie-react"
-import travelLoader from "@/public/lottie/travel-loader.json"
 import { motion } from "framer-motion"
 
-export function SplashLoader() {
+export function SimpleLoader() {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -13,7 +11,7 @@ export function SplashLoader() {
       transition={{ duration: 0.5 }}
       className="fixed inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 text-white z-[9999]"
     >
-      <Lottie animationData={travelLoader} loop={true} autoplay={true} className="w-64 h-64" />
+      <span className="loader"></span>
       <motion.h1
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}

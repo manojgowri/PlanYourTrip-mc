@@ -9,6 +9,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@auth/core": "latest",
     "@emotion/is-prop-valid": "latest",
     "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-accordion": "1.2.2",
@@ -52,11 +53,12 @@
     "framer-motion": "latest",
     "input-otp": "1.4.1",
     "jsonwebtoken": "latest",
-    "lottie-react": "latest",
     "lucide-react": "^0.454.0",
     "mongoose": "latest",
     "next": "14.2.16",
+    "next-auth": "latest",
     "next-themes": "latest",
+    "nodemailer": "latest",
     "react": "^18",
     "react-day-picker": "8.10.1",
     "react-dom": "^18",
