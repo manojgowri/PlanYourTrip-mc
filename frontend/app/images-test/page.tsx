@@ -4,123 +4,106 @@ import { useState } from "react"
 import { ImageUpload } from "@/components/image-upload"
 import { SafeImage } from "@/components/safe-image"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { useToast } from "@/hooks/use-toast"
 
 export default function ImagesTestPage() {
-  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | undefined>(undefined)
-  const [manualImageUrl, setManualImageUrl] = useState<string>("")
-  const [displayImageUrl, setDisplayImageUrl] = useState<string | undefined>(undefined)
-  const { toast } = useToast()
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>("")
+  const [customImageUrl, setCustomImageUrl] = useState<string>("")
+  const [displayImageUrl, setDisplayImageUrl] = useState<string>("")
 
   const handleImageUpload = (url: string) => {
     setUploadedImageUrl(url)
     setDisplayImageUrl(url)
-    toast({
-      title: "Image Uploaded",
-      description: "The image has been successfully uploaded and displayed.",
-    })
   }
 
-  const handleDisplayManualImage = () => {
-    if (manualImageUrl.trim()) {
-      setDisplayImageUrl(manualImageUrl)
-      toast({
-        title: "Image Displayed",
-        description: "Manual image URL is now displayed.",
-      })
-    } else {
-      toast({
-        title: "Error",
-        description: "Please enter a valid image URL.",
-        variant: "destructive",
-      })
-    }
+  const handleDisplayCustomImage = () => {
+    setDisplayImageUrl(customImageUrl)
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">Image Test Page</h1>
+    <div className="container mx-auto p-4 space-y-8">
+      <h1 className="text-4xl font-bold text-center">Image Handling Test Page</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Upload Image</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ImageUpload onImageUpload={handleImageUpload} initialImageUrl={uploadedImageUrl} />
-          </CardContent>
-        </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Image Upload Component Test</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <ImageUpload onImageUpload={handleImageUpload} initialImageUrl={uploadedImageUrl} />
+          {uploadedImageUrl && (
+            <p className="text-sm text-muted-foreground">
+              Uploaded URL: <span className="font-mono break-all">{uploadedImageUrl}</span>
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Display Image from URL</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="manual-image-url">Enter Image URL</Label>
-              <div className="flex gap-2 mt-1">
-                <Input
-                  id="manual-image-url"
-                  type="text"
-                  placeholder="https://example.com/image.jpg"
-                  value={manualImageUrl}
-                  onChange={(e) => setManualImageUrl(e.target.value)}
-                />
-                <Button onClick={handleDisplayManualImage}>Display</Button>
-              </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>SafeImage Component Test</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="custom-image-url">Enter Image URL</Label>
+            <div className="flex gap-2">
+              <Input
+                id="custom-image-url"
+                placeholder="e.g., https://example.com/image.jpg or /placeholder.svg"
+                value={customImageUrl}
+                onChange={(e) => setCustomImageUrl(e.target.value)}
+              />
+              <Button onClick={handleDisplayCustomImage}>Display</Button>
             </div>
-            {displayImageUrl && (
-              <div className="mt-4">
-                <Label>Displayed Image:</Label>
-                <div className="relative w-full h-64 mt-2 rounded-md overflow-hidden shadow-sm">
-                  <SafeImage src={displayImageUrl} alt="Displayed Image" className="object-contain w-full h-full" />
-                </div>
-                <p className="text-sm text-muted-foreground mt-2 break-all">URL: {displayImageUrl}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+          </div>
 
-      <Card className="mt-8">
+          {displayImageUrl ? (
+            <div className="w-full h-64 relative border rounded-md overflow-hidden">
+              <SafeImage
+                src={displayImageUrl}
+                alt="Displayed Image"
+                layout="fill"
+                objectFit="cover"
+                className="rounded-md"
+              />
+            </div>
+          ) : (
+            <div className="w-full h-64 flex items-center justify-center border rounded-md text-muted-foreground">
+              No image to display. Enter a URL or upload one.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader>
           <CardTitle>Placeholder Image Examples</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          <div className="text-center">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="w-full h-40 relative border rounded-md overflow-hidden">
             <SafeImage
-              src="/placeholder.svg?height=100&width=100"
-              alt="Placeholder 100x100"
-              className="w-24 h-24 object-cover mx-auto rounded-md"
+              src="/placeholder.svg?height=160&width=240"
+              alt="Placeholder 1"
+              layout="fill"
+              objectFit="cover"
             />
-            <p className="text-sm text-muted-foreground mt-1">100x100</p>
           </div>
-          <div className="text-center">
+          <div className="w-full h-40 relative border rounded-md overflow-hidden">
             <SafeImage
-              src="/placeholder.svg?height=200&width=300"
-              alt="Placeholder 200x300"
-              className="w-auto h-24 object-cover mx-auto rounded-md"
+              src="/placeholder.svg?text=Custom+Text&height=160&width=240"
+              alt="Placeholder 2"
+              layout="fill"
+              objectFit="cover"
             />
-            <p className="text-sm text-muted-foreground mt-1">200x300</p>
           </div>
-          <div className="text-center">
+          <div className="w-full h-40 relative border rounded-md overflow-hidden">
             <SafeImage
-              src="/placeholder.svg?height=300&width=200"
-              alt="Placeholder 300x200"
-              className="w-auto h-32 object-cover mx-auto rounded-md"
+              src="/placeholder.svg?height=160&width=240&color=red"
+              alt="Placeholder 3"
+              layout="fill"
+              objectFit="cover"
             />
-            <p className="text-sm text-muted-foreground mt-1">300x200</p>
-          </div>
-          <div className="text-center">
-            <SafeImage
-              src="/placeholder.svg?height=150&width=400"
-              alt="Placeholder 150x400"
-              className="w-auto h-20 object-cover mx-auto rounded-md"
-            />
-            <p className="text-sm text-muted-foreground mt-1">150x400</p>
           </div>
         </CardContent>
       </Card>

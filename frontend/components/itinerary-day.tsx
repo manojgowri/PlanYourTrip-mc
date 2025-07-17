@@ -1,68 +1,34 @@
 "use client"
 
-import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { ActivityFormModal } from "@/components/activity-form-modal"
 import { ItineraryActivitiesManager } from "@/components/itinerary-activities-manager"
-import type { Day, Activity } from "@/lib/models"
-import { Plus } from "lucide-react"
+import type { ItineraryDay as ItineraryDayType } from "@/lib/models"
+import { format } from "date-fns"
 
 interface ItineraryDayProps {
-  day: Day
+  day: ItineraryDayType
   dayNumber: number
   itineraryId: string
   isAdmin: boolean
 }
 
 export function ItineraryDay({ day, dayNumber, itineraryId, isAdmin }: ItineraryDayProps) {
-  const [isActivityModalOpen, setIsActivityModalOpen] = useState(false)
-  const [editingActivity, setEditingActivity] = useState<Activity | null>(null)
-
-  const handleAddActivityClick = () => {
-    setEditingActivity(null)
-    setIsActivityModalOpen(true)
-  }
-
-  const handleEditActivity = (activity: Activity) => {
-    setEditingActivity(activity)
-    setIsActivityModalOpen(true)
-  }
-
-  const handleActivityModalClose = () => {
-    setIsActivityModalOpen(false)
-    setEditingActivity(null)
-  }
+  const formattedDate = day.date ? format(new Date(day.date), "PPP") : "Date not set"
 
   return (
     <Card className="shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-xl font-semibold">
-          Day {dayNumber}: {day.date}
+      <CardHeader>
+        <CardTitle className="flex justify-between items-center">
+          <span>
+            Day {dayNumber}: {day.title}
+          </span>
+          <span className="text-sm text-muted-foreground font-normal">{formattedDate}</span>
         </CardTitle>
-        {isAdmin && (
-          <Button size="sm" onClick={handleAddActivityClick}>
-            <Plus className="mr-2 h-4 w-4" /> Add Activity
-          </Button>
-        )}
       </CardHeader>
-      <CardContent>
-        <ItineraryActivitiesManager
-          itineraryId={itineraryId}
-          dayIndex={dayNumber - 1} // Convert day number to 0-based index
-          initialActivities={day.activities}
-          isAdmin={isAdmin}
-          onEditActivity={handleEditActivity}
-        />
+      <CardContent className="p-4">
+        <p className="text-muted-foreground mb-4">{day.description}</p>
+        <ItineraryActivitiesManager itineraryId={itineraryId} day={day} isAdmin={isAdmin} />
       </CardContent>
-
-      <ActivityFormModal
-        isOpen={isActivityModalOpen}
-        onClose={handleActivityModalClose}
-        itineraryId={itineraryId}
-        dayIndex={dayNumber - 1}
-        initialActivity={editingActivity}
-      />
     </Card>
   )
 }

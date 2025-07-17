@@ -1,35 +1,34 @@
 import type React from "react"
-import { ThemeProvider } from "@/components/theme-provider"
-import "./globals.css"
-import { cn } from "@/lib/utils"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
-import { ToastContainer } from "@/components/toast-container"
-import OfflineIndicator from "@/components/offline-indicator"
-import LanguageSelector from "@/components/language-selector"
-import Footer from "@/components/footer"
+import "./globals.css"
+import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/toast"
+import ClientLayout from "./client-layout"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Vietnam Travel Itinerary",
-  description: "Explore Vietnam with our curated travel itineraries.",
+  title: "Travel Itinerary Planner",
+  description: "Plan your perfect trip with ease.",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+  manifest: "/site.webmanifest",
 }
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode
-}) {
+}>) {
   return (
-    <html lang="en">
-      <body className={cn(inter.className, "antialiased")}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <OfflineIndicator />
-          <LanguageSelector />
-          {children}
-          <ToastContainer />
-          <Footer />
+          <ClientLayout>{children}</ClientLayout>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

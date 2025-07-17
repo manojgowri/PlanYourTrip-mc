@@ -1,36 +1,39 @@
-// This is a placeholder for image utility functions.
-// In a real application, you would integrate with an image upload service
-// like Vercel Blob, Cloudinary, AWS S3, etc.
+// This is a mock function for image upload.
+// In a real application, you would integrate with a cloud storage service like Vercel Blob, AWS S3, Cloudinary, etc.
 
-export async function uploadImage(file: File): Promise<string> {
-  // Simulate an API call to an image upload service
+export const uploadImage = async (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
+    if (!file) {
+      reject("No file provided.")
+      return
+    }
+
+    // Simulate network delay
     setTimeout(() => {
-      if (file.size > 5 * 1024 * 1024) {
-        // Example: Limit to 5MB
-        reject(new Error("File size exceeds 5MB limit."))
-      } else {
-        // In a real scenario, you'd upload the file and get a public URL
-        // For now, we'll return a placeholder URL
-        const reader = new FileReader()
-        reader.onloadend = () => {
-          // This is a data URL, not suitable for production storage
-          // but works for immediate preview in the browser.
-          resolve(reader.result as string)
-        }
-        reader.onerror = reject
-        reader.readAsDataURL(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        // In a real scenario, this would be the URL returned by your storage service
+        // For now, we'll use a data URL or a placeholder
+        const mockImageUrl = `/placeholder.svg?text=Uploaded+Image&width=400&height=300`
+        console.log("Simulated upload complete. Mock URL:", mockImageUrl)
+        resolve(mockImageUrl)
       }
-    }, 1500) // Simulate network delay
+      reader.onerror = (error) => {
+        reject(error)
+      }
+      // For a real upload, you'd send the file to a server endpoint
+      // For this mock, we just read it to trigger onloadend
+      reader.readAsDataURL(file)
+    }, 1500) // Simulate 1.5 seconds upload time
   })
 }
 
-export function isValidImageUrl(url: string): boolean {
-  // Basic URL validation, can be expanded
-  try {
-    new URL(url)
-    return true
-  } catch (e) {
-    return false
-  }
+export const deleteImage = async (imageUrl: string): Promise<void> => {
+  return new Promise((resolve) => {
+    // Simulate deletion from storage
+    console.log("Simulating deletion of image:", imageUrl)
+    setTimeout(() => {
+      resolve()
+    }, 500)
+  })
 }

@@ -1,126 +1,184 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { CardContent } from "@/components/ui/card"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Edit, Trash2, DollarSign, MapPin, Clock } from "lucide-react"
-import { deleteActivity } from "@/lib/data"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ActivityFormModal } from "@/components/activity-form-modal"
+import type { ItineraryDay, Activity } from "@/lib/models"
+import { addActivityToDay, updateActivityInDay, deleteActivityFromDay } from "@/lib/data"
 import { useToast } from "@/hooks/use-toast"
-import type { Activity } from "@/lib/models"
-import { formatCurrency } from "@/lib/currency-utils"
+import { PlusCircle, Edit, Trash2 } from "lucide-react"
+import { SafeImage } from "./safe-image"
 
 interface ItineraryActivitiesManagerProps {
   itineraryId: string
-  dayIndex: number
-  initialActivities: Activity[]
+  day: ItineraryDay
   isAdmin: boolean
-  onEditActivity: (activity: Activity) => void
 }
 
-export function ItineraryActivitiesManager({
-  itineraryId,
-  dayIndex,
-  initialActivities,
-  isAdmin,
-  onEditActivity,
-}: ItineraryActivitiesManagerProps) {
-  const [activities, setActivities] = useState<Activity[]>(initialActivities)
+export function ItineraryActivitiesManager({ itineraryId, day, isAdmin }: ItineraryActivitiesManagerProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingActivity, setEditingActivity] = useState<Activity | undefined>(undefined)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
 
-  useEffect(() => {
-    setActivities(initialActivities)
-  }, [initialActivities])
+  const handleAddActivity = () => {
+    if (!isAdmin) {
+      toast({
+        title: "View Mode",
+        description: "Activities can only be added in Admin Mode.",
+        variant: "default",
+      })
+      return
+    }
+    setEditingActivity(undefined)
+    setIsModalOpen(true)
+  }
+
+  const handleEditActivity = (activity: Activity) => {
+    if (!isAdmin) {
+      toast({
+        title: "View Mode",
+        description: "Activities can only be edited in Admin Mode.",
+        variant: "default",
+      })
+      return
+    }
+    setEditingActivity(activity)
+    setIsModalOpen(true)
+  }
 
   const handleDeleteActivity = async (activityId: string) => {
     if (!isAdmin) {
       toast({
-        title: "Admin Mode",
-        description: "Activities can only be deleted by administrators.",
+        title: "View Mode",
+        description: "Activities can only be deleted in Admin Mode.",
         variant: "default",
       })
       return
     }
 
-    if (window.confirm("Are you sure you want to delete this activity?")) {
-      try {
-        await deleteActivity(itineraryId, dayIndex, activityId)
-        setActivities((prev) => prev.filter((activity) => activity._id !== activityId))
+    if (!window.confirm("Are you sure you want to delete this activity?")) {
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      await deleteActivityFromDay(itineraryId, day._id, activityId)
+      toast({
+        title: "Activity Deleted",
+        description: "Activity removed successfully.",
+      })
+    } catch (error) {
+      console.error("Error deleting activity:", error)
+      toast({
+        title: "Error",
+        description: "Failed to delete activity. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleSubmitActivity = async (activityData: Omit<Activity, "_id">) => {
+    setIsSubmitting(true)
+    try {
+      if (editingActivity) {
+        await updateActivityInDay(itineraryId, day._id, editingActivity._id, activityData)
         toast({
-          title: "Activity Deleted",
-          description: "Activity removed successfully.",
+          title: "Activity Updated",
+          description: "Activity details saved successfully.",
         })
-      } catch (error) {
-        console.error("Failed to delete activity:", error)
+      } else {
+        await addActivityToDay(itineraryId, day._id, activityData)
         toast({
-          title: "Error",
-          description: "Failed to delete activity. Please try again.",
-          variant: "destructive",
+          title: "Activity Added",
+          description: "New activity added to the day.",
         })
       }
+      setIsModalOpen(false)
+    } catch (error) {
+      console.error("Error saving activity:", error)
+      toast({
+        title: "Error",
+        description: "Failed to save activity. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   return (
-    <CardContent className="p-0">
-      {activities.length > 0 ? (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Time</TableHead>
-              <TableHead>Activity</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead className="text-right">Cost</TableHead>
-              {isAdmin && <TableHead className="text-right">Actions</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {activities.map((activity) => (
-              <TableRow key={activity._id}>
-                <TableCell className="font-medium flex items-center gap-1">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  {activity.time}
-                </TableCell>
-                <TableCell>{activity.name}</TableCell>
-                <TableCell className="flex items-center gap-1">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  {activity.location}
-                </TableCell>
-                <TableCell className="text-right flex items-center justify-end gap-1">
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  {formatCurrency(activity.cost || 0, "INR")}
-                </TableCell>
-                {isAdmin && (
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
+    <Card className="shadow-sm">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-xl font-semibold">Activities</CardTitle>
+        <Button onClick={handleAddActivity} size="sm" disabled={isSubmitting || !isAdmin}>
+          <PlusCircle className="h-4 w-4 mr-2" /> Add Activity
+        </Button>
+      </CardHeader>
+      <CardContent className="p-4">
+        {day.activities.length === 0 ? (
+          <p className="text-muted-foreground text-sm">No activities planned for this day yet.</p>
+        ) : (
+          <ul className="space-y-4">
+            {day.activities.map((activity) => (
+              <li key={activity._id} className="flex items-start gap-4 p-3 border rounded-md">
+                {activity.imageUrl && (
+                  <div className="relative w-24 h-24 flex-shrink-0 rounded-md overflow-hidden">
+                    <SafeImage src={activity.imageUrl} alt={activity.title} layout="fill" objectFit="cover" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-semibold text-lg">{activity.title}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {activity.time} - {activity.location}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="icon"
-                        className="h-8 w-8 bg-transparent"
-                        onClick={() => onEditActivity(activity)}
+                        onClick={() => handleEditActivity(activity)}
+                        disabled={isSubmitting || !isAdmin}
+                        className="h-8 w-8"
                       >
                         <Edit className="h-4 w-4" />
-                        <span className="sr-only">Edit</span>
+                        <span className="sr-only">Edit activity</span>
                       </Button>
                       <Button
-                        variant="destructive"
+                        variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
                         onClick={() => handleDeleteActivity(activity._id)}
+                        disabled={isSubmitting || !isAdmin}
+                        className="h-8 w-8 text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Delete</span>
+                        <span className="sr-only">Delete activity</span>
                       </Button>
                     </div>
-                  </TableCell>
-                )}
-              </TableRow>
+                  </div>
+                  <p className="text-sm mt-1">{activity.description}</p>
+                  <span className="inline-block mt-2 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full dark:bg-blue-900 dark:text-blue-200">
+                    {activity.type}
+                  </span>
+                </div>
+              </li>
             ))}
-          </TableBody>
-        </Table>
-      ) : (
-        <p className="text-muted-foreground text-center py-4">No activities planned for this day.</p>
-      )}
-    </CardContent>
+          </ul>
+        )}
+      </CardContent>
+
+      <ActivityFormModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleSubmitActivity}
+        initialData={editingActivity}
+        isSubmitting={isSubmitting}
+      />
+    </Card>
   )
 }

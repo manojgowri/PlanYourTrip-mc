@@ -1,20 +1,45 @@
 "use client"
 
-import { useTheme } from "next-themes"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Sun, Moon } from "lucide-react"
+import { Eye, EyeOff } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
-export function ModeToggle() {
-  const { theme, setTheme } = useTheme()
+interface ModeToggleProps {
+  initialAdminMode?: boolean
+  onToggle?: (isAdmin: boolean) => void
+}
 
-  const toggleTheme = () => {
-    setTheme(theme === "light" ? "dark" : "light")
+export function ModeToggle({ initialAdminMode = false, onToggle }: ModeToggleProps) {
+  const [isAdminMode, setIsAdminMode] = useState(initialAdminMode)
+  const { toast } = useToast()
+
+  const toggleMode = () => {
+    const newMode = !isAdminMode
+    setIsAdminMode(newMode)
+    onToggle?.(newMode)
+    toast({
+      title: "Mode Changed",
+      description: `You are now in ${newMode ? "Admin Mode" : "View Mode"}.`,
+      variant: "default",
+    })
   }
 
   return (
-    <Button variant="outline" size="icon" onClick={toggleTheme}>
-      {theme === "light" ? <Sun className="h-[1.2rem] w-[1.2rem]" /> : <Moon className="h-[1.2rem] w-[1.2rem]" />}
-      <span className="sr-only">Toggle theme</span>
+    <Button
+      variant="outline"
+      onClick={toggleMode}
+      className={isAdminMode ? "bg-blue-500 text-white hover:bg-blue-600" : ""}
+    >
+      {isAdminMode ? (
+        <>
+          <EyeOff className="h-4 w-4 mr-2" /> Admin Mode
+        </>
+      ) : (
+        <>
+          <Eye className="h-4 w-4 mr-2" /> View Mode
+        </>
+      )}
     </Button>
   )
 }

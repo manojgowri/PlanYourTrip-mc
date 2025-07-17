@@ -5,6 +5,7 @@ export const languages = {
   es: { code: "es", name: "Spanish", flag: "🇪🇸" },
   fr: { code: "fr", name: "French", flag: "🇫🇷" },
   de: { code: "de", name: "German", flag: "🇩🇪" },
+  hi: { code: "hi", name: "हिंदी", flag: "🇮🇳" }, // Added Hindi language
 }
 
 // Default language
@@ -83,6 +84,86 @@ const translations: Record<string, TranslationDictionary> = {
     error: "Đã xảy ra lỗi",
     offline: "Bạn đang ngoại tuyến",
   },
+  es: {
+    welcome: "Bienvenido a Plan Your Trip Amigos",
+    home: "Inicio",
+    itineraries: "Itinerarios",
+    companions: "Compañeros",
+    admin: "Admin",
+    login: "Iniciar sesión",
+    logout: "Cerrar sesión",
+    darkMode: "Modo oscuro",
+    lightMode: "Modo claro",
+    addTrip: "Agregar viaje",
+    viewDetails: "Ver detalles",
+    editTrip: "Editar viaje",
+    deleteTrip: "Eliminar viaje",
+    saveChanges: "Guardar cambios",
+    cancel: "Cancelar",
+    loading: "Cargando...",
+    error: "Ocurrió un error",
+    offline: "Estás desconectado",
+  },
+  fr: {
+    welcome: "Bienvenue à Plan Your Trip Amigos",
+    home: "Accueil",
+    itineraries: "Itinéraires",
+    companions: "Compagnons",
+    admin: "Admin",
+    login: "Connexion",
+    logout: "Déconnexion",
+    darkMode: "Mode sombre",
+    lightMode: "Mode clair",
+    addTrip: "Ajouter un voyage",
+    viewDetails: "Voir les détails",
+    editTrip: "Éditer le voyage",
+    deleteTrip: "Supprimer le voyage",
+    saveChanges: "Enregistrer les modifications",
+    cancel: "Annuler",
+    loading: "Chargement...",
+    error: "Une erreur s'est produite",
+    offline: "Vous êtes hors ligne",
+  },
+  de: {
+    welcome: "Willkommen bei Plan Your Trip Amigos",
+    home: "Startseite",
+    itineraries: "Reisen",
+    companions: "Mitfahrer",
+    admin: "Admin",
+    login: "Anmelden",
+    logout: "Abmelden",
+    darkMode: "Dunkler Modus",
+    lightMode: "Heller Modus",
+    addTrip: "Reise hinzufügen",
+    viewDetails: "Details anzeigen",
+    editTrip: "Reise bearbeiten",
+    deleteTrip: "Reise löschen",
+    saveChanges: "Änderungen speichern",
+    cancel: "Abbrechen",
+    loading: "Laden...",
+    error: "Ein Fehler ist aufgetreten",
+    offline: "Sie sind offline",
+  },
+  hi: {
+    welcome: "Plan Your Trip Amigos में आपका स्वागत है",
+    home: "होम",
+    itineraries: "यात्रा योजना",
+    companions: "साथी",
+    admin: "प्रशासक",
+    login: "लॉग इन करें",
+    logout: "लॉग आउट करें",
+    darkMode: "डार्क मोड",
+    lightMode: "लाइट मोड",
+    addTrip: "यात्रा जोड़ें",
+    viewDetails: "विवरण देखें",
+    editTrip: "यात्रा संपादित करें",
+    deleteTrip: "यात्रा हटाएं",
+    saveChanges: "परिवर्तन बचाएं",
+    cancel: "रद्द करें",
+    loading: "लोड हो रहा है...",
+    error: "कोई त्रुटि हुई है",
+    offline: "आप ऑफ़लाइन हैं",
+  },
   // Add more languages as needed
 }
 
@@ -102,9 +183,33 @@ export const getLanguageName = (code: string): string => {
   switch (code) {
     case "en":
       return "English"
-    case "vi":
-      return "Tiếng Việt"
+    case "es":
+      return "Español"
+    case "fr":
+      return "Français"
+    case "de":
+      return "Deutsch"
+    case "hi":
+      return "हिंदी"
     default:
       return "Unknown"
+  }
+}
+
+// Get language code
+export const getLanguageCode = (name: string): string => {
+  switch (name) {
+    case "English":
+      return "en"
+    case "Español":
+      return "es"
+    case "Français":
+      return "fr"
+    case "Deutsch":
+      return "de"
+    case "हिंदी":
+      return "hi"
+    default:
+      return "en" // Default to English
   }
 }

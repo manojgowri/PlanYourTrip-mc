@@ -1,17 +1,18 @@
 "use client"
 
 import type React from "react"
-
-import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { AdminNav } from "@/components/admin/admin-nav"
+import { Users, Plane, Database } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Plus, Edit, Trash2, Eye, CheckCircle, XCircle, Database, Server, ListChecks, Lightbulb } from "lucide-react"
+import { Plus, Trash2, Eye, CheckCircle, XCircle } from "lucide-react"
 import {
   getItineraries,
   saveItinerary,
@@ -21,14 +22,10 @@ import {
   markItineraryAsComplete,
 } from "@/lib/data"
 import { useToast } from "@/hooks/use-toast"
-import { AdminNav } from "@/components/admin/admin-nav"
-import { ModeToggle } from "@/components/admin/mode-toggle"
-import { SaveChangesButton } from "@/components/admin/save-changes-button"
-import { CompleteStatusButton } from "@/components/admin/complete-status-button"
 import { SafeImage } from "@/components/safe-image"
 import type { Itinerary } from "@/lib/models"
 
-export default function AdminPage() {
+export default function AdminDashboardPage() {
   const [itineraries, setItineraries] = useState<Itinerary[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingItinerary, setEditingItinerary] = useState<Itinerary | null>(null)
@@ -231,11 +228,49 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto p-4">
       <AdminNav />
-      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+      <h1 className="text-4xl font-bold mb-8 text-center">Admin Dashboard</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <Link href="/admin/itinerary/new">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-2xl font-medium">Manage Itineraries</CardTitle>
+              <Plane className="h-8 w-8 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">Create, edit, and delete travel itineraries.</p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/admin/users">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-2xl font-medium">Manage Users</CardTitle>
+              <Users className="h-8 w-8 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">View and manage user accounts.</p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/admin/db-test">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-2xl font-medium">Database Test</CardTitle>
+              <Database className="h-8 w-8 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">Test database connection and operations.</p>
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Database Status</CardTitle>
@@ -255,7 +290,7 @@ export default function AdminPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Server Health</CardTitle>
-            <Server className="h-4 w-4 text-muted-foreground" />
+            <Plane className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold flex items-center gap-2">
@@ -268,203 +303,6 @@ export default function AdminPage() {
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Theme Toggle</CardTitle>
-            <Lightbulb className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <ModeToggle />
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-semibold">Manage Itineraries</h2>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setIsDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" /> Add New Itinerary
-            </Button>
-          </DialogTrigger>
-          <DialogContent
-            className="sm:max-w-[600px]"
-            onEscapeKeyDown={handleDialogClose}
-            onPointerDownOutside={handleDialogClose}
-          >
-            <DialogHeader>
-              <DialogTitle>{editingItinerary ? "Edit Itinerary" : "Add New Itinerary"}</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="destination" className="text-right">
-                  Destination
-                </Label>
-                <Input
-                  id="destination"
-                  name="destination"
-                  value={editingItinerary?.destination || newItinerary.destination || ""}
-                  onChange={handleInputChange}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="description" className="text-right">
-                  Description
-                </Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  value={editingItinerary?.description || newItinerary.description || ""}
-                  onChange={handleInputChange}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="image" className="text-right">
-                  Image URL
-                </Label>
-                <Input
-                  id="image"
-                  name="image"
-                  value={editingItinerary?.image || newItinerary.image || ""}
-                  onChange={handleInputChange}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="startDate" className="text-right">
-                  Start Date
-                </Label>
-                <Input
-                  id="startDate"
-                  name="startDate"
-                  type="date"
-                  value={editingItinerary?.startDate || newItinerary.startDate || ""}
-                  onChange={handleInputChange}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="endDate" className="text-right">
-                  End Date
-                </Label>
-                <Input
-                  id="endDate"
-                  name="endDate"
-                  type="date"
-                  value={editingItinerary?.endDate || newItinerary.endDate || ""}
-                  onChange={handleInputChange}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="totalBudget" className="text-right">
-                  Total Budget
-                </Label>
-                <Input
-                  id="totalBudget"
-                  name="totalBudget"
-                  type="number"
-                  value={editingItinerary?.totalBudget || newItinerary.totalBudget || 0}
-                  onChange={handleNumberInputChange}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="travellersCount" className="text-right">
-                  Travellers
-                </Label>
-                <Input
-                  id="travellersCount"
-                  name="travellersCount"
-                  type="number"
-                  value={editingItinerary?.travellersCount || newItinerary.travellersCount || 1}
-                  onChange={handleNumberInputChange}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="category" className="text-right">
-                  Category
-                </Label>
-                <Input
-                  id="category"
-                  name="category"
-                  value={editingItinerary?.category || newItinerary.category || ""}
-                  onChange={handleInputChange}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="season" className="text-right">
-                  Season
-                </Label>
-                <Input
-                  id="season"
-                  name="season"
-                  value={editingItinerary?.season || newItinerary.season || ""}
-                  onChange={handleInputChange}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="locations" className="text-right">
-                  Locations (comma-separated)
-                </Label>
-                <Input
-                  id="locations"
-                  name="locations"
-                  value={editingItinerary?.locations?.join(", ") || newItinerary.locations?.join(", ") || ""}
-                  onChange={(e) => {
-                    const locationsArray = e.target.value.split(",").map((loc) => loc.trim())
-                    if (editingItinerary) {
-                      setEditingItinerary({ ...editingItinerary, locations: locationsArray })
-                    } else {
-                      setNewItinerary({ ...newItinerary, locations: locationsArray })
-                    }
-                  }}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="rating" className="text-right">
-                  Rating (0-5)
-                </Label>
-                <Input
-                  id="rating"
-                  name="rating"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="5"
-                  value={editingItinerary?.rating || newItinerary.rating || 0}
-                  onChange={handleNumberInputChange}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="reviewsCount" className="text-right">
-                  Reviews Count
-                </Label>
-                <Input
-                  id="reviewsCount"
-                  name="reviewsCount"
-                  type="number"
-                  value={editingItinerary?.reviewsCount || newItinerary.reviewsCount || 0}
-                  onChange={handleNumberInputChange}
-                  className="col-span-3"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={handleDialogClose}>
-                Cancel
-              </Button>
-              <SaveChangesButton onClick={handleSaveItinerary} />
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
 
       <div className="overflow-x-auto">
@@ -499,13 +337,7 @@ export default function AdminPage() {
                   <TableCell>₹{itinerary.totalBudget?.toLocaleString()}</TableCell>
                   <TableCell>{itinerary.travellersCount}</TableCell>
                   <TableCell>{itinerary.category}</TableCell>
-                  <TableCell>
-                    <CompleteStatusButton
-                      itineraryId={itinerary._id}
-                      initialStatus={itinerary.status}
-                      onStatusChange={loadItineraries}
-                    />
-                  </TableCell>
+                  <TableCell>{itinerary.status}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Link href={`/itinerary/${itinerary._id}`} passHref>
@@ -516,7 +348,7 @@ export default function AdminPage() {
                       </Link>
                       <Link href={`/admin/itinerary/${itinerary._id}`} passHref>
                         <Button variant="outline" size="icon" className="h-8 w-8 bg-transparent">
-                          <ListChecks className="h-4 w-4" />
+                          <Plane className="h-4 w-4" />
                           <span className="sr-only">Manage Details</span>
                         </Button>
                       </Link>
@@ -526,7 +358,7 @@ export default function AdminPage() {
                         className="h-8 w-8 bg-transparent"
                         onClick={() => openEditDialog(itinerary)}
                       >
-                        <Edit className="h-4 w-4" />
+                        <Plane className="h-4 w-4" />
                         <span className="sr-only">Edit</span>
                       </Button>
                       <Button
@@ -552,6 +384,191 @@ export default function AdminPage() {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogTrigger asChild>
+          <Button onClick={() => setIsDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" /> Add New Itinerary
+          </Button>
+        </DialogTrigger>
+        <DialogContent
+          className="sm:max-w-[600px]"
+          onEscapeKeyDown={handleDialogClose}
+          onPointerDownOutside={handleDialogClose}
+        >
+          <DialogHeader>
+            <DialogTitle>{editingItinerary ? "Edit Itinerary" : "Add New Itinerary"}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="destination" className="text-right">
+                Destination
+              </Label>
+              <Input
+                id="destination"
+                name="destination"
+                value={editingItinerary?.destination || newItinerary.destination || ""}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="description" className="text-right">
+                Description
+              </Label>
+              <Textarea
+                id="description"
+                name="description"
+                value={editingItinerary?.description || newItinerary.description || ""}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="image" className="text-right">
+                Image URL
+              </Label>
+              <Input
+                id="image"
+                name="image"
+                value={editingItinerary?.image || newItinerary.image || ""}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="startDate" className="text-right">
+                Start Date
+              </Label>
+              <Input
+                id="startDate"
+                name="startDate"
+                type="date"
+                value={editingItinerary?.startDate || newItinerary.startDate || ""}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="endDate" className="text-right">
+                End Date
+              </Label>
+              <Input
+                id="endDate"
+                name="endDate"
+                type="date"
+                value={editingItinerary?.endDate || newItinerary.endDate || ""}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="totalBudget" className="text-right">
+                Total Budget
+              </Label>
+              <Input
+                id="totalBudget"
+                name="totalBudget"
+                type="number"
+                value={editingItinerary?.totalBudget || newItinerary.totalBudget || 0}
+                onChange={handleNumberInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="travellersCount" className="text-right">
+                Travellers
+              </Label>
+              <Input
+                id="travellersCount"
+                name="travellersCount"
+                type="number"
+                value={editingItinerary?.travellersCount || newItinerary.travellersCount || 1}
+                onChange={handleNumberInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="category" className="text-right">
+                Category
+              </Label>
+              <Input
+                id="category"
+                name="category"
+                value={editingItinerary?.category || newItinerary.category || ""}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="season" className="text-right">
+                Season
+              </Label>
+              <Input
+                id="season"
+                name="season"
+                value={editingItinerary?.season || newItinerary.season || ""}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="locations" className="text-right">
+                Locations (comma-separated)
+              </Label>
+              <Input
+                id="locations"
+                name="locations"
+                value={editingItinerary?.locations?.join(", ") || newItinerary.locations?.join(", ") || ""}
+                onChange={(e) => {
+                  const locationsArray = e.target.value.split(",").map((loc) => loc.trim())
+                  if (editingItinerary) {
+                    setEditingItinerary({ ...editingItinerary, locations: locationsArray })
+                  } else {
+                    setNewItinerary({ ...newItinerary, locations: locationsArray })
+                  }
+                }}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="rating" className="text-right">
+                Rating (0-5)
+              </Label>
+              <Input
+                id="rating"
+                name="rating"
+                type="number"
+                step="0.1"
+                min="0"
+                max="5"
+                value={editingItinerary?.rating || newItinerary.rating || 0}
+                onChange={handleNumberInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="reviewsCount" className="text-right">
+                Reviews Count
+              </Label>
+              <Input
+                id="reviewsCount"
+                name="reviewsCount"
+                type="number"
+                value={editingItinerary?.reviewsCount || newItinerary.reviewsCount || 0}
+                onChange={handleNumberInputChange}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleDialogClose}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveItinerary}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

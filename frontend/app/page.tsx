@@ -1,163 +1,85 @@
-"use client"
-
-import { useState, useEffect } from "react"
-import { getItineraries } from "@/lib/data"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Plane, MapPin, Users, DollarSign } from "lucide-react"
+import { getTravelItineraries } from "@/lib/data"
 import { TravelCard } from "@/components/travel-card"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import type { Itinerary } from "@/lib/models"
-import { SafeImage } from "@/components/safe-image"
-import { Compass } from "lucide-react"
+import type { TravelItinerary } from "@/lib/models"
 
-export default function Home() {
-  const [itineraries, setItineraries] = useState<Itinerary[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [currentSlide, setCurrentSlide] = useState(0)
-
-  // Slider images
-  const sliderImages = [
-    "/images/budget_travel_planning.jpg",
-    "/images/travel-adventures-bg.jpg",
-    "/images/backgroundimage.jpg",
-  ]
-
-  useEffect(() => {
-    const fetchItineraries = async () => {
-      try {
-        setLoading(true)
-        const data = await getItineraries()
-        setItineraries(data)
-      } catch (err) {
-        console.error("Error fetching itineraries:", err)
-        setError("Failed to load itineraries. Please try again.")
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchItineraries()
-  }, [])
-
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev === sliderImages.length - 1 ? 0 : prev + 1))
-  }
-
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev === 0 ? sliderImages.length - 1 : prev - 1))
-  }
+export default async function HomePage() {
+  const itineraries: TravelItinerary[] = await getTravelItineraries()
 
   return (
-    <main className="flex min-h-screen flex-col">
-      {/* Hero Section with Background Image */}
-      <section
-        className="relative py-24 bg-cover bg-center"
-        style={{
-          backgroundImage: 'url("/images/backgroundimage.jpg")',
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="absolute inset-0 bg-black/50"></div>
-        <div className="container relative z-10 mx-auto px-4 text-center">
-          <h1 className="mb-6 text-4xl font-bold tracking-tight text-white md:text-5xl lg:text-6xl">
-            <span className="text-emerald-400">Plan Your Trip</span> <span className="text-amber-500">Amigos</span>
-          </h1>
-          <p className="mx-auto mb-8 max-w-2xl text-lg text-gray-200">
-            <span className="font-medium text-white">Budget Travel Made Easy</span> - Create detailed itineraries, track
-            expenses, and share your adventures with friends and family.
-          </p>
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] py-12 px-4 sm:px-6 lg:px-8">
+      <section className="text-center mb-12">
+        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl mb-4">
+          Your Ultimate Travel Planner
+        </h1>
+        <p className="mt-3 max-w-2xl mx-auto text-xl text-muted-foreground sm:mt-5">
+          Plan, organize, and enjoy your trips with ease. From detailed itineraries to budget tracking, we&apos;ve got
+          you covered.
+        </p>
+        <div className="mt-8 flex justify-center gap-4">
+          <Button size="lg" asChild>
+            <Link href="/itinerary/new">Start Planning</Link>
+          </Button>
+          <Button size="lg" variant="outline" asChild>
+            <Link href="/companions">Find Companions</Link>
+          </Button>
         </div>
       </section>
 
-      {/* Itineraries Section */}
-      <section className="py-12">
-        <div className="container mx-auto px-4">
-          <div className="mb-8 flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Travel Adventures</h2>
+      <section className="w-full max-w-6xl mb-12">
+        <h2 className="text-3xl font-bold text-center mb-8">Why Choose Us?</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="text-center">
+            <CardHeader>
+              <Plane className="mx-auto h-12 w-12 text-primary mb-2" />
+              <CardTitle>Effortless Itineraries</CardTitle>
+            </CardHeader>
+            <CardContent>Create detailed day-by-day plans for your adventures.</CardContent>
+          </Card>
+          <Card className="text-center">
+            <CardHeader>
+              <MapPin className="mx-auto h-12 w-12 text-primary mb-2" />
+              <CardTitle>Destination Guides</CardTitle>
+            </CardHeader>
+            <CardContent>Discover hidden gems and popular spots for your next trip.</CardContent>
+          </Card>
+          <Card className="text-center">
+            <CardHeader>
+              <Users className="mx-auto h-12 w-12 text-primary mb-2" />
+              <CardTitle>Travel Companions</CardTitle>
+            </CardHeader>
+            <CardContent>Connect with fellow travelers and share experiences.</CardContent>
+          </Card>
+          <Card className="text-center">
+            <CardHeader>
+              <DollarSign className="mx-auto h-12 w-12 text-primary mb-2" />
+              <CardTitle>Budget Tracking</CardTitle>
+            </CardHeader>
+            <CardContent>Keep an eye on your expenses and stay within budget.</CardContent>
+          </Card>
+        </div>
+      </section>
+
+      <section className="w-full max-w-6xl">
+        <h2 className="text-3xl font-bold text-center mb-8">Your Recent Itineraries</h2>
+        {itineraries.length === 0 ? (
+          <div className="text-center text-muted-foreground">
+            <p className="mb-4">No itineraries found. Start planning your first adventure!</p>
+            <Button asChild>
+              <Link href="/itinerary/new">Create New Itinerary</Link>
+            </Button>
           </div>
-
-          {loading ? (
-            <div className="text-center">
-              <p className="text-gray-600 dark:text-gray-300">Loading itineraries...</p>
-            </div>
-          ) : error ? (
-            <div className="rounded-md bg-red-50 p-4 dark:bg-red-900/20">
-              <p className="text-red-800 dark:text-red-300">{error}</p>
-            </div>
-          ) : itineraries.length === 0 ? (
-            <div className="rounded-md bg-amber-50 p-8 text-center dark:bg-amber-900/20">
-              <Compass className="mx-auto mb-4 h-12 w-12 text-amber-500" />
-              <h3 className="mb-2 text-xl font-semibold text-amber-800 dark:text-amber-300">No adventures yet</h3>
-              <p className="text-amber-700 dark:text-amber-400">
-                Your travel adventures will appear here once you create them.
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {itineraries.map((itinerary) => (
-                <TravelCard key={itinerary.id} itinerary={itinerary} />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Image Slider Section */}
-      <section className="bg-gray-100 py-12 dark:bg-gray-800">
-        <div className="container mx-auto px-4">
-          <h2 className="mb-8 text-center text-2xl font-bold text-gray-900 dark:text-white">Travel Inspiration</h2>
-
-          <div className="relative mx-auto max-w-4xl">
-            <div className="overflow-hidden rounded-lg shadow-lg">
-              <div className="relative h-[400px] w-full">
-                {sliderImages.map((image, index) => (
-                  <div
-                    key={index}
-                    className={`absolute inset-0 transition-opacity duration-500 ${
-                      index === currentSlide ? "opacity-100" : "opacity-0"
-                    }`}
-                  >
-                    <SafeImage
-                      src={image}
-                      alt={`Travel inspiration ${index + 1}`}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <button
-              onClick={prevSlide}
-              className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-2 text-gray-800 shadow-md transition-colors hover:bg-white"
-              aria-label="Previous slide"
-            >
-              <ChevronLeft className="h-6 w-6" />
-            </button>
-
-            <button
-              onClick={nextSlide}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-2 text-gray-800 shadow-md transition-colors hover:bg-white"
-              aria-label="Next slide"
-            >
-              <ChevronRight className="h-6 w-6" />
-            </button>
-
-            <div className="mt-4 flex justify-center gap-2">
-              {sliderImages.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentSlide(index)}
-                  className={`h-2 w-8 rounded-full transition-colors ${
-                    index === currentSlide ? "bg-emerald-600" : "bg-gray-300 dark:bg-gray-600"
-                  }`}
-                  aria-label={`Go to slide ${index + 1}`}
-                />
-              ))}
-            </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {itineraries.map((itinerary) => (
+              <TravelCard key={itinerary._id} itinerary={itinerary} />
+            ))}
           </div>
-        </div>
+        )}
       </section>
-    </main>
+    </div>
   )
 }

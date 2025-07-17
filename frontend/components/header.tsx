@@ -1,93 +1,69 @@
 "use client"
 
 import Link from "next/link"
+import { Plane } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { LanguageSelector } from "@/components/language-selector"
-import { motion } from "framer-motion"
-import { cn } from "@/lib/utils"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { CurrencySelector } from "@/components/currency-selector"
 import { Button } from "@/components/ui/button"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Menu } from "lucide-react"
-import { OfflineIndicator } from "@/components/offline-indicator"
-import { PlaneIcon } from "./plane-icon" // Import PlaneIcon from the same file
+import { useMobile } from "@/hooks/use-mobile"
 
-export function Header() {
-  const textVariants = {
-    hidden: { opacity: 0, y: -20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } },
-  }
+interface HeaderProps {
+  isAdminRoute: boolean
+}
+
+export function Header({ isAdminRoute }: HeaderProps) {
+  const isMobile = useMobile()
+
+  const navLinks = (
+    <>
+      <Link href="/" className="text-sm font-medium hover:text-primary transition-colors">
+        Home
+      </Link>
+      <Link href="/companions" className="text-sm font-medium hover:text-primary transition-colors">
+        Companions
+      </Link>
+      <Link href="/contact" className="text-sm font-medium hover:text-primary transition-colors">
+        Contact
+      </Link>
+      {isAdminRoute && (
+        <Link href="/admin" className="text-sm font-medium hover:text-primary transition-colors">
+          Admin
+        </Link>
+      )}
+    </>
+  )
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur-sm">
-      <div className="container flex h-16 items-center justify-between px-4 md:px-6">
-        <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
-          <PlaneIcon className="h-6 w-6" />
-          <motion.h1
-            className={cn(
-              "text-2xl font-bold bg-gradient-to-r from-purple-600 via-pink-500 to-red-500 text-transparent bg-clip-text",
-              "dark:from-purple-400 dark:via-pink-300 dark:to-red-300",
-            )}
-            initial="hidden"
-            animate="visible"
-            variants={textVariants}
-          >
-            Travel Fam
-          </motion.h1>
-        </Link>
-        <nav className="hidden items-center gap-6 md:flex">
-          <Link href="/companions" className="text-sm font-medium hover:underline">
-            Companions
+    <header className="sticky top-0 z-40 w-full border-b bg-background/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center">
+          <Link href="/" className="flex items-center space-x-2 mr-6">
+            <Plane className="h-6 w-6 text-primary" />
+            <span className="font-bold text-lg">Travel Planner</span>
           </Link>
-          <Link href="/admin" className="text-sm font-medium hover:underline">
-            Admin Panel
-          </Link>
-          <Link href="/contact" className="text-sm font-medium hover:underline">
-            Contact
-          </Link>
-          <ThemeToggle />
+          {!isMobile && <nav className="hidden md:flex items-center space-x-4">{navLinks}</nav>}
+        </div>
+        <div className="flex items-center space-x-2">
+          <CurrencySelector />
           <LanguageSelector />
-          <OfflineIndicator />
-          <motion.div
-            className="rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 px-3 py-1 text-sm font-medium text-white shadow-lg"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            whileHover={{ scale: 1.05 }}
-          >
-            <motion.span
-              animate={{ opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
-            >
-              Come say hi to our travel fam!
-            </motion.span>
-          </motion.div>
-        </nav>
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="md:hidden bg-transparent">
-              <Menu className="h-6 w-6" />
-              <span className="sr-only">Toggle navigation menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right">
-            <div className="flex flex-col gap-4 py-6">
-              <Link href="/companions" className="text-lg font-medium hover:underline">
-                Companions
-              </Link>
-              <Link href="/admin" className="text-lg font-medium hover:underline">
-                Admin Panel
-              </Link>
-              <Link href="/contact" className="text-lg font-medium hover:underline">
-                Contact
-              </Link>
-              <div className="flex items-center gap-4">
-                <ThemeToggle />
-                <LanguageSelector />
-              </div>
-              <OfflineIndicator />
-            </div>
-          </SheetContent>
-        </Sheet>
+          <ThemeToggle />
+          {isMobile && (
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Toggle navigation menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[250px] sm:w-[300px]">
+                <nav className="flex flex-col gap-4 pt-6">{navLinks}</nav>
+              </SheetContent>
+            </Sheet>
+          )}
+        </div>
       </div>
     </header>
   )

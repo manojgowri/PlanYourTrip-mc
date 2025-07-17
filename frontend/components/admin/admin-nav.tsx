@@ -1,26 +1,38 @@
-import Link from "next/link"
-import ModeToggle from "./mode-toggle"
-import SaveChangesButton from "./save-changes-button"
-import CompleteStatusButton from "./complete-status-button"
+"use client"
 
-const AdminNav = () => {
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { cn } from "@/lib/utils"
+import { ModeToggle } from "./mode-toggle"
+
+export function AdminNav() {
+  const pathname = usePathname()
+
   return (
-    <nav className="bg-gray-100 p-4 flex justify-between items-center">
-      <div>
-        <Link href="/admin" className="text-blue-500 hover:text-blue-700">
-          Admin Home
-        </Link>
-        <Link href="/admin/db-test" className="ml-4 text-blue-500 hover:text-blue-700">
-          DB Test
-        </Link>
-      </div>
-      <div className="flex items-center">
-        <ModeToggle />
-        <SaveChangesButton />
-        <CompleteStatusButton />
-      </div>
+    <nav className="mb-8 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg flex justify-between items-center">
+      <ul className="flex space-x-4">
+        <li>
+          <Link
+            href="/admin"
+            className={cn("text-lg font-medium hover:text-primary", {
+              "text-primary": pathname === "/admin",
+            })}
+          >
+            Admin Dashboard
+          </Link>
+        </li>
+        <li>
+          <Link
+            href="/admin/db-test"
+            className={cn("text-lg font-medium hover:text-primary", {
+              "text-primary": pathname === "/admin/db-test",
+            })}
+          >
+            DB Test
+          </Link>
+        </li>
+      </ul>
+      <ModeToggle />
     </nav>
   )
 }
-
-export default AdminNav

@@ -1,41 +1,34 @@
 "use client"
 
 import { useState } from "react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { formatCurrency } from "@/lib/currency-utils"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
+import { DollarSign } from "lucide-react"
 
-interface CurrencySelectorProps {
-  initialCurrency: string
-  onCurrencyChange: (currency: string) => void
-  amount?: number
-}
+export function CurrencySelector() {
+  const [selectedCurrency, setSelectedCurrency] = useState("USD") // Default to USD
 
-export function CurrencySelector({ initialCurrency, onCurrencyChange, amount }: CurrencySelectorProps) {
-  const [selectedCurrency, setSelectedCurrency] = useState(initialCurrency)
-
-  const handleValueChange = (value: string) => {
-    setSelectedCurrency(value)
-    onCurrencyChange(value)
+  const handleCurrencyChange = (currency: string) => {
+    setSelectedCurrency(currency)
+    // In a real application, you would update a currency context or state here
+    console.log(`Currency changed to: ${currency}`)
   }
 
   return (
-    <div className="flex items-center space-x-2">
-      <Select value={selectedCurrency} onValueChange={handleValueChange}>
-        <SelectTrigger className="w-[100px]">
-          <SelectValue placeholder="Currency" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="USD">USD</SelectItem>
-          <SelectItem value="EUR">EUR</SelectItem>
-          <SelectItem value="GBP">GBP</SelectItem>
-          <SelectItem value="JPY">JPY</SelectItem>
-          <SelectItem value="INR">INR</SelectItem>
-          {/* Add more currencies as needed */}
-        </SelectContent>
-      </Select>
-      {amount !== undefined && (
-        <span className="text-lg font-semibold">{formatCurrency(amount, selectedCurrency)}</span>
-      )}
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="icon">
+          <DollarSign className="h-[1.2rem] w-[1.2rem]" />
+          <span className="sr-only">Select currency</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => handleCurrencyChange("USD")}>USD</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleCurrencyChange("EUR")}>EUR</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleCurrencyChange("GBP")}>GBP</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleCurrencyChange("JPY")}>JPY</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleCurrencyChange("VND")}>VND</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

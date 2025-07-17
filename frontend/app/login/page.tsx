@@ -3,54 +3,57 @@
 import type React from "react"
 
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useToast } from "@/hooks/use-toast"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const router = useRouter()
+  const { toast } = useToast()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
-    setLoading(true)
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-
-    if (email === "admin@example.com" && password === "password") {
-      // In a real app, you'd handle authentication (e.g., set a cookie, redirect)
-      console.log("Login successful!")
-      window.location.href = "/admin" // Redirect to admin page
+    // In a real application, you would send these credentials to your backend for authentication.
+    // For this demo, we'll simulate a successful login for any input.
+    if (email && password) {
+      toast({
+        title: "Login Successful",
+        description: "Redirecting to dashboard...",
+      })
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      router.push("/") // Redirect to home page after successful login
     } else {
-      setError("Invalid email or password.")
+      toast({
+        title: "Login Failed",
+        description: "Please enter both email and password.",
+        variant: "destructive",
+      })
     }
-    setLoading(false)
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900">
+    <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold">Login</CardTitle>
-          <CardDescription>Enter your credentials to access the admin dashboard.</CardDescription>
+        <CardHeader>
+          <CardTitle className="text-3xl text-center">Login</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="m@example.com"
-                required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                required
               />
             </div>
             <div>
@@ -58,22 +61,22 @@ export default function LoginPage() {
               <Input
                 id="password"
                 type="password"
-                required
+                placeholder="********"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                required
               />
             </div>
-            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Logging in..." : "Login"}
+            <Button type="submit" className="w-full">
+              Sign In
             </Button>
           </form>
-          <div className="mt-6 text-center text-sm">
+          <p className="mt-4 text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}
-            <Link href="#" className="underline">
-              Sign up
-            </Link>
-          </div>
+            <a href="#" className="text-primary hover:underline">
+              Sign Up
+            </a>
+          </p>
         </CardContent>
       </Card>
     </div>

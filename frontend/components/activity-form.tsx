@@ -8,165 +8,124 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ImageUpload } from "@/components/image-upload"
 import type { Activity } from "@/lib/models"
+import { Loader2 } from "lucide-react"
 
 interface ActivityFormProps {
-  initialData?: Activity | null
-  onSubmit: (activity: Activity) => void
+  initialData?: Activity
+  onSubmit: (activity: Omit<Activity, "_id">) => Promise<void>
   onCancel: () => void
+  isSubmitting: boolean
 }
 
-export function ActivityForm({ initialData, onSubmit, onCancel }: ActivityFormProps) {
-  const [activity, setActivity] = useState<Activity>(
-    initialData || {
-      _id: "", // Will be generated on save if new
-      name: "",
-      time: "",
-      location: "",
-      description: "",
-      cost: 0,
-      category: "Sightseeing",
-      status: "planned",
-    },
-  )
+export function ActivityForm({ initialData, onSubmit, onCancel, isSubmitting }: ActivityFormProps) {
+  const [title, setTitle] = useState(initialData?.title || "")
+  const [description, setDescription] = useState(initialData?.description || "")
+  const [time, setTime] = useState(initialData?.time || "")
+  const [location, setLocation] = useState(initialData?.location || "")
+  const [type, setType] = useState(initialData?.type || "sightseeing")
+  const [imageUrl, setImageUrl] = useState(initialData?.imageUrl || "")
 
   useEffect(() => {
     if (initialData) {
-      setActivity(initialData)
-    } else {
-      setActivity({
-        _id: "",
-        name: "",
-        time: "",
-        location: "",
-        description: "",
-        cost: 0,
-        category: "Sightseeing",
-        status: "planned",
-      })
+      setTitle(initialData.title)
+      setDescription(initialData.description)
+      setTime(initialData.time)
+      setLocation(initialData.location)
+      setType(initialData.type)
+      setImageUrl(initialData.imageUrl || "")
     }
   }, [initialData])
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setActivity((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setActivity((prev) => ({ ...prev, [name]: Number.parseFloat(value) || 0 }))
-  }
-
-  const handleSelectChange = (name: string, value: string) => {
-    setActivity((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(activity)
+    const newActivity: Omit<Activity, "_id"> = {
+      title,
+      description,
+      time,
+      location,
+      type,
+      imageUrl,
+    }
+    await onSubmit(newActivity)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="name" className="text-right">
-          Name
-        </Label>
-        <Input id="name" name="name" value={activity.name} onChange={handleChange} className="col-span-3" required />
-      </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="time" className="text-right">
-          Time
-        </Label>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="title">Title</Label>
         <Input
-          id="time"
-          name="time"
-          type="time"
-          value={activity.time}
-          onChange={handleChange}
-          className="col-span-3"
+          id="title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="e.g., Visit Eiffel Tower"
           required
+          disabled={isSubmitting}
         />
       </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="location" className="text-right">
-          Location
-        </Label>
-        <Input
-          id="location"
-          name="location"
-          value={activity.location}
-          onChange={handleChange}
-          className="col-span-3"
-          required
-        />
-      </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="description" className="text-right">
-          Description
-        </Label>
+      <div>
+        <Label htmlFor="description">Description</Label>
         <Textarea
           id="description"
-          name="description"
-          value={activity.description || ""}
-          onChange={handleChange}
-          className="col-span-3"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Brief description of the activity"
+          rows={3}
+          disabled={isSubmitting}
         />
       </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="cost" className="text-right">
-          Cost (₹)
-        </Label>
-        <Input
-          id="cost"
-          name="cost"
-          type="number"
-          value={activity.cost || 0}
-          onChange={handleNumberChange}
-          className="col-span-3"
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="time">Time</Label>
+          <Input
+            id="time"
+            type="time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            required
+            disabled={isSubmitting}
+          />
+        </div>
+        <div>
+          <Label htmlFor="location">Location</Label>
+          <Input
+            id="location"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="e.g., Paris, France"
+            disabled={isSubmitting}
+          />
+        </div>
       </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="category" className="text-right">
-          Category
-        </Label>
-        <Select value={activity.category} onValueChange={(value) => handleSelectChange("category", value)}>
-          <SelectTrigger className="col-span-3">
-            <SelectValue placeholder="Select a category" />
+      <div>
+        <Label htmlFor="type">Type</Label>
+        <Select value={type} onValueChange={setType} disabled={isSubmitting}>
+          <SelectTrigger id="type">
+            <SelectValue placeholder="Select activity type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Sightseeing">Sightseeing</SelectItem>
-            <SelectItem value="Food">Food</SelectItem>
-            <SelectItem value="Shopping">Shopping</SelectItem>
-            <SelectItem value="Adventure">Adventure</SelectItem>
-            <SelectItem value="Relaxation">Relaxation</SelectItem>
-            <SelectItem value="Transportation">Transportation</SelectItem>
-            <SelectItem value="Accommodation">Accommodation</SelectItem>
-            <SelectItem value="Other">Other</SelectItem>
+            <SelectItem value="sightseeing">Sightseeing</SelectItem>
+            <SelectItem value="food">Food & Drink</SelectItem>
+            <SelectItem value="adventure">Adventure</SelectItem>
+            <SelectItem value="relaxation">Relaxation</SelectItem>
+            <SelectItem value="shopping">Shopping</SelectItem>
+            <SelectItem value="other">Other</SelectItem>
           </SelectContent>
         </Select>
       </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="status" className="text-right">
-          Status
-        </Label>
-        <Select value={activity.status} onValueChange={(value) => handleSelectChange("status", value)}>
-          <SelectTrigger className="col-span-3">
-            <SelectValue placeholder="Select status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="planned">Planned</SelectItem>
-            <SelectItem value="booked">Booked</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
+      <div>
+        <Label>Activity Image</Label>
+        <ImageUpload onImageUpload={setImageUrl} initialImageUrl={imageUrl} disabled={isSubmitting} />
       </div>
-      <div className="flex justify-end gap-2 mt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           Cancel
         </Button>
-        <Button type="submit">{initialData ? "Save Changes" : "Add Activity"}</Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {initialData ? "Save Changes" : "Add Activity"}
+        </Button>
       </div>
     </form>
   )

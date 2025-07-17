@@ -1,6 +1,6 @@
 {
-  "name": "Plan Your Trip Amigos",
-  "short_name": "Trip Amigos",
+  "name": "Travel Itinerary Planner",
+  "short_name": "Travel Planner",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
@@ -13,7 +13,7 @@
       "type": "image/png"
     }
   ],
-  "theme_color": "#10b981",
+  "theme_color": "#ffffff",
   "background_color": "#ffffff",
   "display": "standalone"
 }

@@ -1,21 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import DbConnectionTest from "@/components/db-connection-test"
+import { DbConnectionTest } from "@/components/db-connection-test"
+import { AdminNav } from "@/components/admin/admin-nav"
 
-const AdminDBTestPage = () => {
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
+export default function DbTestPage() {
   return (
-    <div>
-      <h1>Admin - DB Connection Test</h1>
-      {mounted && <DbConnectionTest />}
+    <div className="container mx-auto p-4">
+      <AdminNav />
+      <h1 className="text-3xl font-bold mb-6">Database Connection Test</h1>
+      <DbConnectionTest />
     </div>
   )
 }
-
-export default AdminDBTestPage

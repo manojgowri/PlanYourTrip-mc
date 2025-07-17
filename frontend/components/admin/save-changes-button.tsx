@@ -3,44 +3,48 @@
 import { Button } from "@/components/ui/button"
 import { Check, Loader2 } from "lucide-react"
 import { useState } from "react"
+import { useToast } from "@/hooks/use-toast"
 
 interface SaveChangesButtonProps {
-  onClick: () => Promise<void>
+  onSave: () => Promise<void>
+  disabled?: boolean
 }
 
-export function SaveChangesButton({ onClick }: SaveChangesButtonProps) {
+export function SaveChangesButton({ onSave, disabled }: SaveChangesButtonProps) {
   const [isSaving, setIsSaving] = useState(false)
-  const [isSaved, setIsSaved] = useState(false)
+  const { toast } = useToast()
 
-  const handleClick = async () => {
+  const handleSave = async () => {
     setIsSaving(true)
-    setIsSaved(false)
     try {
-      await onClick()
-      setIsSaved(true)
+      await onSave()
+      toast({
+        title: "Changes Saved",
+        description: "Your modifications have been successfully saved.",
+        variant: "default",
+      })
     } catch (error) {
       console.error("Error saving changes:", error)
-      setIsSaved(false) // Indicate save failed
+      toast({
+        title: "Error Saving",
+        description: "Failed to save changes. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setIsSaving(false)
-      setTimeout(() => setIsSaved(false), 2000) // Reset saved state after 2 seconds
     }
   }
 
   return (
-    <Button onClick={handleClick} disabled={isSaving}>
+    <Button onClick={handleSave} disabled={disabled || isSaving}>
       {isSaving ? (
         <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Saving...
-        </>
-      ) : isSaved ? (
-        <>
-          <Check className="mr-2 h-4 w-4" />
-          Saved!
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
         </>
       ) : (
-        "Save Changes"
+        <>
+          <Check className="mr-2 h-4 w-4" /> Save Changes
+        </>
       )}
     </Button>
   )

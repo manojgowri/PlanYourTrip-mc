@@ -1,37 +1,35 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { usePathname } from "next/navigation"
 import Lottie from "lottie-react"
-import animationData from "@/public/lottie/travel-loader.json" // Corrected path to the Lottie JSON file
+import travelLoader from "@/public/lottie/travel-loader.json"
+import { motion } from "framer-motion"
 
-export default function SplashLoader() {
-  const pathname = usePathname()
-  const isAdminPage = pathname.startsWith("/admin")
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    if (isAdminPage) {
-      setIsLoading(false)
-      return
-    }
-
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 2000) // Show loader for 2 seconds
-
-    return () => clearTimeout(timer)
-  }, [isAdminPage])
-
-  if (!isLoading) {
-    return null
-  }
-
+export function SplashLoader() {
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background">
-      <div className="w-64 h-64">
-        <Lottie animationData={animationData} loop={true} autoplay={true} />
-      </div>
-    </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5 }}
+      className="fixed inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 text-white z-[9999]"
+    >
+      <Lottie animationData={travelLoader} loop={true} autoplay={true} className="w-64 h-64" />
+      <motion.h1
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.5, duration: 0.5 }}
+        className="text-4xl font-bold mt-8"
+      >
+        Planning Your Adventure...
+      </motion.h1>
+      <motion.p
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.7, duration: 0.5 }}
+        className="text-lg mt-2"
+      >
+        Get ready for an unforgettable journey!
+      </motion.p>
+    </motion.div>
   )
 }
