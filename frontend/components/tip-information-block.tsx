@@ -1,106 +1,244 @@
 "use client"
 
-import { Lightbulb, DollarSign, Shield, Globe, Clock, Info } from "lucide-react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import type { TipItem } from "@/lib/models"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Plus, X, Lightbulb, Wallet, Shield, Globe, Utensils, Camera } from "lucide-react"
+import { updateItinerary } from "@/lib/data"
+import type { Tip } from "@/lib/models"
+import { useToast } from "@/hooks/use-toast"
+import { cn } from "@/lib/utils"
 
 interface TipInformationBlockProps {
-  tips: TipItem[]
+  itineraryId: string
+  initialTips: Tip[]
+  isAdmin: boolean
 }
 
-export function TipInformationBlock({ tips }: TipInformationBlockProps) {
-  const getCategoryIcon = (category: TipItem["category"]) => {
-    switch (category) {
-      case "money-saving":
-        return <DollarSign className="h-5 w-5" />
-      case "safety":
-        return <Shield className="h-5 w-5" />
-      case "cultural":
-        return <Globe className="h-5 w-5" />
-      case "transportation":
-        return <Clock className="h-5 w-5" />
-      case "accommodation":
-        return <Info className="h-5 w-5" />
-      default:
-        return <Lightbulb className="h-5 w-5" />
+const tipCategories = [
+  { value: "general", label: "General", icon: Lightbulb, color: "bg-blue-500" },
+  { value: "money", label: "Money Saving", icon: Wallet, color: "bg-green-500" },
+  { value: "safety", label: "Safety", icon: Shield, color: "bg-red-500" },
+  { value: "culture", label: "Culture", icon: Globe, color: "bg-purple-500" },
+  { value: "food", label: "Food", icon: Utensils, color: "bg-orange-500" },
+  { value: "photography", label: "Photography", icon: Camera, color: "bg-yellow-500" },
+]
+
+export function TipInformationBlock({ itineraryId, initialTips, isAdmin }: TipInformationBlockProps) {
+  const [tips, setTips] = useState<Tip[]>(initialTips)
+  const [newTip, setNewTip] = useState({ title: "", content: "", category: "general" })
+  const [editingTipId, setEditingTipId] = useState<string | null>(null)
+  const { toast } = useToast()
+
+  useEffect(() => {
+    setTips(initialTips)
+  }, [initialTips])
+
+  const handleAddTip = async () => {
+    if (newTip.title.trim() === "" || newTip.content.trim() === "") return
+
+    const newItem: Tip = {
+      _id: `temp-${Date.now()}`, // Temporary ID for UI
+      title: newTip.title.trim(),
+      content: newTip.content.trim(),
+      category: newTip.category,
+    }
+
+    const updatedTips = [...tips, newItem]
+    setTips(updatedTips)
+    setNewTip({ title: "", content: "", category: "general" })
+
+    try {
+      const response = await updateItinerary(itineraryId, { tips: updatedTips })
+      if (response) {
+        // Replace temporary ID with actual ID from backend if available
+        const finalTips = updatedTips.map((item) =>
+          item._id === newItem._id
+            ? {
+                ...item,
+                _id:
+                  response.tips?.find((t) => t.title === newItem.title && t.content === newItem.content)?._id ||
+                  item._id,
+              }
+            : item,
+        )
+        setTips(finalTips)
+        toast({
+          title: "Tip Added",
+          description: "New travel tip added successfully.",
+        })
+      } else {
+        throw new Error("Failed to add tip to backend")
+      }
+    } catch (error) {
+      console.error("Failed to add tip:", error)
+      toast({
+        title: "Error",
+        description: "Failed to add tip. Please try again.",
+        variant: "destructive",
+      })
+      // Revert on error
+      setTips(initialTips)
     }
   }
 
-  const getCategoryColor = (category: TipItem["category"]) => {
-    switch (category) {
-      case "money-saving":
-        return "text-green-600 bg-green-100 dark:bg-green-900/50 dark:text-green-400"
-      case "safety":
-        return "text-red-600 bg-red-100 dark:bg-red-900/50 dark:text-red-400"
-      case "cultural":
-        return "text-purple-600 bg-purple-100 dark:bg-purple-900/50 dark:text-purple-400"
-      case "transportation":
-        return "text-blue-600 bg-blue-100 dark:bg-blue-900/50 dark:text-blue-400"
-      case "accommodation":
-        return "text-orange-600 bg-orange-100 dark:bg-orange-900/50 dark:text-orange-400"
-      default:
-        return "text-yellow-600 bg-yellow-100 dark:bg-yellow-900/50 dark:text-yellow-400"
+  const handleUpdateTip = async (id: string) => {
+    const tipToUpdate = tips.find((tip) => tip._id === id)
+    if (!tipToUpdate) return
+
+    try {
+      await updateItinerary(itineraryId, { tips: tips }) // Send the whole updated array
+      toast({
+        title: "Tip Updated",
+        description: "Travel tip updated successfully.",
+      })
+      setEditingTipId(null)
+    } catch (error) {
+      console.error("Failed to update tip:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update tip. Please try again.",
+        variant: "destructive",
+      })
+      // Revert on error
+      setTips(initialTips)
     }
   }
 
-  const getCategoryGradient = (category: TipItem["category"]) => {
-    switch (category) {
-      case "money-saving":
-        return "from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20"
-      case "safety":
-        return "from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20"
-      case "cultural":
-        return "from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20"
-      case "transportation":
-        return "from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20"
-      case "accommodation":
-        return "from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20"
-      default:
-        return "from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20"
+  const handleDeleteTip = async (id: string) => {
+    const updatedTips = tips.filter((tip) => tip._id !== id)
+    setTips(updatedTips)
+
+    try {
+      await updateItinerary(itineraryId, { tips: updatedTips })
+      toast({
+        title: "Tip Removed",
+        description: "Travel tip removed successfully.",
+      })
+    } catch (error) {
+      console.error("Failed to delete tip:", error)
+      toast({
+        title: "Error",
+        description: "Failed to remove tip. Please try again.",
+        variant: "destructive",
+      })
+      // Revert on error
+      setTips(initialTips)
     }
   }
 
-  if (!tips || tips.length === 0) {
-    return null
+  const getCategoryIcon = (category: string) => {
+    const cat = tipCategories.find((c) => c.value === category)
+    return cat ? <cat.icon className="h-5 w-5" /> : <Lightbulb className="h-5 w-5" />
+  }
+
+  const getCategoryColor = (category: string) => {
+    const cat = tipCategories.find((c) => c.value === category)
+    return cat ? cat.color : "bg-gray-500"
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Lightbulb className="h-6 w-6 text-yellow-600" />
-          Travel Tips & Insights
-        </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Expert recommendations to make your trip memorable and hassle-free
-        </p>
+        <CardTitle>Travel Tips</CardTitle>
       </CardHeader>
+      <CardContent className="space-y-6">
+        {isAdmin && (
+          <div className="space-y-4 border-b pb-4">
+            <h3 className="text-lg font-semibold">Add New Tip</h3>
+            <Input
+              placeholder="Tip Title"
+              value={newTip.title}
+              onChange={(e) => setNewTip({ ...newTip, title: e.target.value })}
+            />
+            <Textarea
+              placeholder="Tip Content"
+              value={newTip.content}
+              onChange={(e) => setNewTip({ ...newTip, content: e.target.value })}
+            />
+            <Select value={newTip.category} onValueChange={(value) => setNewTip({ ...newTip, category: value })}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Category" />
+              </SelectTrigger>
+              <SelectContent>
+                {tipCategories.map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value}>
+                    <div className="flex items-center">
+                      {<cat.icon className={cn("mr-2 h-4 w-4", getCategoryColor(cat.value).replace("bg-", "text-"))} />}
+                      {cat.label}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button onClick={handleAddTip} className="w-full">
+              <Plus className="h-4 w-4 mr-2" /> Add Tip
+            </Button>
+          </div>
+        )}
 
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {tips.length === 0 && <p className="text-muted-foreground">No tips added yet.</p>}
+
+        <div className="grid gap-4">
           {tips.map((tip) => (
-            <div
-              key={tip.id}
-              className={`p-4 rounded-lg border bg-gradient-to-br ${getCategoryGradient(tip.category)} hover:shadow-md transition-all duration-200`}
-            >
-              <div className="flex items-start gap-3">
-                <div className={`flex-shrink-0 p-2 rounded-full ${getCategoryColor(tip.category)}`}>
-                  {getCategoryIcon(tip.category)}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h4 className="font-semibold text-lg">{tip.title}</h4>
-                    <Badge variant="outline" className={getCategoryColor(tip.category)}>
-                      {tip.category.replace("-", " ")}
-                    </Badge>
+            <Card key={tip._id} className="relative overflow-hidden">
+              <div className={cn("absolute inset-y-0 left-0 w-2", getCategoryColor(tip.category))}></div>
+              <CardContent className="p-4 pl-6">
+                {isAdmin && (
+                  <div className="absolute top-2 right-2 flex space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        if (editingTipId === tip._id) {
+                          handleUpdateTip(tip._id)
+                        } else {
+                          setEditingTipId(tip._id)
+                          setNewTip({ title: tip.title, content: tip.content, category: tip.category })
+                        }
+                      }}
+                      className="text-muted-foreground hover:text-primary"
+                    >
+                      {editingTipId === tip._id ? "Save" : "Edit"}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteTip(tip._id)}
+                      className="text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
-
-                  <p className="text-muted-foreground leading-relaxed">{tip.description}</p>
+                )}
+                <div className="flex items-center mb-2">
+                  <div className={cn("p-2 rounded-full mr-3 text-white", getCategoryColor(tip.category))}>
+                    {getCategoryIcon(tip.category)}
+                  </div>
+                  {editingTipId === tip._id ? (
+                    <Input
+                      value={newTip.title}
+                      onChange={(e) => setNewTip({ ...newTip, title: e.target.value })}
+                      className="text-lg font-semibold"
+                    />
+                  ) : (
+                    <h3 className="text-lg font-semibold">{tip.title}</h3>
+                  )}
                 </div>
-              </div>
-            </div>
+                {editingTipId === tip._id ? (
+                  <Textarea
+                    value={newTip.content}
+                    onChange={(e) => setNewTip({ ...newTip, content: e.target.value })}
+                    className="text-sm text-muted-foreground"
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">{tip.content}</p>
+                )}
+              </CardContent>
+            </Card>
           ))}
         </div>
       </CardContent>

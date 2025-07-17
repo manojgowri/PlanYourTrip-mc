@@ -1,100 +1,56 @@
-// Type definitions for the application
-
-export interface Activity {
-  id: string
-  time: string
-  title: string
+export interface Itinerary {
+  _id: string
+  destination: string
+  startDate: string
+  endDate: string
+  duration: string // e.g., "9 Days / 8 Nights"
+  category: string // e.g., "Adventure", "Relaxation"
+  season: string // e.g., "Summer", "Winter"
+  image: string
   description: string
-  type: "food" | "activity" | "travel" | "accommodation" | "must-visit"
-  expense?: {
-    amount: number
-    currency: string
-    category?: string
-  }
-  image?: string
+  totalBudget: number
+  travellersCount?: number // New field for group trips
+  travelRecommendation?: string // New field for solo/friends/family
+  reviewsCount?: number // New field for dynamic review counts
+  days: ItineraryDay[]
+  preTripChecklist?: PreTripChecklistItem[] // Array of checklist items
+  tips?: Tip[] // Array of tips
 }
 
 export interface ItineraryDay {
-  id: string
-  day: number
-  date: string
-  location: string
+  dayNumber: number
+  date?: string // Optional date for the day
   activities: Activity[]
 }
 
-export interface ChecklistItem {
-  id: string
-  title: string
-  completed: boolean
+export interface Activity {
+  _id: string
+  name: string
+  time: string
+  location?: string
+  description?: string
+  expense?: number // Optional expense for the activity
   notes?: string
+  type?: string // e.g., "Must visit place", "Restaurant", "Activity"
 }
 
-export interface TipItem {
-  id: string
+export interface PreTripChecklistItem {
+  _id: string
+  item: string
+  completed: boolean
+}
+
+export interface Tip {
+  _id: string
   title: string
-  description: string
-  category: "money-saving" | "safety" | "cultural" | "transportation" | "accommodation" | "general"
-  icon?: string
-}
-
-export interface Itinerary {
-  id: string
-  destination: string
-  image?: string
-  description: string
-  startDate: string
-  endDate: string
-  startTime?: string
-  endTime?: string
-  status: "online" | "completed"
-  season?: string
-  rating: number
-  reviewCount: number
-  locations: string[]
-  days: ItineraryDay[]
-  travellersCount?: number
-  totalBudget?: number
-  metadata?: {
-    checklist?: ChecklistItem[]
-    tips?: TipItem[]
-    [key: string]: any
-  }
-}
-
-export interface Location {
-  id: string
-  name: string
-  dates: string
-  destinationId: string
-}
-
-export interface Accommodation {
-  id: string
-  name: string
-  location: string
-  dates: string
-  destinationId: string
+  content: string
+  category: string // e.g., "money", "safety", "culture"
 }
 
 export interface Companion {
-  id: string
+  _id: string
   name: string
-  relationship: string
-  bio: string
-  image?: string
-  instagramId?: string
-}
-
-export interface Comment {
-  id: string
-  name: string
-  date: string
-  content: string
-  rating: number
-  itineraryId: string
-}
-
-export interface User {
-  username: string
-  isAdmin: boolean
+  title: string
+  image: string
+  instagramId?: string // Changed to Instagram ID
 }

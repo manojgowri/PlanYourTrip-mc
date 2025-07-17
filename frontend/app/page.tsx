@@ -17,7 +17,7 @@ export default function Home() {
   const sliderImages = [
     "/images/budget_travel_planning.jpg",
     "/images/travel-adventures-bg.jpg",
-    "/images/quotesimages.JPG",
+    "/images/backgroundimage.jpg",
   ]
 
   useEffect(() => {

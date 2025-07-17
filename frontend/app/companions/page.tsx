@@ -1,190 +1,300 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Instagram, MapPin, Calendar } from "lucide-react"
+import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
+import { Instagram, X } from "lucide-react"
+import { fetchCompanions, createCompanion, updateCompanion, deleteCompanion } from "@/lib/data"
+import type { Companion } from "@/lib/models"
+import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { useToast } from "@/hooks/use-toast"
 import { SafeImage } from "@/components/safe-image"
-import { getCompanions, type Companion } from "@/lib/data"
-import { useLoading } from "@/contexts/loading-context"
 
 export default function CompanionsPage() {
   const [companions, setCompanions] = useState<Companion[]>([])
   const [selectedCompanion, setSelectedCompanion] = useState<Companion | null>(null)
-  const { setLoading, setLoadingMessage } = useLoading()
+  const [newCompanion, setNewCompanion] = useState({ name: "", title: "", image: "", instagramId: "" })
+  const [isAdding, setIsAdding] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const { toast } = useToast()
 
   useEffect(() => {
-    const fetchCompanions = async () => {
-      try {
-        setLoading(true)
-        setLoadingMessage("Loading travel companions...")
-        const companionsData = await getCompanions()
-        setCompanions(companionsData)
-        if (companionsData.length > 0) {
-          setSelectedCompanion(companionsData[0])
-        }
-      } catch (error) {
-        console.error("Error fetching companions:", error)
-      } finally {
-        setLoading(false)
+    const getCompanions = async () => {
+      const data = await fetchCompanions()
+      setCompanions(data)
+      if (data.length > 0) {
+        setSelectedCompanion(data[0])
       }
     }
+    getCompanions()
+  }, [])
 
-    fetchCompanions()
-  }, [setLoading, setLoadingMessage])
+  const handleAddCompanion = async () => {
+    if (!newCompanion.name || !newCompanion.title) {
+      toast({
+        title: "Error",
+        description: "Name and Title are required.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      const createdCompanion = await createCompanion(newCompanion)
+      if (createdCompanion) {
+        setCompanions([...companions, createdCompanion])
+        setNewCompanion({ name: "", title: "", image: "", instagramId: "" })
+        setIsAdding(false)
+        toast({
+          title: "Success",
+          description: "Companion added successfully.",
+        })
+      } else {
+        throw new Error("Failed to create companion")
+      }
+    } catch (error) {
+      console.error("Error adding companion:", error)
+      toast({
+        title: "Error",
+        description: "Failed to add companion. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleUpdateCompanion = async () => {
+    if (!selectedCompanion) return
+
+    try {
+      const updated = await updateCompanion(selectedCompanion._id, selectedCompanion)
+      if (updated) {
+        setCompanions(companions.map((c) => (c._id === updated._id ? updated : c)))
+        setIsEditing(false)
+        toast({
+          title: "Success",
+          description: "Companion updated successfully.",
+        })
+      } else {
+        throw new Error("Failed to update companion")
+      }
+    } catch (error) {
+      console.error("Error updating companion:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update companion. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleDeleteCompanion = async (id: string) => {
+    try {
+      const success = await deleteCompanion(id)
+      if (success) {
+        setCompanions(companions.filter((c) => c._id !== id))
+        if (selectedCompanion?._id === id) {
+          setSelectedCompanion(companions.length > 1 ? companions[0] : null)
+        }
+        toast({
+          title: "Success",
+          description: "Companion deleted successfully.",
+        })
+      } else {
+        throw new Error("Failed to delete companion")
+      }
+    } catch (error) {
+      console.error("Error deleting companion:", error)
+      toast({
+        title: "Error",
+        description: "Failed to delete companion. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold mb-4">Travel Companions</h1>
-          <p className="text-gray-400 text-lg">Meet the amazing people who make our journeys unforgettable</p>
+    <div className="min-h-[calc(100vh-4rem)] bg-black text-white flex flex-col lg:flex-row">
+      {/* Left Sidebar - Companion List */}
+      <div className="w-full lg:w-1/3 border-r border-gray-800 flex flex-col">
+        <div className="p-6 border-b border-gray-800">
+          <h2 className="text-2xl font-bold">Our Travel Fam</h2>
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-[600px]">
-          {/* Companions List - Scrollable */}
-          <div className="lg:col-span-1">
-            <div className="h-full overflow-y-auto pr-2 space-y-2">
-              {companions.map((companion) => (
-                <div
-                  key={companion.id}
-                  className={`p-4 border border-gray-800 cursor-pointer transition-all duration-200 ${
-                    selectedCompanion?.id === companion.id
-                      ? "bg-gray-900 border-emerald-600"
-                      : "hover:bg-gray-900/50 hover:border-gray-700"
-                  }`}
-                  onClick={() => setSelectedCompanion(companion)}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
-                      <SafeImage
-                        src={companion.image || "/placeholder.svg?height=48&width=48"}
-                        alt={companion.name}
-                        className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-300"
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold text-white truncate">{companion.name}</h3>
-                      <p className="text-sm text-gray-400 truncate">{companion.relationship}</p>
-                    </div>
-                    {companion.instagramId && <Instagram className="h-4 w-4 text-gray-500" />}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Selected Companion Details */}
-          <div className="lg:col-span-2">
-            {selectedCompanion ? (
-              <Card className="bg-gray-900 border-gray-800 h-full">
-                <CardContent className="p-0 h-full">
-                  <div className="grid grid-cols-1 md:grid-cols-2 h-full">
-                    {/* Image */}
-                    <div className="relative overflow-hidden">
-                      <SafeImage
-                        src={selectedCompanion.image || "/placeholder.svg?height=600&width=400"}
-                        alt={selectedCompanion.name}
-                        className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                    </div>
-
-                    {/* Details */}
-                    <div className="p-8 flex flex-col justify-center">
-                      <div className="space-y-6">
-                        <div>
-                          <h2 className="text-3xl font-bold text-white mb-2">{selectedCompanion.name}</h2>
-                          <p className="text-emerald-400 font-medium text-lg">{selectedCompanion.relationship}</p>
-                        </div>
-
-                        {selectedCompanion.bio && (
-                          <div>
-                            <h3 className="text-lg font-semibold text-white mb-3">About</h3>
-                            <p className="text-gray-300 leading-relaxed">{selectedCompanion.bio}</p>
-                          </div>
-                        )}
-
-                        <div className="space-y-4">
-                          <div className="flex items-center gap-3">
-                            <MapPin className="h-5 w-5 text-emerald-400" />
-                            <span className="text-gray-300">Travel Enthusiast</span>
-                          </div>
-
-                          <div className="flex items-center gap-3">
-                            <Calendar className="h-5 w-5 text-emerald-400" />
-                            <span className="text-gray-300">Active Traveler</span>
-                          </div>
-                        </div>
-
-                        {selectedCompanion.instagramId && (
-                          <div className="pt-4">
-                            <Button
-                              variant="outline"
-                              className="bg-transparent border-emerald-600 text-emerald-400 hover:bg-emerald-600 hover:text-white"
-                              onClick={() =>
-                                window.open(`https://instagram.com/${selectedCompanion.instagramId}`, "_blank")
-                              }
-                            >
-                              <Instagram className="h-4 w-4 mr-2" />
-                              Follow on Instagram
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="h-full flex items-center justify-center">
-                <div className="text-center">
-                  <h3 className="text-xl font-semibold text-gray-400 mb-2">No Companion Selected</h3>
-                  <p className="text-gray-500">Select a companion from the list to view details</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Mobile Layout */}
-        <div className="lg:hidden mt-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {companions.map((companion) => (
-              <Card key={companion.id} className="bg-gray-900 border-gray-800">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
-                      <SafeImage
-                        src={companion.image || "/placeholder.svg?height=64&width=64"}
-                        alt={companion.name}
-                        className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-300"
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold text-white">{companion.name}</h3>
-                      <p className="text-sm text-emerald-400">{companion.relationship}</p>
-                    </div>
-                  </div>
-
-                  {companion.bio && <p className="text-gray-300 text-sm mb-4 line-clamp-3">{companion.bio}</p>}
-
-                  {companion.instagramId && (
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
+          {companions.map((companion) => (
+            <div
+              key={companion._id}
+              className={`p-6 border-b border-gray-800 cursor-pointer transition-colors duration-200 ${
+                selectedCompanion?._id === companion._id ? "bg-gray-800" : "hover:bg-gray-900"
+              }`}
+              onClick={() => {
+                setSelectedCompanion(companion)
+                setIsAdding(false)
+                setIsEditing(false)
+              }}
+            >
+              <h3 className="text-lg font-semibold uppercase">{companion.name}</h3>
+              {selectedCompanion?._id === companion._id && (
+                <div className="text-sm text-gray-400">
+                  <p>{companion.title}</p>
+                  <div className="flex items-center mt-2 space-x-2">
+                    {companion.instagramId && (
+                      <a
+                        href={`https://instagram.com/${companion.instagramId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gray-400 hover:text-white"
+                      >
+                        <Instagram className="h-5 w-5" />
+                      </a>
+                    )}
+                    {/* Admin controls for delete */}
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
-                      className="w-full bg-transparent border-emerald-600 text-emerald-400 hover:bg-emerald-600 hover:text-white"
-                      onClick={() => window.open(`https://instagram.com/${companion.instagramId}`, "_blank")}
+                      onClick={(e) => {
+                        e.stopPropagation() // Prevent selecting companion when deleting
+                        handleDeleteCompanion(companion._id)
+                      }}
+                      className="text-gray-400 hover:text-red-500"
                     >
-                      <Instagram className="h-4 w-4 mr-2" />
-                      Follow
+                      <X className="h-4 w-4" />
                     </Button>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
+        <div className="p-6 border-t border-gray-800">
+          <Button
+            onClick={() => {
+              setIsAdding(true)
+              setIsEditing(false)
+              setSelectedCompanion(null)
+              setNewCompanion({ name: "", title: "", image: "", instagramId: "" })
+            }}
+            className="w-full bg-gray-700 hover:bg-gray-600 text-white"
+          >
+            Add New Companion
+          </Button>
+        </div>
+      </div>
+
+      {/* Right Content - Companion Details / Add/Edit Form */}
+      <div className="w-full lg:w-2/3 p-6 flex flex-col items-center justify-center bg-gray-950">
+        {isAdding ? (
+          <Card className="w-full max-w-md bg-gray-900 border-gray-700 text-white">
+            <CardContent className="p-6 space-y-4">
+              <h3 className="text-xl font-bold mb-4">Add New Companion</h3>
+              <Input
+                placeholder="Name"
+                value={newCompanion.name}
+                onChange={(e) => setNewCompanion({ ...newCompanion, name: e.target.value })}
+                className="bg-gray-800 border-gray-700 text-white"
+              />
+              <Input
+                placeholder="Title (e.g., CEO, Vercel)"
+                value={newCompanion.title}
+                onChange={(e) => setNewCompanion({ ...newCompanion, title: e.target.value })}
+                className="bg-gray-800 border-gray-700 text-white"
+              />
+              <Input
+                placeholder="Image URL (optional)"
+                value={newCompanion.image}
+                onChange={(e) => setNewCompanion({ ...newCompanion, image: e.target.value })}
+                className="bg-gray-800 border-gray-700 text-white"
+              />
+              <Input
+                placeholder="Instagram ID (optional)"
+                value={newCompanion.instagramId}
+                onChange={(e) => setNewCompanion({ ...newCompanion, instagramId: e.target.value })}
+                className="bg-gray-800 border-gray-700 text-white"
+              />
+              <Button onClick={handleAddCompanion} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                Save Companion
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setIsAdding(false)}
+                className="w-full text-gray-300 border-gray-700 hover:bg-gray-800"
+              >
+                Cancel
+              </Button>
+            </CardContent>
+          </Card>
+        ) : selectedCompanion ? (
+          <div className="flex flex-col items-center space-y-6 w-full max-w-lg">
+            <div className="relative w-64 h-64 rounded-full overflow-hidden border-2 border-gray-700">
+              <SafeImage
+                src={selectedCompanion.image || "/placeholder.svg?height=256&width=256"}
+                alt={selectedCompanion.name}
+                className="object-cover grayscale hover:grayscale-0 transition-all duration-300"
+                fill
+              />
+            </div>
+            <h2 className="text-4xl font-bold uppercase text-center">{selectedCompanion.name}</h2>
+            <p className="text-xl text-gray-400 text-center">{selectedCompanion.title}</p>
+            <div className="flex space-x-4">
+              {selectedCompanion.instagramId && (
+                <a
+                  href={`https://instagram.com/${selectedCompanion.instagramId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-white transition-colors duration-200"
+                >
+                  <Instagram className="h-8 w-8" />
+                </a>
+              )}
+            </div>
+            <Button onClick={() => setIsEditing(true)} className="bg-gray-700 hover:bg-gray-600 text-white">
+              Edit Companion
+            </Button>
+          </div>
+        ) : (
+          <p className="text-gray-400">Select a companion or add a new one.</p>
+        )}
+
+        {isEditing && selectedCompanion && (
+          <Card className="w-full max-w-md bg-gray-900 border-gray-700 text-white mt-6">
+            <CardContent className="p-6 space-y-4">
+              <h3 className="text-xl font-bold mb-4">Edit Companion</h3>
+              <Input
+                placeholder="Name"
+                value={selectedCompanion.name}
+                onChange={(e) => setSelectedCompanion({ ...selectedCompanion, name: e.target.value })}
+                className="bg-gray-800 border-gray-700 text-white"
+              />
+              <Input
+                placeholder="Title (e.g., CEO, Vercel)"
+                value={selectedCompanion.title}
+                onChange={(e) => setSelectedCompanion({ ...selectedCompanion, title: e.target.value })}
+                className="bg-gray-800 border-gray-700 text-white"
+              />
+              <Input
+                placeholder="Image URL (optional)"
+                value={selectedCompanion.image}
+                onChange={(e) => setSelectedCompanion({ ...selectedCompanion, image: e.target.value })}
+                className="bg-gray-800 border-gray-700 text-white"
+              />
+              <Input
+                placeholder="Instagram ID (optional)"
+                value={selectedCompanion.instagramId}
+                onChange={(e) => setSelectedCompanion({ ...selectedCompanion, instagramId: e.target.value })}
+                className="bg-gray-800 border-gray-700 text-white"
+              />
+              <Button onClick={handleUpdateCompanion} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                Save Changes
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setIsEditing(false)}
+                className="w-full text-gray-300 border-gray-700 hover:bg-gray-800"
+              >
+                Cancel
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )

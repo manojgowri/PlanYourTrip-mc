@@ -3,11 +3,10 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
-import { LoadingProvider } from "@/contexts/loading-context"
-import { GlobalLoader } from "@/components/global-loader"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ToastContainer } from "@/components/toast-container"
+import { SplashLoader } from "@/components/splash-loader" // New import
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -32,15 +31,13 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <LoadingProvider>
-            <div className="min-h-screen flex flex-col">
-              <Header />
-              <main className="flex-1">{children}</main>
-              <Footer />
-            </div>
-            <GlobalLoader />
-            <ToastContainer />
-          </LoadingProvider>
+          <div className="min-h-screen flex flex-col">
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </div>
+          <SplashLoader /> {/* New loader component */}
+          <ToastContainer />
         </ThemeProvider>
       </body>
     </html>
