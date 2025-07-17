@@ -1,13 +1,22 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import type React from "react"
+
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useToast } from "@/hooks/use-toast"
-import type { Comment } from "@/lib/models"
+import { MessageSquare } from "lucide-react"
+
+interface Comment {
+  id: string
+  author: string
+  avatar: string
+  content: string
+  timestamp: string
+}
 
 interface CommentSectionProps {
   itineraryId: string
@@ -15,117 +24,75 @@ interface CommentSectionProps {
 
 export function CommentSection({ itineraryId }: CommentSectionProps) {
   const [comments, setComments] = useState<Comment[]>([])
-  const [newCommentText, setNewCommentText] = useState("")
-  const [newCommentAuthor, setNewCommentAuthor] = useState("")
+  const [newComment, setNewComment] = useState("")
   const { toast } = useToast()
 
-  useEffect(() => {
-    fetchComments()
-  }, [itineraryId])
-
-  const fetchComments = async () => {
-    try {
-      // In a real app, this would fetch comments from your backend
-      // For now, simulate fetching
-      const dummyComments: Comment[] = [
-        { _id: "1", author: "Alice", text: "Great itinerary!", createdAt: "2023-01-15T10:00:00Z" },
-        { _id: "2", author: "Bob", text: "Looks amazing, can't wait to try it.", createdAt: "2023-01-16T14:30:00Z" },
-      ]
-      setComments(dummyComments)
-    } catch (error) {
-      console.error("Failed to fetch comments:", error)
+  const handleSubmitComment = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (newComment.trim() === "") {
       toast({
         title: "Error",
-        description: "Failed to load comments.",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const handleAddComment = async () => {
-    if (!newCommentText.trim() || !newCommentAuthor.trim()) {
-      toast({
-        title: "Error",
-        description: "Author and comment cannot be empty.",
+        description: "Comment cannot be empty.",
         variant: "destructive",
       })
       return
     }
 
-    try {
-      // In a real app, this would send the new comment to your backend
-      // For now, simulate adding
-      const newComment: Comment = {
-        _id: String(comments.length + 1),
-        author: newCommentAuthor,
-        text: newCommentText,
-        createdAt: new Date().toISOString(),
-      }
-      setComments([...comments, newComment])
-      setNewCommentText("")
-      setNewCommentAuthor("")
-      toast({
-        title: "Success",
-        description: "Comment added!",
-      })
-    } catch (error) {
-      console.error("Failed to add comment:", error)
-      toast({
-        title: "Error",
-        description: "Failed to add comment. Please try again.",
-        variant: "destructive",
-      })
+    const comment: Comment = {
+      id: Date.now().toString(),
+      author: "Current User", // In a real app, this would come from auth
+      avatar: "/placeholder-user.jpg", // Placeholder
+      content: newComment.trim(),
+      timestamp: new Date().toLocaleString(),
     }
+
+    setComments((prev) => [...prev, comment])
+    setNewComment("")
+    toast({
+      title: "Comment Added",
+      description: "Your comment has been posted.",
+    })
   }
 
   return (
-    <Card className="mt-8">
-      <CardHeader>
-        <CardTitle>Comments</CardTitle>
+    <Card className="shadow-sm">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-xl font-semibold">Comments</CardTitle>
+        <MessageSquare className="h-6 w-6 text-muted-foreground" />
       </CardHeader>
       <CardContent>
         <div className="space-y-4 mb-6">
-          {comments.length > 0 ? (
+          {comments.length === 0 ? (
+            <p className="text-muted-foreground text-center">No comments yet. Be the first to comment!</p>
+          ) : (
             comments.map((comment) => (
-              <div key={comment._id} className="border-b pb-3 last:border-b-0">
-                <p className="font-semibold text-sm">{comment.author}</p>
-                <p className="text-muted-foreground text-xs">{new Date(comment.createdAt).toLocaleString()}</p>
-                <p className="mt-1 text-sm">{comment.text}</p>
+              <div key={comment.id} className="flex items-start space-x-3">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={comment.avatar || "/placeholder.svg"} alt={comment.author} />
+                  <AvatarFallback>{comment.author.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <p className="font-semibold text-sm">{comment.author}</p>
+                    <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{comment.content}</p>
+                </div>
               </div>
             ))
-          ) : (
-            <p className="text-muted-foreground text-sm">No comments yet. Be the first to comment!</p>
           )}
         </div>
-
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Add a Comment</h3>
-          <div>
-            <Label htmlFor="comment-author" className="sr-only">
-              Your Name
-            </Label>
-            <Input
-              id="comment-author"
-              placeholder="Your Name"
-              value={newCommentAuthor}
-              onChange={(e) => setNewCommentAuthor(e.target.value)}
-              className="mb-2"
-            />
-          </div>
-          <div>
-            <Label htmlFor="new-comment" className="sr-only">
-              Your Comment
-            </Label>
-            <Textarea
-              id="new-comment"
-              placeholder="Write your comment here..."
-              value={newCommentText}
-              onChange={(e) => setNewCommentText(e.target.value)}
-              rows={4}
-            />
-          </div>
-          <Button onClick={handleAddComment}>Submit Comment</Button>
-        </div>
+        <form onSubmit={handleSubmitComment} className="space-y-4">
+          <Textarea
+            placeholder="Write your comment here..."
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            rows={3}
+          />
+          <Button type="submit" className="w-full">
+            Post Comment
+          </Button>
+        </form>
       </CardContent>
     </Card>
   )

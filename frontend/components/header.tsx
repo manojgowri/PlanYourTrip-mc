@@ -1,12 +1,15 @@
 "use client"
 
-import type React from "react"
-
 import Link from "next/link"
-import { ModeToggle } from "@/components/theme-toggle"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { LanguageSelector } from "@/components/language-selector"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Button } from "@/components/ui/button"
+import { Menu } from "lucide-react"
+import { OfflineIndicator } from "@/components/offline-indicator"
+import { PlaneIcon } from "./plane-icon" // Import PlaneIcon from the same file
 
 export function Header() {
   const textVariants = {
@@ -15,9 +18,9 @@ export function Header() {
   }
 
   return (
-    <header className="flex items-center justify-between px-4 py-3 border-b">
-      <div className="flex items-center gap-4">
-        <Link className="flex items-center gap-2" href="/">
+    <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur-sm">
+      <div className="container flex h-16 items-center justify-between px-4 md:px-6">
+        <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
           <PlaneIcon className="h-6 w-6" />
           <motion.h1
             className={cn(
@@ -31,40 +34,61 @@ export function Header() {
             Travel Fam
           </motion.h1>
         </Link>
+        <nav className="hidden items-center gap-6 md:flex">
+          <Link href="/companions" className="text-sm font-medium hover:underline">
+            Companions
+          </Link>
+          <Link href="/admin" className="text-sm font-medium hover:underline">
+            Admin Panel
+          </Link>
+          <Link href="/contact" className="text-sm font-medium hover:underline">
+            Contact
+          </Link>
+          <ThemeToggle />
+          <LanguageSelector />
+          <OfflineIndicator />
+          <motion.div
+            className="rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 px-3 py-1 text-sm font-medium text-white shadow-lg"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            whileHover={{ scale: 1.05 }}
+          >
+            <motion.span
+              animate={{ opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+            >
+              Come say hi to our travel fam!
+            </motion.span>
+          </motion.div>
+        </nav>
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="icon" className="md:hidden bg-transparent">
+              <Menu className="h-6 w-6" />
+              <span className="sr-only">Toggle navigation menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right">
+            <div className="flex flex-col gap-4 py-6">
+              <Link href="/companions" className="text-lg font-medium hover:underline">
+                Companions
+              </Link>
+              <Link href="/admin" className="text-lg font-medium hover:underline">
+                Admin Panel
+              </Link>
+              <Link href="/contact" className="text-lg font-medium hover:underline">
+                Contact
+              </Link>
+              <div className="flex items-center gap-4">
+                <ThemeToggle />
+                <LanguageSelector />
+              </div>
+              <OfflineIndicator />
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
-      <nav className="flex items-center gap-4">
-        <Link className="font-medium hover:underline" href="/companions">
-          Companions
-        </Link>
-        <Link className="font-medium hover:underline" href="/admin">
-          Admin
-        </Link>
-        <Link className="font-medium hover:underline" href="/contact">
-          Contact
-        </Link>
-        <ModeToggle />
-        <LanguageSelector />
-      </nav>
     </header>
-  )
-}
-
-function PlaneIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M17.8 19.2 16 11.4l4.8-1.4c.4-1.1-.2-2.3-1.3-2.7l-10-.7L3.9 2.9c-1.1-.4-2.3.2-2.7 1.3L2 10.4l7.8 1.8L11.4 16l7.8 1.8c1.1.4 2.3-.2 2.7-1.3l.7-1.9c.4-1.1-.2-2.3-1.3-2.7L17.8 19.2Z" />
-      <path d="m15 10-5 5" />
-    </svg>
   )
 }

@@ -2,533 +2,655 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
+import {
+  getItineraryById,
+  addAccommodation,
+  updateAccommodation,
+  deleteAccommodation,
+  addChecklistItem,
+  deleteChecklistItem,
+  addTip,
+  updateTip,
+  deleteTip,
+} from "@/lib/data"
+import { notFound } from "next/navigation"
+import { ItineraryDay } from "@/components/itinerary-day"
+import { ExpenseSummary } from "@/components/expense-summary"
+import { BackToTravelButton } from "@/components/back-to-travel-button"
+import { CommentSection } from "@/components/comment-section"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { SafeImage } from "@/components/safe-image"
+import { MapPin, Calendar, Users, DollarSign, Star, ListChecks, Plus, Edit, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Trash2 } from "lucide-react"
-import { getItineraryById, saveItinerary } from "@/lib/data"
+import { useState } from "react"
 import { useToast } from "@/hooks/use-toast"
-import { SaveChangesButton } from "@/components/admin/save-changes-button"
-import { SafeImage } from "@/components/safe-image"
-import { ItineraryActivitiesManager } from "@/components/itinerary-activities-manager"
-import { BackToTravelButton } from "@/components/back-to-travel-button"
-import type { Itinerary, Day, Accommodation, ChecklistItem, Tip } from "@/lib/models"
+import type { Itinerary, Accommodation, ChecklistItem, Tip } from "@/lib/models"
 
-export default function AdminItineraryDetailPage() {
-  const params = useParams()
-  const itineraryId = params.id as string
-  const [itinerary, setItinerary] = useState<Itinerary | null>(null)
-  const [activeTab, setActiveTab] = useState("details")
+interface AdminItineraryPageProps {
+  params: { id: string }
+}
+
+export default async function AdminItineraryPage({ params }: AdminItineraryPageProps) {
+  const { id } = params
+  const itinerary = await getItineraryById(id)
+
+  if (!itinerary) {
+    notFound()
+  }
+
+  return <AdminItineraryPageContent initialItinerary={itinerary} />
+}
+
+function AdminItineraryPageContent({ initialItinerary }: { initialItinerary: Itinerary }) {
+  const [itinerary, setItinerary] = useState<Itinerary>(initialItinerary)
+  const [isAccommodationDialogOpen, setIsAccommodationDialogOpen] = useState(false)
+  const [editingAccommodation, setEditingAccommodation] = useState<Accommodation | null>(null)
+  const [newAccommodation, setNewAccommodation] = useState<Partial<Accommodation>>({
+    name: "",
+    type: "",
+    checkInDate: "",
+    checkOutDate: "",
+    cost: 0,
+    bookingConfirmation: "",
+  })
+
+  const [isChecklistDialogOpen, setIsChecklistDialogOpen] = useState(false)
+  const [newChecklistItem, setNewChecklistItem] = useState<Partial<ChecklistItem>>({ item: "", completed: false })
+
+  const [isTipDialogOpen, setIsTipDialogOpen] = useState(false)
+  const [editingTip, setEditingTip] = useState<Tip | null>(null)
+  const [newTip, setNewTip] = useState<Partial<Tip>>({ title: "", content: "" })
+
   const { toast } = useToast()
+  const isAdmin = true // This is the admin page
 
-  useEffect(() => {
-    if (itineraryId) {
-      loadItinerary()
-    }
-  }, [itineraryId])
-
-  const loadItinerary = async () => {
+  const refreshItinerary = async () => {
     try {
-      const data = await getItineraryById(itineraryId)
-      if (data) {
-        setItinerary(data)
+      const updatedData = await getItineraryById(itinerary._id)
+      setItinerary(updatedData)
+    } catch (error) {
+      console.error("Failed to refresh itinerary:", error)
+      toast({
+        title: "Error",
+        description: "Failed to refresh itinerary data.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Accommodation Handlers
+  const handleAccommodationInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    if (editingAccommodation) {
+      setEditingAccommodation({ ...editingAccommodation, [name]: value })
+    } else {
+      setNewAccommodation({ ...newAccommodation, [name]: value })
+    }
+  }
+
+  const handleAccommodationNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    const numValue = Number.parseFloat(value)
+    if (editingAccommodation) {
+      setEditingAccommodation({ ...editingAccommodation, [name]: numValue })
+    } else {
+      setNewAccommodation({ ...newAccommodation, [name]: numValue })
+    }
+  }
+
+  const handleSaveAccommodation = async () => {
+    try {
+      const accommodationToSave = editingAccommodation || newAccommodation
+      if (accommodationToSave._id) {
+        await updateAccommodation(itinerary._id, accommodationToSave._id, accommodationToSave as Accommodation)
+        toast({ title: "Success", description: "Accommodation updated successfully!" })
       } else {
+        await addAccommodation(itinerary._id, accommodationToSave as Accommodation)
+        toast({ title: "Success", description: "Accommodation added successfully!" })
+      }
+      setIsAccommodationDialogOpen(false)
+      setEditingAccommodation(null)
+      setNewAccommodation({ name: "", type: "", checkInDate: "", checkOutDate: "", cost: 0, bookingConfirmation: "" })
+      refreshItinerary()
+    } catch (error) {
+      console.error("Failed to save accommodation:", error)
+      toast({ title: "Error", description: "Failed to save accommodation. Please try again.", variant: "destructive" })
+    }
+  }
+
+  const handleDeleteAccommodation = async (accommodationId: string) => {
+    if (window.confirm("Are you sure you want to delete this accommodation?")) {
+      try {
+        await deleteAccommodation(itinerary._id, accommodationId)
+        toast({ title: "Success", description: "Accommodation deleted successfully!" })
+        refreshItinerary()
+      } catch (error) {
+        console.error("Failed to delete accommodation:", error)
         toast({
           title: "Error",
-          description: "Itinerary not found.",
+          description: "Failed to delete accommodation. Please try again.",
           variant: "destructive",
         })
       }
-    } catch (error) {
-      console.error("Failed to fetch itinerary:", error)
-      toast({
-        title: "Error",
-        description: "Failed to load itinerary details. Please try again.",
-        variant: "destructive",
-      })
     }
   }
 
-  const handleItineraryInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setItinerary((prev) => (prev ? { ...prev, [name]: value } : null))
+  const openAccommodationEditDialog = (accommodation: Accommodation) => {
+    setEditingAccommodation(accommodation)
+    setIsAccommodationDialogOpen(true)
   }
 
-  const handleItineraryNumberInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setItinerary((prev) => (prev ? { ...prev, [name]: Number.parseFloat(value) } : null))
+  const handleAccommodationDialogClose = () => {
+    setIsAccommodationDialogOpen(false)
+    setEditingAccommodation(null)
+    setNewAccommodation({ name: "", type: "", checkInDate: "", checkOutDate: "", cost: 0, bookingConfirmation: "" })
   }
 
-  const handleSaveItineraryDetails = async () => {
-    if (!itinerary) return
+  // Checklist Handlers
+  const handleChecklistItemChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewChecklistItem({ ...newChecklistItem, item: e.target.value })
+  }
 
+  const handleAddChecklistItem = async () => {
+    if (!newChecklistItem.item?.trim()) {
+      toast({ title: "Error", description: "Checklist item cannot be empty.", variant: "destructive" })
+      return
+    }
     try {
-      const saved = await saveItinerary(itinerary)
-      if (saved) {
-        toast({
-          title: "Success",
-          description: "Itinerary details saved successfully!",
-        })
-        setItinerary(saved) // Update with potentially new data from server
-      } else {
-        throw new Error("Failed to save itinerary details")
-      }
+      await addChecklistItem(itinerary._id, { item: newChecklistItem.item, completed: false } as ChecklistItem)
+      toast({ title: "Success", description: "Checklist item added successfully!" })
+      setIsChecklistDialogOpen(false)
+      setNewChecklistItem({ item: "", completed: false })
+      refreshItinerary()
     } catch (error) {
-      console.error("Failed to save itinerary details:", error)
-      toast({
-        title: "Error",
-        description: "Failed to save itinerary details. Please try again.",
-        variant: "destructive",
-      })
+      console.error("Failed to add checklist item:", error)
+      toast({ title: "Error", description: "Failed to add checklist item. Please try again.", variant: "destructive" })
     }
   }
 
-  const handleAddDay = async () => {
-    if (!itinerary) return
-    const newDayNumber = (itinerary.days?.length || 0) + 1
-    const newDay: Day = {
-      _id: `new-day-${Date.now()}`, // Temporary ID
-      dayNumber: newDayNumber,
-      date: new Date().toISOString().split("T")[0], // Default to today
-      activities: [],
+  const handleDeleteChecklistItem = async (itemId: string) => {
+    if (window.confirm("Are you sure you want to delete this checklist item?")) {
+      try {
+        await deleteChecklistItem(itinerary._id, itemId)
+        toast({ title: "Success", description: "Checklist item deleted successfully!" })
+        refreshItinerary()
+      } catch (error) {
+        console.error("Failed to delete checklist item:", error)
+        toast({
+          title: "Error",
+          description: "Failed to delete checklist item. Please try again.",
+          variant: "destructive",
+        })
+      }
     }
-    const updatedItinerary = { ...itinerary, days: [...(itinerary.days || []), newDay] }
-    setItinerary(updatedItinerary)
-    // In a real app, you'd save this to the backend immediately or on overall save
-    toast({ title: "Day Added", description: `Day ${newDayNumber} added. Remember to save changes!` })
   }
 
-  const handleDeleteDay = async (dayId: string) => {
-    if (!itinerary || !window.confirm("Are you sure you want to delete this day and all its activities?")) return
-
-    const updatedDays = itinerary.days?.filter((day) => day._id !== dayId) || []
-    const renumberedDays = updatedDays.map((day, index) => ({ ...day, dayNumber: index + 1 }))
-
-    const updatedItinerary = { ...itinerary, days: renumberedDays }
-    setItinerary(updatedItinerary)
-    // In a real app, you'd save this to the backend
-    toast({ title: "Day Deleted", description: "Day deleted. Remember to save changes!" })
-  }
-
-  const handleAddAccommodation = () => {
-    if (!itinerary) return
-    const newAccommodation: Accommodation = {
-      _id: `new-acc-${Date.now()}`,
-      name: "",
-      type: "",
-      checkInDate: "",
-      checkOutDate: "",
-      cost: 0,
-    }
-    setItinerary((prev) =>
-      prev ? { ...prev, accommodations: [...(prev.accommodations || []), newAccommodation] } : null,
-    )
-  }
-
-  const handleAccommodationChange = (index: number, field: keyof Accommodation, value: string | number) => {
-    if (!itinerary) return
-    const updatedAccommodations = [...(itinerary.accommodations || [])]
-    if (field === "cost") {
-      updatedAccommodations[index] = { ...updatedAccommodations[index], [field]: Number(value) }
+  // Tip Handlers
+  const handleTipInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    if (editingTip) {
+      setEditingTip({ ...editingTip, [name]: value })
     } else {
-      updatedAccommodations[index] = { ...updatedAccommodations[index], [field]: value as string }
+      setNewTip({ ...newTip, [name]: value })
     }
-    setItinerary((prev) => (prev ? { ...prev, accommodations: updatedAccommodations } : null))
   }
 
-  const handleDeleteAccommodation = (id: string) => {
-    if (!itinerary || !window.confirm("Are you sure you want to delete this accommodation?")) return
-    setItinerary((prev) =>
-      prev ? { ...prev, accommodations: prev.accommodations?.filter((acc) => acc._id !== id) } : null,
-    )
-  }
-
-  const handleAddChecklistItem = () => {
-    if (!itinerary) return
-    const newItem: ChecklistItem = {
-      _id: `new-item-${Date.now()}`,
-      item: "",
-      isCompleted: false,
+  const handleSaveTip = async () => {
+    try {
+      const tipToSave = editingTip || newTip
+      if (!tipToSave.title?.trim() || !tipToSave.content?.trim()) {
+        toast({ title: "Error", description: "Tip title and content cannot be empty.", variant: "destructive" })
+        return
+      }
+      if (tipToSave._id) {
+        await updateTip(itinerary._id, tipToSave._id, tipToSave as Tip)
+        toast({ title: "Success", description: "Tip updated successfully!" })
+      } else {
+        await addTip(itinerary._id, tipToSave as Tip)
+        toast({ title: "Success", description: "Tip added successfully!" })
+      }
+      setIsTipDialogOpen(false)
+      setEditingTip(null)
+      setNewTip({ title: "", content: "" })
+      refreshItinerary()
+    } catch (error) {
+      console.error("Failed to save tip:", error)
+      toast({ title: "Error", description: "Failed to save tip. Please try again.", variant: "destructive" })
     }
-    setItinerary((prev) => (prev ? { ...prev, preTripChecklist: [...(prev.preTripChecklist || []), newItem] } : null))
   }
 
-  const handleChecklistItemChange = (index: number, field: keyof ChecklistItem, value: string | boolean) => {
-    if (!itinerary) return
-    const updatedChecklist = [...(itinerary.preTripChecklist || [])]
-    updatedChecklist[index] = { ...updatedChecklist[index], [field]: value }
-    setItinerary((prev) => (prev ? { ...prev, preTripChecklist: updatedChecklist } : null))
-  }
-
-  const handleDeleteChecklistItem = (id: string) => {
-    if (!itinerary || !window.confirm("Are you sure you want to delete this checklist item?")) return
-    setItinerary((prev) =>
-      prev ? { ...prev, preTripChecklist: prev.preTripChecklist?.filter((item) => item._id !== id) } : null,
-    )
-  }
-
-  const handleAddTip = () => {
-    if (!itinerary) return
-    const newTip: Tip = {
-      _id: `new-tip-${Date.now()}`,
-      title: "",
-      description: "",
+  const handleDeleteTip = async (tipId: string) => {
+    if (window.confirm("Are you sure you want to delete this tip?")) {
+      try {
+        await deleteTip(itinerary._id, tipId)
+        toast({ title: "Success", description: "Tip deleted successfully!" })
+        refreshItinerary()
+      } catch (error) {
+        console.error("Failed to delete tip:", error)
+        toast({ title: "Error", description: "Failed to delete tip. Please try again.", variant: "destructive" })
+      }
     }
-    setItinerary((prev) => (prev ? { ...prev, tips: [...(prev.tips || []), newTip] } : null))
   }
 
-  const handleTipChange = (index: number, field: keyof Tip, value: string) => {
-    if (!itinerary) return
-    const updatedTips = [...(itinerary.tips || [])]
-    updatedTips[index] = { ...updatedTips[index], [field]: value }
-    setItinerary((prev) => (prev ? { ...prev, tips: updatedTips } : null))
+  const openTipEditDialog = (tip: Tip) => {
+    setEditingTip(tip)
+    setIsTipDialogOpen(true)
   }
 
-  const handleDeleteTip = (id: string) => {
-    if (!itinerary || !window.confirm("Are you sure you want to delete this tip?")) return
-    setItinerary((prev) => (prev ? { ...prev, tips: prev.tips?.filter((tip) => tip._id !== id) } : null))
-  }
-
-  if (!itinerary) {
-    return <div className="container mx-auto px-4 py-8 text-center">Loading itinerary...</div>
+  const handleTipDialogClose = () => {
+    setIsTipDialogOpen(false)
+    setEditingTip(null)
+    setNewTip({ title: "", content: "" })
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <BackToTravelButton />
-        <h1 className="text-3xl font-bold">Manage {itinerary.destination} Itinerary</h1>
-        <SaveChangesButton onClick={handleSaveItineraryDetails} />
+      <BackToTravelButton />
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold text-center mb-4">{itinerary.destination} (Admin View)</h1>
+        {itinerary.image && (
+          <div className="relative w-full h-96 rounded-lg overflow-hidden mb-6 shadow-lg">
+            <SafeImage src={itinerary.image} alt={itinerary.destination} className="object-cover w-full h-full" />
+          </div>
+        )}
+        <p className="text-lg text-muted-foreground text-center max-w-2xl mx-auto">{itinerary.description}</p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="details">Details</TabsTrigger>
-          <TabsTrigger value="days">Daily Itinerary</TabsTrigger>
-          <TabsTrigger value="accommodations">Accommodations</TabsTrigger>
-          <TabsTrigger value="checklist">Checklist</TabsTrigger>
-          <TabsTrigger value="tips">Tips</TabsTrigger>
-        </TabsList>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Dates</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {itinerary.startDate} - {itinerary.endDate}
+            </div>
+            <p className="text-xs text-muted-foreground">{itinerary.days.length} Days</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Travellers</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{itinerary.travellersCount}</div>
+            <p className="text-xs text-muted-foreground">People</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Budget</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">₹{itinerary.totalBudget?.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Estimated</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Category</CardTitle>
+            <MapPin className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <Badge variant="secondary">{itinerary.category}</Badge>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Rating</CardTitle>
+            <Star className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{itinerary.rating?.toFixed(1)} / 5</div>
+            <p className="text-xs text-muted-foreground">{itinerary.reviewsCount} Reviews</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Status</CardTitle>
+            <ListChecks className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <Badge variant={itinerary.status === "completed" ? "default" : "secondary"}>{itinerary.status}</Badge>
+          </CardContent>
+        </Card>
+      </div>
 
-        <TabsContent value="details" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Itinerary Details</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="destination">Destination</Label>
-                  <Input
-                    id="destination"
-                    name="destination"
-                    value={itinerary.destination}
-                    onChange={handleItineraryInputChange}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="image">Image URL</Label>
-                  <Input id="image" name="image" value={itinerary.image} onChange={handleItineraryInputChange} />
-                  {itinerary.image && (
-                    <SafeImage
-                      src={itinerary.image}
-                      alt="Itinerary Image"
-                      className="mt-2 w-full h-32 object-cover rounded-md"
+      <Tabs defaultValue="itinerary" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="itinerary">Itinerary</TabsTrigger>
+          <TabsTrigger value="accommodations">Accommodations</TabsTrigger>
+          <TabsTrigger value="checklist-tips">Checklist & Tips</TabsTrigger>
+        </TabsList>
+        <TabsContent value="itinerary" className="space-y-6 mt-6">
+          <h2 className="text-3xl font-bold mb-4">Itinerary Details</h2>
+          {itinerary.days.map((day, index) => (
+            <ItineraryDay key={index} day={day} dayNumber={index + 1} isAdmin={isAdmin} itineraryId={itinerary._id} />
+          ))}
+          <ExpenseSummary expenses={itinerary.expenses || []} />
+        </TabsContent>
+        <TabsContent value="accommodations" className="space-y-6 mt-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-3xl font-bold">Accommodations</h2>
+            <Dialog open={isAccommodationDialogOpen} onOpenChange={setIsAccommodationDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={() => setIsAccommodationDialogOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" /> Add Accommodation
+                </Button>
+              </DialogTrigger>
+              <DialogContent
+                className="sm:max-w-[600px]"
+                onEscapeKeyDown={handleAccommodationDialogClose}
+                onPointerDownOutside={handleAccommodationDialogClose}
+              >
+                <DialogHeader>
+                  <DialogTitle>{editingAccommodation ? "Edit Accommodation" : "Add New Accommodation"}</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="acc-name" className="text-right">
+                      Name
+                    </Label>
+                    <Input
+                      id="acc-name"
+                      name="name"
+                      value={editingAccommodation?.name || newAccommodation.name || ""}
+                      onChange={handleAccommodationInputChange}
+                      className="col-span-3"
                     />
-                  )}
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="acc-type" className="text-right">
+                      Type
+                    </Label>
+                    <Input
+                      id="acc-type"
+                      name="type"
+                      value={editingAccommodation?.type || newAccommodation.type || ""}
+                      onChange={handleAccommodationInputChange}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="acc-checkin" className="text-right">
+                      Check-in Date
+                    </Label>
+                    <Input
+                      id="acc-checkin"
+                      name="checkInDate"
+                      type="date"
+                      value={editingAccommodation?.checkInDate || newAccommodation.checkInDate || ""}
+                      onChange={handleAccommodationInputChange}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="acc-checkout" className="text-right">
+                      Check-out Date
+                    </Label>
+                    <Input
+                      id="acc-checkout"
+                      name="checkOutDate"
+                      type="date"
+                      value={editingAccommodation?.checkOutDate || newAccommodation.checkOutDate || ""}
+                      onChange={handleAccommodationInputChange}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="acc-cost" className="text-right">
+                      Cost
+                    </Label>
+                    <Input
+                      id="acc-cost"
+                      name="cost"
+                      type="number"
+                      value={editingAccommodation?.cost || newAccommodation.cost || 0}
+                      onChange={handleAccommodationNumberChange}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="acc-confirmation" className="text-right">
+                      Confirmation
+                    </Label>
+                    <Input
+                      id="acc-confirmation"
+                      name="bookingConfirmation"
+                      value={editingAccommodation?.bookingConfirmation || newAccommodation.bookingConfirmation || ""}
+                      onChange={handleAccommodationInputChange}
+                      className="col-span-3"
+                    />
+                  </div>
                 </div>
-              </div>
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  value={itinerary.description}
-                  onChange={handleItineraryInputChange}
-                  rows={4}
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="startDate">Start Date</Label>
-                  <Input
-                    id="startDate"
-                    name="startDate"
-                    type="date"
-                    value={itinerary.startDate}
-                    onChange={handleItineraryInputChange}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="endDate">End Date</Label>
-                  <Input
-                    id="endDate"
-                    name="endDate"
-                    type="date"
-                    value={itinerary.endDate}
-                    onChange={handleItineraryInputChange}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="totalBudget">Total Budget (₹)</Label>
-                  <Input
-                    id="totalBudget"
-                    name="totalBudget"
-                    type="number"
-                    value={itinerary.totalBudget}
-                    onChange={handleItineraryNumberInputChange}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="travellersCount">Travellers Count</Label>
-                  <Input
-                    id="travellersCount"
-                    name="travellersCount"
-                    type="number"
-                    value={itinerary.travellersCount}
-                    onChange={handleItineraryNumberInputChange}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="category">Category</Label>
-                  <Input
-                    id="category"
-                    name="category"
-                    value={itinerary.category}
-                    onChange={handleItineraryInputChange}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="season">Season</Label>
-                  <Input id="season" name="season" value={itinerary.season} onChange={handleItineraryInputChange} />
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="locations">Locations (comma-separated)</Label>
-                <Input
-                  id="locations"
-                  name="locations"
-                  value={itinerary.locations?.join(", ") || ""}
-                  onChange={(e) =>
-                    setItinerary((prev) =>
-                      prev ? { ...prev, locations: e.target.value.split(",").map((loc) => loc.trim()) } : null,
-                    )
-                  }
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="rating">Rating (0-5)</Label>
-                  <Input
-                    id="rating"
-                    name="rating"
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    max="5"
-                    value={itinerary.rating}
-                    onChange={handleItineraryNumberInputChange}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="reviewsCount">Reviews Count</Label>
-                  <Input
-                    id="reviewsCount"
-                    name="reviewsCount"
-                    type="number"
-                    value={itinerary.reviewsCount}
-                    onChange={handleItineraryNumberInputChange}
-                  />
-                </div>
-              </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={handleAccommodationDialogClose}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSaveAccommodation}>Save</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+          <Card>
+            <CardContent className="p-0">
+              {itinerary.accommodations && itinerary.accommodations.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Dates</TableHead>
+                      <TableHead className="text-right">Cost</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {itinerary.accommodations.map((acc) => (
+                      <TableRow key={acc._id}>
+                        <TableCell className="font-medium">{acc.name}</TableCell>
+                        <TableCell>{acc.type}</TableCell>
+                        <TableCell>
+                          {acc.checkInDate} - {acc.checkOutDate}
+                        </TableCell>
+                        <TableCell className="text-right">₹{acc.cost?.toLocaleString()}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 bg-transparent"
+                              onClick={() => openAccommodationEditDialog(acc)}
+                            >
+                              <Edit className="h-4 w-4" />
+                              <span className="sr-only">Edit</span>
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => handleDeleteAccommodation(acc._id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Delete</span>
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <p className="text-muted-foreground text-center py-4">No accommodations added yet.</p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
-
-        <TabsContent value="days" className="mt-6">
-          <h2 className="text-2xl font-semibold mb-4">Daily Itinerary</h2>
-          <Button onClick={handleAddDay} className="mb-4">
-            <Plus className="mr-2 h-4 w-4" /> Add New Day
-          </Button>
-          {itinerary.days?.length > 0 ? (
-            <div className="space-y-6">
-              {itinerary.days.map((day) => (
-                <Card key={day._id}>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>
-                      Day {day.dayNumber}: {day.date}
-                    </CardTitle>
-                    <Button variant="destructive" size="icon" onClick={() => handleDeleteDay(day._id)}>
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Delete Day</span>
+        <TabsContent value="checklist-tips" className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xl font-semibold">Pre-Trip Checklist</CardTitle>
+              <Dialog open={isChecklistDialogOpen} onOpenChange={setIsChecklistDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" onClick={() => setIsChecklistDialogOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" /> Add Item
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Add New Checklist Item</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="checklist-item" className="text-right">
+                        Item
+                      </Label>
+                      <Input
+                        id="checklist-item"
+                        value={newChecklistItem.item || ""}
+                        onChange={handleChecklistItemChange}
+                        className="col-span-3"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsChecklistDialogOpen(false)}>
+                      Cancel
                     </Button>
-                  </CardHeader>
-                  <CardContent>
-                    <ItineraryActivitiesManager
-                      itineraryId={itinerary._id}
-                      day={day}
-                      onActivityChange={loadItinerary} // Reload itinerary after activity changes
-                    />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground">No days added yet. Click "Add New Day" to start planning!</p>
-          )}
-        </TabsContent>
-
-        <TabsContent value="accommodations" className="mt-6">
-          <h2 className="text-2xl font-semibold mb-4">Accommodations</h2>
-          <Button onClick={handleAddAccommodation} className="mb-4">
-            <Plus className="mr-2 h-4 w-4" /> Add New Accommodation
-          </Button>
-          {itinerary.accommodations?.length > 0 ? (
-            <div className="space-y-4">
-              {itinerary.accommodations.map((acc, index) => (
-                <Card key={acc._id}>
-                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-                    <div>
-                      <Label htmlFor={`acc-name-${index}`}>Name</Label>
-                      <Input
-                        id={`acc-name-${index}`}
-                        value={acc.name}
-                        onChange={(e) => handleAccommodationChange(index, "name", e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor={`acc-type-${index}`}>Type</Label>
-                      <Input
-                        id={`acc-type-${index}`}
-                        value={acc.type}
-                        onChange={(e) => handleAccommodationChange(index, "type", e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor={`acc-checkin-${index}`}>Check-in Date</Label>
-                      <Input
-                        id={`acc-checkin-${index}`}
-                        type="date"
-                        value={acc.checkInDate}
-                        onChange={(e) => handleAccommodationChange(index, "checkInDate", e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor={`acc-checkout-${index}`}>Check-out Date</Label>
-                      <Input
-                        id={`acc-checkout-${index}`}
-                        type="date"
-                        value={acc.checkOutDate}
-                        onChange={(e) => handleAccommodationChange(index, "checkOutDate", e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor={`acc-cost-${index}`}>Cost (₹)</Label>
-                      <Input
-                        id={`acc-cost-${index}`}
-                        type="number"
-                        value={acc.cost}
-                        onChange={(e) => handleAccommodationChange(index, "cost", e.target.value)}
-                      />
-                    </div>
-                    <div className="flex items-end justify-end">
-                      <Button variant="destructive" onClick={() => handleDeleteAccommodation(acc._id)}>
-                        <Trash2 className="h-4 w-4 mr-2" /> Delete
+                    <Button onClick={handleAddChecklistItem}>Add Item</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent className="p-4">
+              {itinerary.preTripChecklist && itinerary.preTripChecklist.length > 0 ? (
+                <ul className="space-y-2">
+                  {itinerary.preTripChecklist.map((item) => (
+                    <li key={item._id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <input type="checkbox" checked={item.completed} disabled className="h-4 w-4" />
+                        <span className={item.completed ? "line-through text-muted-foreground" : ""}>{item.item}</span>
+                      </div>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => handleDeleteChecklistItem(item._id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        <span className="sr-only">Delete</span>
                       </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground">No accommodations added yet.</p>
-          )}
-        </TabsContent>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-muted-foreground text-center">No checklist items available.</p>
+              )}
+            </CardContent>
+          </Card>
 
-        <TabsContent value="checklist" className="mt-6">
-          <h2 className="text-2xl font-semibold mb-4">Pre-Trip Checklist</h2>
-          <Button onClick={handleAddChecklistItem} className="mb-4">
-            <Plus className="mr-2 h-4 w-4" /> Add New Item
-          </Button>
-          {itinerary.preTripChecklist?.length > 0 ? (
-            <div className="space-y-4">
-              {itinerary.preTripChecklist.map((item, index) => (
-                <Card key={item._id}>
-                  <CardContent className="flex items-center gap-4 py-4">
-                    <Input
-                      value={item.item}
-                      onChange={(e) => handleChecklistItemChange(index, "item", e.target.value)}
-                      className="flex-grow"
-                    />
-                    <input
-                      type="checkbox"
-                      checked={item.isCompleted}
-                      onChange={(e) => handleChecklistItemChange(index, "isCompleted", e.target.checked)}
-                      className="h-5 w-5"
-                    />
-                    <Button variant="destructive" size="icon" onClick={() => handleDeleteChecklistItem(item._id)}>
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Delete Item</span>
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground">No checklist items added yet.</p>
-          )}
-        </TabsContent>
-
-        <TabsContent value="tips" className="mt-6">
-          <h2 className="text-2xl font-semibold mb-4">Travel Tips</h2>
-          <Button onClick={handleAddTip} className="mb-4">
-            <Plus className="mr-2 h-4 w-4" /> Add New Tip
-          </Button>
-          {itinerary.tips?.length > 0 ? (
-            <div className="space-y-4">
-              {itinerary.tips.map((tip, index) => (
-                <Card key={tip._id}>
-                  <CardContent className="grid gap-2 py-4">
-                    <div>
-                      <Label htmlFor={`tip-title-${index}`}>Title</Label>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xl font-semibold">Travel Tips</CardTitle>
+              <Dialog open={isTipDialogOpen} onOpenChange={setIsTipDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" onClick={() => setIsTipDialogOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" /> Add Tip
+                  </Button>
+                </DialogTrigger>
+                <DialogContent
+                  className="sm:max-w-[600px]"
+                  onEscapeKeyDown={handleTipDialogClose}
+                  onPointerDownOutside={handleTipDialogClose}
+                >
+                  <DialogHeader>
+                    <DialogTitle>{editingTip ? "Edit Tip" : "Add New Tip"}</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="tip-title" className="text-right">
+                        Title
+                      </Label>
                       <Input
-                        id={`tip-title-${index}`}
-                        value={tip.title}
-                        onChange={(e) => handleTipChange(index, "title", e.target.value)}
+                        id="tip-title"
+                        name="title"
+                        value={editingTip?.title || newTip.title || ""}
+                        onChange={handleTipInputChange}
+                        className="col-span-3"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor={`tip-description-${index}`}>Description</Label>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="tip-content" className="text-right">
+                        Content
+                      </Label>
                       <Textarea
-                        id={`tip-description-${index}`}
-                        value={tip.description}
-                        onChange={(e) => handleTipChange(index, "description", e.target.value)}
-                        rows={3}
+                        id="tip-content"
+                        name="content"
+                        value={editingTip?.content || newTip.content || ""}
+                        onChange={handleTipInputChange}
+                        className="col-span-3"
                       />
                     </div>
-                    <div className="flex justify-end">
-                      <Button variant="destructive" onClick={() => handleDeleteTip(tip._id)}>
-                        <Trash2 className="h-4 w-4 mr-2" /> Delete
-                      </Button>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={handleTipDialogClose}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleSaveTip}>Save</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent className="p-4">
+              {itinerary.tips && itinerary.tips.length > 0 ? (
+                <div className="space-y-4">
+                  {itinerary.tips.map((tip) => (
+                    <div key={tip._id} className="border rounded-md p-3 flex justify-between items-start">
+                      <div>
+                        <h4 className="font-semibold">{tip.title}</h4>
+                        <p className="text-sm text-muted-foreground">{tip.content}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-6 w-6 bg-transparent"
+                          onClick={() => openTipEditDialog(tip)}
+                        >
+                          <Edit className="h-3 w-3" />
+                          <span className="sr-only">Edit</span>
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => handleDeleteTip(tip._id)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          <span className="sr-only">Delete</span>
+                        </Button>
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground">No tips added yet.</p>
-          )}
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center">No tips added yet.</p>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
+      <CommentSection itineraryId={itinerary._id} />
     </div>
   )
 }

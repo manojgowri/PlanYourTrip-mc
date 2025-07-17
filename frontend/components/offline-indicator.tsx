@@ -1,41 +1,52 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { WifiOff, Wifi } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { WifiOff } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { useToast } from "@/hooks/use-toast"
 
 export function OfflineIndicator() {
-  const [isOffline, setIsOffline] = useState(false)
+  const [isOnline, setIsOnline] = useState(true)
+  const { toast } = useToast()
 
   useEffect(() => {
-    const handleOnline = () => setIsOffline(false)
-    const handleOffline = () => setIsOffline(true)
+    const handleOnline = () => {
+      setIsOnline(true)
+      toast({
+        title: "You are back online!",
+        description: "Your connection has been restored.",
+        variant: "default",
+      })
+    }
+    const handleOffline = () => {
+      setIsOnline(false)
+      toast({
+        title: "You are offline!",
+        description: "Some features may not be available.",
+        variant: "destructive",
+      })
+    }
+
+    // Set initial status
+    setIsOnline(navigator.onLine)
 
     window.addEventListener("online", handleOnline)
     window.addEventListener("offline", handleOffline)
-
-    // Initial check
-    setIsOffline(!navigator.onLine)
 
     return () => {
       window.removeEventListener("online", handleOnline)
       window.removeEventListener("offline", handleOffline)
     }
-  }, [])
+  }, [toast])
 
-  if (!isOffline) {
-    return null
+  if (isOnline) {
+    return null // Don't show anything if online
   }
 
   return (
-    <div
-      className={cn(
-        "fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium shadow-lg",
-        isOffline ? "bg-red-500 text-white" : "bg-green-500 text-white",
-      )}
-    >
-      {isOffline ? <WifiOff className="h-4 w-4" /> : <Wifi className="h-4 w-4" />}
-      {isOffline ? "You are offline" : "You are online"}
-    </div>
+    <Badge variant="destructive" className="flex items-center gap-1">
+      <WifiOff className="h-4 w-4" />
+      Offline
+    </Badge>
   )
 }

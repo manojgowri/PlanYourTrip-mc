@@ -1,28 +1,31 @@
 export interface Itinerary {
   _id: string
+  id: string // Added for consistency, often _id is used as id
   destination: string
   startDate: string
   endDate: string
-  totalBudget: number
-  travellersCount: number
-  category: string
-  status: "online" | "completed" | "draft"
-  image: string
-  description: string
-  season: string
+  totalBudget?: number
+  travellersCount?: number
+  category?: string
+  status: "planning" | "booked" | "completed" | "cancelled" | "online"
+  image?: string
+  description?: string
+  season?: string
   locations: string[]
-  rating: number
-  reviewsCount: number
+  rating?: number
+  reviewsCount?: number
   days: Day[]
-  accommodations: Accommodation[]
-  preTripChecklist: ChecklistItem[]
-  tips: Tip[]
-  comments: Comment[]
+  expenses?: Expense[]
+  accommodations?: Accommodation[]
+  preTripChecklist?: ChecklistItem[]
+  tips?: Tip[]
+  metadata?: {
+    createdAt: string
+    updatedAt: string
+  }
 }
 
 export interface Day {
-  _id: string
-  dayNumber: number
   date: string
   activities: Activity[]
 }
@@ -32,10 +35,18 @@ export interface Activity {
   name: string
   time: string
   location: string
-  description: string
-  image?: string
+  description?: string
+  cost?: number
+  category?: string
+  status?: "planned" | "booked" | "completed" | "cancelled"
+}
+
+export interface Expense {
+  _id: string
+  item: string
   cost: number
-  type?: "Must visit place" | "Other" // Added type field
+  category: string
+  date: string
 }
 
 export interface Accommodation {
@@ -44,33 +55,18 @@ export interface Accommodation {
   type: string
   checkInDate: string
   checkOutDate: string
-  cost: number
+  cost?: number
+  bookingConfirmation?: string
 }
 
 export interface ChecklistItem {
   _id: string
   item: string
-  isCompleted: boolean
+  completed: boolean
 }
 
 export interface Tip {
   _id: string
   title: string
-  description: string
-}
-
-export interface Comment {
-  _id: string
-  author: string
-  text: string
-  createdAt: string
-}
-
-export interface Companion {
-  _id: string
-  name: string
-  relation: string
-  contact: string
-  image?: string
-  notes?: string
+  content: string
 }

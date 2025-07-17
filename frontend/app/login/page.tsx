@@ -3,60 +3,45 @@
 import type React from "react"
 
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { useToast } from "@/hooks/use-toast"
+import Link from "next/link"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const { toast } = useToast()
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+    setError(null)
+    setLoading(true)
 
-      if (email === "admin@example.com" && password === "password") {
-        toast({
-          title: "Login Successful",
-          description: "Welcome back!",
-          variant: "default",
-        })
-        // Redirect to admin dashboard or home page
-        window.location.href = "/admin"
-      } else {
-        toast({
-          title: "Login Failed",
-          description: "Invalid email or password.",
-          variant: "destructive",
-        })
-      }
-    } catch (error) {
-      console.error("Login error:", error)
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 1500))
+
+    if (email === "admin@example.com" && password === "password") {
+      // In a real app, you'd handle authentication (e.g., set a cookie, redirect)
+      console.log("Login successful!")
+      window.location.href = "/admin" // Redirect to admin page
+    } else {
+      setError("Invalid email or password.")
     }
+    setLoading(false)
   }
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-64px)] bg-gray-100 dark:bg-gray-900">
+    <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900">
       <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl text-center">Login</CardTitle>
+        <CardHeader className="text-center">
+          <CardTitle className="text-3xl font-bold">Login</CardTitle>
+          <CardDescription>Enter your credentials to access the admin dashboard.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-6">
             <div>
               <Label htmlFor="email">Email</Label>
               <Input
@@ -78,10 +63,17 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Logging in..." : "Login"}
+            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Logging in..." : "Login"}
             </Button>
           </form>
+          <div className="mt-6 text-center text-sm">
+            Don&apos;t have an account?{" "}
+            <Link href="#" className="underline">
+              Sign up
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>

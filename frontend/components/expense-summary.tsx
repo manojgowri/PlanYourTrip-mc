@@ -2,47 +2,62 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { CurrencySelector } from "@/components/currency-selector"
 import { formatCurrency } from "@/lib/currency-utils"
-import type { Activity } from "@/lib/models"
+import type { Expense } from "@/lib/models"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { DollarSign } from "lucide-react"
 
 interface ExpenseSummaryProps {
-  activities: Activity[]
+  expenses: Expense[]
 }
 
-export function ExpenseSummary({ activities }: ExpenseSummaryProps) {
+export function ExpenseSummary({ expenses }: ExpenseSummaryProps) {
+  const [selectedCurrency, setSelectedCurrency] = useState("INR") // Default to INR
   const [totalExpenses, setTotalExpenses] = useState(0)
-  const [currency, setCurrency] = useState("INR") // Default currency
 
   useEffect(() => {
-    const calculatedTotal = activities.reduce((sum, activity) => sum + (activity.cost || 0), 0)
-    setTotalExpenses(calculatedTotal)
-  }, [activities])
-
-  // In a real app, you'd likely have a context or prop to get the selected currency
-  // For now, we'll just use INR as the base for calculation and display.
+    const sum = expenses.reduce((acc, expense) => acc + expense.cost, 0)
+    setTotalExpenses(sum)
+  }, [expenses])
 
   return (
-    <Card className="mt-4">
-      <CardHeader>
-        <CardTitle className="text-lg">Activity Expenses</CardTitle>
+    <Card className="shadow-sm">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-xl font-semibold">Expense Summary</CardTitle>
+        <DollarSign className="h-6 w-6 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        <div className="space-y-2">
-          {activities.length > 0 ? (
-            activities.map((activity) => (
-              <div key={activity._id} className="flex justify-between text-sm">
-                <span>{activity.name}</span>
-                <span>{formatCurrency(activity.cost || 0, currency)}</span>
-              </div>
-            ))
-          ) : (
-            <p className="text-muted-foreground text-sm">No expenses recorded for activities.</p>
-          )}
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-medium">Total Expenses:</h3>
+          <CurrencySelector
+            initialCurrency={selectedCurrency}
+            onCurrencyChange={setSelectedCurrency}
+            amount={totalExpenses}
+          />
         </div>
-        <div className="border-t pt-2 mt-4 flex justify-between font-semibold">
-          <span>Total Activity Expenses:</span>
-          <span>{formatCurrency(totalExpenses, currency)}</span>
-        </div>
+        {expenses.length > 0 ? (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Item</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead className="text-right">Cost</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {expenses.map((expense) => (
+                <TableRow key={expense._id}>
+                  <TableCell>{expense.item}</TableCell>
+                  <TableCell>{expense.category}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(expense.cost, selectedCurrency)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
+          <p className="text-muted-foreground text-center">No expenses recorded yet.</p>
+        )}
       </CardContent>
     </Card>
   )

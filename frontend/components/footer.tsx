@@ -1,68 +1,72 @@
 import Link from "next/link"
-import { Facebook, Twitter, Instagram, Youtube, Mail, Phone } from "lucide-react"
+import { MountainSnow, Facebook, Twitter, Instagram } from "lucide-react"
 
 export function Footer() {
   return (
-    <footer className="bg-gray-100 dark:bg-gray-800 py-8 px-4 md:px-6 border-t">
-      <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">About Us</h3>
-          <p className="text-sm text-muted-foreground">
-            We help you plan your perfect travel adventures, making every trip memorable and hassle-free.
-          </p>
-          <div className="flex space-x-4">
-            <Link href="#" className="text-muted-foreground hover:text-primary" prefetch={false}>
-              <Facebook className="h-5 w-5" />
+    <footer className="bg-gray-100 py-8 dark:bg-gray-800">
+      <div className="container mx-auto px-4 md:px-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="space-y-4">
+            <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
+              <MountainSnow className="h-6 w-6 text-emerald-600" />
+              <span className="sr-only">Plan Your Trip Amigos</span>
+              <span className="hidden md:inline">
+                Plan Your Trip <span className="text-emerald-600">Amigos</span>
+              </span>
             </Link>
-            <Link href="#" className="text-muted-foreground hover:text-primary" prefetch={false}>
-              <Twitter className="h-5 w-5" />
-            </Link>
-            <Link href="#" className="text-muted-foreground hover:text-primary" prefetch={false}>
-              <Instagram className="h-5 w-5" />
-            </Link>
-            <Link href="#" className="text-muted-foreground hover:text-primary" prefetch={false}>
-              <Youtube className="h-5 w-5" />
-            </Link>
+            <p className="text-sm text-muted-foreground">
+              Your ultimate companion for planning unforgettable budget-friendly travel adventures.
+            </p>
+            <div className="flex space-x-4">
+              <Link href="#" className="text-muted-foreground hover:text-gray-900 dark:hover:text-white">
+                <Facebook className="h-6 w-6" />
+                <span className="sr-only">Facebook</span>
+              </Link>
+              <Link href="#" className="text-muted-foreground hover:text-gray-900 dark:hover:text-white">
+                <Twitter className="h-6 w-6" />
+                <span className="sr-only">Twitter</span>
+              </Link>
+              <Link href="#" className="text-muted-foreground hover:text-gray-900 dark:hover:text-white">
+                <Instagram className="h-6 w-6" />
+                <span className="sr-only">Instagram</span>
+              </Link>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold">Quick Links</h3>
+            <ul className="space-y-1">
+              <li>
+                <Link href="/" className="text-sm text-muted-foreground hover:underline">
+                  Home
+                </Link>
+              </li>
+              <li>
+                <Link href="/companions" className="text-sm text-muted-foreground hover:underline">
+                  Companions
+                </Link>
+              </li>
+              <li>
+                <Link href="/admin" className="text-sm text-muted-foreground hover:underline">
+                  Admin Panel
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="text-sm text-muted-foreground hover:underline">
+                  Contact
+                </Link>
+              </li>
+            </ul>
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold">Contact Us</h3>
+            <p className="text-sm text-muted-foreground">123 Travel Lane, Adventure City, World 12345</p>
+            <p className="text-sm text-muted-foreground">Email: info@planyourtripamigos.com</p>
+            <p className="text-sm text-muted-foreground">Phone: +1 (234) 567-890</p>
           </div>
         </div>
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Quick Links</h3>
-          <nav className="space-y-2">
-            <Link className="block text-sm text-muted-foreground hover:text-primary" href="/" prefetch={false}>
-              Home
-            </Link>
-            <Link
-              className="block text-sm text-muted-foreground hover:text-primary"
-              href="/companions"
-              prefetch={false}
-            >
-              Companions
-            </Link>
-            <Link className="block text-sm text-muted-foreground hover:text-primary" href="/admin" prefetch={false}>
-              Admin Dashboard
-            </Link>
-            <Link className="block text-sm text-muted-foreground hover:text-primary" href="/contact" prefetch={false}>
-              Contact Us
-            </Link>
-          </nav>
+        <div className="mt-8 border-t border-gray-300 pt-6 text-center text-sm text-muted-foreground dark:border-gray-700">
+          &copy; {new Date().getFullYear()} Plan Your Trip Amigos. All rights reserved.
         </div>
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Contact Information</h3>
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <p className="flex items-center gap-2">
-              <Mail className="h-4 w-4" />
-              <span>info@travelamigos.com</span>
-            </p>
-            <p className="flex items-center gap-2">
-              <Phone className="h-4 w-4" />
-              <span>+1 (555) 123-4567</span>
-            </p>
-            <p>123 Adventure Lane, Wanderlust City, TRV 98765</p>
-          </div>
-        </div>
-      </div>
-      <div className="mt-8 text-center text-sm text-muted-foreground">
-        © {new Date().getFullYear()} Travel Amigos. All rights reserved.
       </div>
     </footer>
   )

@@ -6,82 +6,87 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Upload } from "lucide-react"
+import { Loader2, Upload, XCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { uploadImage } from "@/lib/image-utils" // Assuming this utility exists
 
 interface ImageUploadProps {
   onImageUpload: (url: string) => void
-  currentImageUrl?: string
-  label?: string
+  initialImageUrl?: string
 }
 
-export function ImageUpload({ onImageUpload, currentImageUrl, label = "Upload Image" }: ImageUploadProps) {
+export function ImageUpload({ onImageUpload, initialImageUrl }: ImageUploadProps) {
   const [file, setFile] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null)
-  const [isUploading, setIsUploading] = useState(false)
+  const [imageUrl, setImageUrl] = useState<string>(initialImageUrl || "")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0]
-    if (selectedFile) {
-      setFile(selectedFile)
-      setPreviewUrl(URL.createObjectURL(selectedFile))
-    } else {
-      setFile(null)
-      setPreviewUrl(currentImageUrl || null)
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0])
+      setError(null)
     }
   }
 
   const handleUpload = async () => {
     if (!file) {
-      toast({
-        title: "No file selected",
-        description: "Please select an image to upload.",
-        variant: "destructive",
-      })
+      setError("Please select a file to upload.")
       return
     }
 
-    setIsUploading(true)
+    setLoading(true)
+    setError(null)
+
     try {
-      // Replace with actual image upload logic (e.g., to Vercel Blob, S3, etc.)
-      const imageUrl = await uploadImage(file) // This function needs to be implemented in lib/image-utils.ts
-      onImageUpload(imageUrl)
+      // Simulate image upload to a service like Vercel Blob, AWS S3, etc.
+      // Replace this with your actual image upload logic
+      const uploadedUrl = await uploadImage(file) // This function needs to be implemented in lib/image-utils.ts
+      setImageUrl(uploadedUrl)
+      onImageUpload(uploadedUrl)
       toast({
         title: "Upload Successful",
-        description: "Image uploaded and URL updated.",
+        description: "Image uploaded successfully!",
+        variant: "default",
       })
-    } catch (error) {
-      console.error("Image upload failed:", error)
+    } catch (err) {
+      console.error("Image upload failed:", err)
+      setError("Failed to upload image. Please try again.")
       toast({
         title: "Upload Failed",
-        description: "There was an error uploading your image. Please try again.",
+        description: "Could not upload image. " + (err as Error).message,
         variant: "destructive",
       })
     } finally {
-      setIsUploading(false)
-      setFile(null) // Clear file input after upload
+      setLoading(false)
+      setFile(null) // Clear the selected file after upload attempt
     }
   }
 
   return (
     <div className="space-y-4">
-      <Label htmlFor="image-upload">{label}</Label>
-      <div className="flex items-center gap-4">
-        <Input id="image-upload" type="file" accept="image/*" onChange={handleFileChange} className="flex-grow" />
-        <Button onClick={handleUpload} disabled={!file || isUploading}>
-          {isUploading ? "Uploading..." : <Upload className="h-4 w-4 mr-2" />}
-          {isUploading ? "" : "Upload"}
-        </Button>
+      <div>
+        <Label htmlFor="image-upload">Upload Image</Label>
+        <div className="flex items-center gap-2">
+          <Input id="image-upload" type="file" accept="image/*" onChange={handleFileChange} />
+          <Button onClick={handleUpload} disabled={loading || !file}>
+            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+            {loading ? "Uploading..." : "Upload"}
+          </Button>
+        </div>
+        {error && (
+          <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
+            <XCircle className="h-4 w-4" /> {error}
+          </p>
+        )}
       </div>
-      {previewUrl && (
+      {imageUrl && (
         <div className="mt-4">
-          <p className="text-sm text-muted-foreground mb-2">Image Preview:</p>
+          <Label>Current Image Preview:</Label>
           <img
-            src={previewUrl || "/placeholder.svg"}
-            alt="Image Preview"
-            className="max-w-full h-auto rounded-md object-contain max-h-48"
+            src={imageUrl || "/placeholder.svg"}
+            alt="Uploaded preview"
+            className="mt-2 max-w-full h-auto rounded-md shadow-sm"
           />
         </div>
       )}

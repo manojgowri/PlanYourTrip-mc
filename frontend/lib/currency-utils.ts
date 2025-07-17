@@ -50,11 +50,13 @@ export function convertCurrency(amount: number, fromCurrency: string, toCurrency
 }
 
 export function formatCurrency(amount: number, currencyCode: string): string {
-  const formatter = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: currencyCode,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })
-  return formatter.format(amount)
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currencyCode,
+    }).format(amount)
+  } catch (error) {
+    console.error("Error formatting currency:", error)
+    return `${currencyCode} ${amount.toFixed(2)}` // Fallback
+  }
 }

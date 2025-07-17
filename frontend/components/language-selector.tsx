@@ -1,40 +1,35 @@
 "use client"
+
 import { useState } from "react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
 import { Globe } from "lucide-react"
 
-interface LanguageSelectorProps {
-  initialLanguage?: string
-  onLanguageChange?: (lang: string) => void
-}
+export function LanguageSelector() {
+  const [selectedLanguage, setSelectedLanguage] = useState("en") // Default to English
 
-export function LanguageSelector({ initialLanguage = "en", onLanguageChange }: LanguageSelectorProps) {
-  const [selectedLanguage, setSelectedLanguage] = useState(initialLanguage)
-
-  const handleLanguageChange = (value: string) => {
-    setSelectedLanguage(value)
-    if (onLanguageChange) {
-      onLanguageChange(value)
-    }
-    // In a real app, you'd update i18n library here
-    console.log("Language changed to:", value)
+  const handleLanguageChange = (lang: string) => {
+    setSelectedLanguage(lang)
+    // In a real application, you would change the locale here
+    // e.g., using Next.js i18n routing or a context provider
+    console.log(`Language changed to: ${lang}`)
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <Globe className="h-5 w-5 text-muted-foreground" />
-      <Select value={selectedLanguage} onValueChange={handleLanguageChange}>
-        <SelectTrigger className="w-[120px]">
-          <SelectValue placeholder="Select language" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="en">English</SelectItem>
-          <SelectItem value="es">Español</SelectItem>
-          <SelectItem value="fr">Français</SelectItem>
-          <SelectItem value="vi">Tiếng Việt</SelectItem>
-          {/* Add more languages as needed */}
-        </SelectContent>
-      </Select>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="icon">
+          <Globe className="h-[1.2rem] w-[1.2rem]" />
+          <span className="sr-only">Select language</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => handleLanguageChange("en")}>English</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleLanguageChange("es")}>Español</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleLanguageChange("fr")}>Français</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleLanguageChange("de")}>Deutsch</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleLanguageChange("hi")}>हिंदी</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

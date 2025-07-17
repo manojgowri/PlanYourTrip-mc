@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 import Lottie from "lottie-react"
-import animationData from "@/public/lottie/travel-loader.json" // Assuming you have this Lottie JSON file
+import animationData from "@/public/lottie/travel-loader.json" // Corrected path to the Lottie JSON file
 
 export default function SplashLoader() {
   const pathname = usePathname()

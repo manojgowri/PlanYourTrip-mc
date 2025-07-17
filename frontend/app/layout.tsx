@@ -4,14 +4,14 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ToastContainer } from "@/components/toast-container"
-import { SplashLoader } from "@/components/splash-loader"
+import SplashLoader from "@/components/splash-loader"
 import ClientLayout from "./client-layout"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Vietnam Travel Page",
-  description: "Plan your next adventure to Vietnam!",
+  title: "Plan Your Trip Amigos",
+  description: "Your ultimate travel planning companion.",
 }
 
 export default function RootLayout({

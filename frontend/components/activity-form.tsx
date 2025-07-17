@@ -8,41 +8,43 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ImageUpload } from "@/components/image-upload"
 import type { Activity } from "@/lib/models"
 
 interface ActivityFormProps {
   initialData?: Activity | null
-  onSubmit: (activity: Partial<Activity>) => void
+  onSubmit: (activity: Activity) => void
   onCancel: () => void
-  isSubmitting?: boolean
 }
 
-export function ActivityForm({ initialData, onSubmit, onCancel, isSubmitting }: ActivityFormProps) {
-  const [activity, setActivity] = useState<Partial<Activity>>(
+export function ActivityForm({ initialData, onSubmit, onCancel }: ActivityFormProps) {
+  const [activity, setActivity] = useState<Activity>(
     initialData || {
+      _id: "", // Will be generated on save if new
       name: "",
       time: "",
       location: "",
       description: "",
-      image: "",
       cost: 0,
-      type: "Other", // Default type
+      category: "Sightseeing",
+      status: "planned",
     },
   )
 
   useEffect(() => {
-    setActivity(
-      initialData || {
+    if (initialData) {
+      setActivity(initialData)
+    } else {
+      setActivity({
+        _id: "",
         name: "",
         time: "",
         location: "",
         description: "",
-        image: "",
         cost: 0,
-        type: "Other",
-      },
-    )
+        category: "Sightseeing",
+        status: "planned",
+      })
+    }
   }, [initialData])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -55,12 +57,8 @@ export function ActivityForm({ initialData, onSubmit, onCancel, isSubmitting }: 
     setActivity((prev) => ({ ...prev, [name]: Number.parseFloat(value) || 0 }))
   }
 
-  const handleSelectChange = (value: string) => {
-    setActivity((prev) => ({ ...prev, type: value as Activity["type"] }))
-  }
-
-  const handleImageUpload = (url: string) => {
-    setActivity((prev) => ({ ...prev, image: url }))
+  const handleSelectChange = (name: string, value: string) => {
+    setActivity((prev) => ({ ...prev, [name]: value }))
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -74,14 +72,7 @@ export function ActivityForm({ initialData, onSubmit, onCancel, isSubmitting }: 
         <Label htmlFor="name" className="text-right">
           Name
         </Label>
-        <Input
-          id="name"
-          name="name"
-          value={activity.name || ""}
-          onChange={handleChange}
-          className="col-span-3"
-          required
-        />
+        <Input id="name" name="name" value={activity.name} onChange={handleChange} className="col-span-3" required />
       </div>
       <div className="grid grid-cols-4 items-center gap-4">
         <Label htmlFor="time" className="text-right">
@@ -90,10 +81,10 @@ export function ActivityForm({ initialData, onSubmit, onCancel, isSubmitting }: 
         <Input
           id="time"
           name="time"
-          value={activity.time || ""}
+          type="time"
+          value={activity.time}
           onChange={handleChange}
           className="col-span-3"
-          placeholder="e.g., 9:00 AM"
           required
         />
       </div>
@@ -104,7 +95,7 @@ export function ActivityForm({ initialData, onSubmit, onCancel, isSubmitting }: 
         <Input
           id="location"
           name="location"
-          value={activity.location || ""}
+          value={activity.location}
           onChange={handleChange}
           className="col-span-3"
           required
@@ -130,45 +121,52 @@ export function ActivityForm({ initialData, onSubmit, onCancel, isSubmitting }: 
           id="cost"
           name="cost"
           type="number"
-          step="0.01"
           value={activity.cost || 0}
           onChange={handleNumberChange}
           className="col-span-3"
         />
       </div>
       <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="type" className="text-right">
-          Type
+        <Label htmlFor="category" className="text-right">
+          Category
         </Label>
-        <Select value={activity.type || "Other"} onValueChange={handleSelectChange}>
+        <Select value={activity.category} onValueChange={(value) => handleSelectChange("category", value)}>
           <SelectTrigger className="col-span-3">
-            <SelectValue placeholder="Select activity type" />
+            <SelectValue placeholder="Select a category" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Must visit place">Must visit place</SelectItem>
+            <SelectItem value="Sightseeing">Sightseeing</SelectItem>
+            <SelectItem value="Food">Food</SelectItem>
+            <SelectItem value="Shopping">Shopping</SelectItem>
+            <SelectItem value="Adventure">Adventure</SelectItem>
+            <SelectItem value="Relaxation">Relaxation</SelectItem>
+            <SelectItem value="Transportation">Transportation</SelectItem>
+            <SelectItem value="Accommodation">Accommodation</SelectItem>
             <SelectItem value="Other">Other</SelectItem>
           </SelectContent>
         </Select>
       </div>
-      <div className="grid grid-cols-4 items-start gap-4">
-        <Label htmlFor="image-upload-component" className="text-right pt-2">
-          Image
+      <div className="grid grid-cols-4 items-center gap-4">
+        <Label htmlFor="status" className="text-right">
+          Status
         </Label>
-        <div className="col-span-3">
-          <ImageUpload
-            onImageUpload={handleImageUpload}
-            currentImageUrl={activity.image}
-            label="Upload Activity Image"
-          />
-        </div>
+        <Select value={activity.status} onValueChange={(value) => handleSelectChange("status", value)}>
+          <SelectTrigger className="col-span-3">
+            <SelectValue placeholder="Select status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="planned">Planned</SelectItem>
+            <SelectItem value="booked">Booked</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <div className="flex justify-end gap-2 mt-4">
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Saving..." : "Save Activity"}
-        </Button>
+        <Button type="submit">{initialData ? "Save Changes" : "Add Activity"}</Button>
       </div>
     </form>
   )
