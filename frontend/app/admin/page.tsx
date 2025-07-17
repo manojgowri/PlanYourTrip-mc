@@ -3,115 +3,150 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { fetchItineraries, createItinerary, updateItinerary, deleteItinerary } from "@/lib/data"
-import type { Itinerary } from "@/lib/models"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus, Edit, Trash2, CalendarDays, Users, DollarSign } from "lucide-react"
-import { AdminNav } from "@/components/admin/admin-nav"
-import { DatePicker } from "@/components/date-picker"
-import { format } from "date-fns"
-import { calculateDuration, getTravelRecommendation } from "@/lib/utils"
-import { ImageUpload } from "@/components/image-upload"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Plus, Edit, Trash2, Eye, CheckCircle, XCircle, Database, Server, ListChecks, Lightbulb } from "lucide-react"
+import {
+  getItineraries,
+  saveItinerary,
+  deleteItinerary,
+  testDatabaseConnection,
+  checkServerHealth,
+  markItineraryAsComplete,
+} from "@/lib/data"
 import { useToast } from "@/hooks/use-toast"
+import { AdminNav } from "@/components/admin/admin-nav"
+import { ModeToggle } from "@/components/admin/mode-toggle"
+import { SaveChangesButton } from "@/components/admin/save-changes-button"
+import { CompleteStatusButton } from "@/components/admin/complete-status-button"
+import { SafeImage } from "@/components/safe-image"
+import type { Itinerary } from "@/lib/models"
 
 export default function AdminPage() {
   const [itineraries, setItineraries] = useState<Itinerary[]>([])
-  const [editingItinerary, setEditingItinerary] = useState<Partial<Itinerary> | null>(null)
-  const [isNewItinerary, setIsNewItinerary] = useState(false)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [editingItinerary, setEditingItinerary] = useState<Itinerary | null>(null)
+  const [newItinerary, setNewItinerary] = useState<Partial<Itinerary>>({
+    destination: "",
+    startDate: "",
+    endDate: "",
+    totalBudget: 0,
+    travellersCount: 1,
+    category: "Adventure",
+    status: "online",
+    image: "",
+    description: "",
+    season: "",
+    locations: [],
+    rating: 0,
+    reviewsCount: 0,
+    days: [],
+    accommodations: [],
+    preTripChecklist: [],
+    tips: [],
+  })
+  const [dbStatus, setDbStatus] = useState<string | null>(null)
+  const [serverStatus, setServerStatus] = useState<string | null>(null)
   const { toast } = useToast()
 
   useEffect(() => {
     loadItineraries()
+    checkStatuses()
   }, [])
 
   const loadItineraries = async () => {
-    const data = await fetchItineraries()
-    setItineraries(data)
-  }
-
-  const handleEdit = (itinerary: Itinerary) => {
-    setEditingItinerary({ ...itinerary })
-    setIsNewItinerary(false)
-  }
-
-  const handleCreateNew = () => {
-    setEditingItinerary({
-      destination: "",
-      startDate: "",
-      endDate: "",
-      duration: "",
-      category: "Adventure",
-      season: "Summer",
-      image: "",
-      description: "",
-      totalBudget: 0,
-      travellersCount: 1,
-      days: [],
-      preTripChecklist: [],
-      tips: [],
-    })
-    setIsNewItinerary(true)
-  }
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setEditingItinerary((prev) => ({ ...prev!, [name]: value }))
-  }
-
-  const handleSelectChange = (name: string, value: string) => {
-    setEditingItinerary((prev) => ({ ...prev!, [name]: value }))
-  }
-
-  const handleDateChange = (name: string, date: Date | undefined) => {
-    setEditingItinerary((prev) => ({
-      ...prev!,
-      [name]: date ? format(date, "yyyy-MM-dd") : "",
-    }))
-  }
-
-  const handleSave = async () => {
-    if (!editingItinerary) return
-
-    const itineraryToSave = { ...editingItinerary }
-
-    // Calculate duration and recommendation before saving
-    if (itineraryToSave.startDate && itineraryToSave.endDate) {
-      itineraryToSave.duration = calculateDuration(itineraryToSave.startDate, itineraryToSave.endDate)
+    try {
+      const data = await getItineraries()
+      setItineraries(data)
+    } catch (error) {
+      console.error("Failed to fetch itineraries:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load itineraries. Please try again.",
+        variant: "destructive",
+      })
     }
-    itineraryToSave.travelRecommendation = getTravelRecommendation(itineraryToSave.travellersCount)
+  }
+
+  const checkStatuses = async () => {
+    try {
+      const dbRes = await testDatabaseConnection()
+      setDbStatus(dbRes.message)
+    } catch (error) {
+      setDbStatus("Failed to connect")
+      console.error("DB connection test failed:", error)
+    }
 
     try {
-      if (isNewItinerary) {
-        const newItinerary = await createItinerary(itineraryToSave)
-        if (newItinerary) {
-          setItineraries([...itineraries, newItinerary])
-          toast({
-            title: "Success",
-            description: "Itinerary created successfully.",
-          })
-        } else {
-          throw new Error("Failed to create itinerary")
-        }
-      } else if (editingItinerary._id) {
-        const updatedItinerary = await updateItinerary(editingItinerary._id, itineraryToSave)
-        if (updatedItinerary) {
-          setItineraries(itineraries.map((it) => (it._id === updatedItinerary._id ? updatedItinerary : it)))
-          toast({
-            title: "Success",
-            description: "Itinerary updated successfully.",
-          })
-        } else {
-          throw new Error("Failed to update itinerary")
-        }
-      }
-      setEditingItinerary(null)
-      setIsNewItinerary(false)
+      const serverRes = await checkServerHealth()
+      setServerStatus(serverRes.message)
     } catch (error) {
-      console.error("Error saving itinerary:", error)
+      setServerStatus("Server unhealthy")
+      console.error("Server health check failed:", error)
+    }
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    if (editingItinerary) {
+      setEditingItinerary({ ...editingItinerary, [name]: value })
+    } else {
+      setNewItinerary({ ...newItinerary, [name]: value })
+    }
+  }
+
+  const handleNumberInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    const numValue = Number.parseFloat(value)
+    if (editingItinerary) {
+      setEditingItinerary({ ...editingItinerary, [name]: numValue })
+    } else {
+      setNewItinerary({ ...newItinerary, [name]: numValue })
+    }
+  }
+
+  const handleSaveItinerary = async () => {
+    try {
+      const itineraryToSave = editingItinerary || newItinerary
+      const saved = await saveItinerary(itineraryToSave as Itinerary)
+      if (saved) {
+        toast({
+          title: "Success",
+          description: "Itinerary saved successfully!",
+        })
+        setIsDialogOpen(false)
+        setEditingItinerary(null)
+        setNewItinerary({
+          destination: "",
+          startDate: "",
+          endDate: "",
+          totalBudget: 0,
+          travellersCount: 1,
+          category: "Adventure",
+          status: "online",
+          image: "",
+          description: "",
+          season: "",
+          locations: [],
+          rating: 0,
+          reviewsCount: 0,
+          days: [],
+          accommodations: [],
+          preTripChecklist: [],
+          tips: [],
+        })
+        loadItineraries() // Reload list to show changes
+      } else {
+        throw new Error("Failed to save itinerary")
+      }
+    } catch (error) {
+      console.error("Failed to save itinerary:", error)
       toast({
         title: "Error",
         description: "Failed to save itinerary. Please try again.",
@@ -120,21 +155,21 @@ export default function AdminPage() {
     }
   }
 
-  const handleDelete = async (id: string) => {
+  const handleDeleteItinerary = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this itinerary?")) {
       try {
         const success = await deleteItinerary(id)
         if (success) {
-          setItineraries(itineraries.filter((it) => it._id !== id))
           toast({
             title: "Success",
-            description: "Itinerary deleted successfully.",
+            description: "Itinerary deleted successfully!",
           })
+          loadItineraries() // Reload list
         } else {
           throw new Error("Failed to delete itinerary")
         }
       } catch (error) {
-        console.error("Error deleting itinerary:", error)
+        console.error("Failed to delete itinerary:", error)
         toast({
           title: "Error",
           description: "Failed to delete itinerary. Please try again.",
@@ -144,177 +179,378 @@ export default function AdminPage() {
     }
   }
 
+  const handleMarkComplete = async (id: string) => {
+    try {
+      const updatedItinerary = await markItineraryAsComplete(id)
+      if (updatedItinerary) {
+        toast({
+          title: "Success",
+          description: `Itinerary "${updatedItinerary.destination}" marked as complete!`,
+        })
+        loadItineraries()
+      } else {
+        throw new Error("Failed to mark itinerary as complete")
+      }
+    } catch (error) {
+      console.error("Failed to mark itinerary complete:", error)
+      toast({
+        title: "Error",
+        description: "Failed to mark itinerary as complete. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const openEditDialog = (itinerary: Itinerary) => {
+    setEditingItinerary(itinerary)
+    setIsDialogOpen(true)
+  }
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false)
+    setEditingItinerary(null)
+    setNewItinerary({
+      destination: "",
+      startDate: "",
+      endDate: "",
+      totalBudget: 0,
+      travellersCount: 1,
+      category: "Adventure",
+      status: "online",
+      image: "",
+      description: "",
+      season: "",
+      locations: [],
+      rating: 0,
+      reviewsCount: 0,
+      days: [],
+      accommodations: [],
+      preTripChecklist: [],
+      tips: [],
+    })
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <AdminNav />
-      <h1 className="mb-8 text-3xl font-bold">Manage Itineraries</h1>
+      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
 
-      <div className="mb-6 flex justify-end">
-        <Button onClick={handleCreateNew}>
-          <Plus className="mr-2 h-4 w-4" /> Create New Itinerary
-        </Button>
-      </div>
-
-      {editingItinerary && (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>{isNewItinerary ? "Create New Itinerary" : `Edit ${editingItinerary.destination}`}</CardTitle>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Database Status</CardTitle>
+            <Database className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <div>
-              <label htmlFor="destination" className="mb-1 block text-sm font-medium">
-                Destination
-              </label>
-              <Input
-                id="destination"
-                name="destination"
-                value={editingItinerary.destination || ""}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="startDate" className="mb-1 block text-sm font-medium">
-                Start Date
-              </label>
-              <DatePicker
-                date={editingItinerary.startDate ? new Date(editingItinerary.startDate) : undefined}
-                setDate={(date) => handleDateChange("startDate", date)}
-              />
-            </div>
-            <div>
-              <label htmlFor="endDate" className="mb-1 block text-sm font-medium">
-                End Date
-              </label>
-              <DatePicker
-                date={editingItinerary.endDate ? new Date(editingItinerary.endDate) : undefined}
-                setDate={(date) => handleDateChange("endDate", date)}
-              />
-            </div>
-            <div>
-              <label htmlFor="category" className="mb-1 block text-sm font-medium">
-                Category
-              </label>
-              <Select
-                value={editingItinerary.category || ""}
-                onValueChange={(value) => handleSelectChange("category", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Adventure">Adventure</SelectItem>
-                  <SelectItem value="Relaxation">Relaxation</SelectItem>
-                  <SelectItem value="Cultural">Cultural</SelectItem>
-                  <SelectItem value="City Break">City Break</SelectItem>
-                  <SelectItem value="Nature">Nature</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label htmlFor="season" className="mb-1 block text-sm font-medium">
-                Season
-              </label>
-              <Select
-                value={editingItinerary.season || ""}
-                onValueChange={(value) => handleSelectChange("season", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a season" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Summer">Summer</SelectItem>
-                  <SelectItem value="Autumn">Autumn</SelectItem>
-                  <SelectItem value="Winter">Winter</SelectItem>
-                  <SelectItem value="Spring">Spring</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label htmlFor="totalBudget" className="mb-1 block text-sm font-medium">
-                Total Budget ($)
-              </label>
-              <Input
-                id="totalBudget"
-                name="totalBudget"
-                type="number"
-                value={editingItinerary.totalBudget || 0}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="travellersCount" className="mb-1 block text-sm font-medium">
-                Number of Travellers
-              </label>
-              <Input
-                id="travellersCount"
-                name="travellersCount"
-                type="number"
-                value={editingItinerary.travellersCount || 1}
-                onChange={handleChange}
-                min="1"
-              />
-            </div>
-            <div className="md:col-span-2 lg:col-span-3">
-              <label htmlFor="description" className="mb-1 block text-sm font-medium">
-                Description
-              </label>
-              <Textarea
-                id="description"
-                name="description"
-                value={editingItinerary.description || ""}
-                onChange={handleChange}
-                rows={3}
-              />
-            </div>
-            <div className="md:col-span-2 lg:col-span-3">
-              <label htmlFor="image" className="mb-1 block text-sm font-medium">
-                Image URL
-              </label>
-              <ImageUpload
-                initialImageUrl={editingItinerary.image}
-                onImageUpload={(url) => setEditingItinerary((prev) => ({ ...prev!, image: url }))}
-              />
-            </div>
-            <div className="col-span-full flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setEditingItinerary(null)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSave}>Save Itinerary</Button>
+          <CardContent>
+            <div className="text-2xl font-bold flex items-center gap-2">
+              {dbStatus === "Connected to MongoDB" ? (
+                <CheckCircle className="h-6 w-6 text-green-500" />
+              ) : (
+                <XCircle className="h-6 w-6 text-red-500" />
+              )}
+              {dbStatus || "Checking..."}
             </div>
           </CardContent>
         </Card>
-      )}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Server Health</CardTitle>
+            <Server className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold flex items-center gap-2">
+              {serverStatus === "Server is healthy" ? (
+                <CheckCircle className="h-6 w-6 text-green-500" />
+              ) : (
+                <XCircle className="h-6 w-6 text-red-500" />
+              )}
+              {serverStatus || "Checking..."}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Theme Toggle</CardTitle>
+            <Lightbulb className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <ModeToggle />
+          </CardContent>
+        </Card>
+      </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {itineraries.map((itinerary) => (
-          <Card key={itinerary._id}>
-            <CardHeader>
-              <CardTitle>{itinerary.destination}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm text-muted-foreground">
-              <p className="flex items-center">
-                <CalendarDays className="mr-2 h-4 w-4" />
-                {itinerary.startDate} - {itinerary.endDate} ({itinerary.duration})
-              </p>
-              <p className="flex items-center">
-                <Users className="mr-2 h-4 w-4" />
-                {itinerary.travellersCount} Travellers
-              </p>
-              <p className="flex items-center">
-                <DollarSign className="mr-2 h-4 w-4" />${itinerary.totalBudget?.toLocaleString()}
-              </p>
-              <p>{itinerary.description.substring(0, 100)}...</p>
-            </CardContent>
-            <CardContent className="flex justify-end space-x-2">
-              <Button variant="outline" size="sm" onClick={() => handleEdit(itinerary)}>
-                <Edit className="mr-2 h-4 w-4" /> Edit
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-semibold">Manage Itineraries</h2>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={() => setIsDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> Add New Itinerary
+            </Button>
+          </DialogTrigger>
+          <DialogContent
+            className="sm:max-w-[600px]"
+            onEscapeKeyDown={handleDialogClose}
+            onPointerDownOutside={handleDialogClose}
+          >
+            <DialogHeader>
+              <DialogTitle>{editingItinerary ? "Edit Itinerary" : "Add New Itinerary"}</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="destination" className="text-right">
+                  Destination
+                </Label>
+                <Input
+                  id="destination"
+                  name="destination"
+                  value={editingItinerary?.destination || newItinerary.destination || ""}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="description" className="text-right">
+                  Description
+                </Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  value={editingItinerary?.description || newItinerary.description || ""}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="image" className="text-right">
+                  Image URL
+                </Label>
+                <Input
+                  id="image"
+                  name="image"
+                  value={editingItinerary?.image || newItinerary.image || ""}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="startDate" className="text-right">
+                  Start Date
+                </Label>
+                <Input
+                  id="startDate"
+                  name="startDate"
+                  type="date"
+                  value={editingItinerary?.startDate || newItinerary.startDate || ""}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="endDate" className="text-right">
+                  End Date
+                </Label>
+                <Input
+                  id="endDate"
+                  name="endDate"
+                  type="date"
+                  value={editingItinerary?.endDate || newItinerary.endDate || ""}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="totalBudget" className="text-right">
+                  Total Budget
+                </Label>
+                <Input
+                  id="totalBudget"
+                  name="totalBudget"
+                  type="number"
+                  value={editingItinerary?.totalBudget || newItinerary.totalBudget || 0}
+                  onChange={handleNumberInputChange}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="travellersCount" className="text-right">
+                  Travellers
+                </Label>
+                <Input
+                  id="travellersCount"
+                  name="travellersCount"
+                  type="number"
+                  value={editingItinerary?.travellersCount || newItinerary.travellersCount || 1}
+                  onChange={handleNumberInputChange}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="category" className="text-right">
+                  Category
+                </Label>
+                <Input
+                  id="category"
+                  name="category"
+                  value={editingItinerary?.category || newItinerary.category || ""}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="season" className="text-right">
+                  Season
+                </Label>
+                <Input
+                  id="season"
+                  name="season"
+                  value={editingItinerary?.season || newItinerary.season || ""}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="locations" className="text-right">
+                  Locations (comma-separated)
+                </Label>
+                <Input
+                  id="locations"
+                  name="locations"
+                  value={editingItinerary?.locations?.join(", ") || newItinerary.locations?.join(", ") || ""}
+                  onChange={(e) => {
+                    const locationsArray = e.target.value.split(",").map((loc) => loc.trim())
+                    if (editingItinerary) {
+                      setEditingItinerary({ ...editingItinerary, locations: locationsArray })
+                    } else {
+                      setNewItinerary({ ...newItinerary, locations: locationsArray })
+                    }
+                  }}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="rating" className="text-right">
+                  Rating (0-5)
+                </Label>
+                <Input
+                  id="rating"
+                  name="rating"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="5"
+                  value={editingItinerary?.rating || newItinerary.rating || 0}
+                  onChange={handleNumberInputChange}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="reviewsCount" className="text-right">
+                  Reviews Count
+                </Label>
+                <Input
+                  id="reviewsCount"
+                  name="reviewsCount"
+                  type="number"
+                  value={editingItinerary?.reviewsCount || newItinerary.reviewsCount || 0}
+                  onChange={handleNumberInputChange}
+                  className="col-span-3"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={handleDialogClose}>
+                Cancel
               </Button>
-              <Button variant="destructive" size="sm" onClick={() => handleDelete(itinerary._id)}>
-                <Trash2 className="mr-2 h-4 w-4" /> Delete
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
+              <SaveChangesButton onClick={handleSaveItinerary} />
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Image</TableHead>
+              <TableHead>Destination</TableHead>
+              <TableHead>Dates</TableHead>
+              <TableHead>Budget</TableHead>
+              <TableHead>Travellers</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {itineraries.length > 0 ? (
+              itineraries.map((itinerary) => (
+                <TableRow key={itinerary._id}>
+                  <TableCell>
+                    <SafeImage
+                      src={itinerary.image || "/placeholder.svg?height=50&width=50"}
+                      alt={itinerary.destination}
+                      className="w-12 h-12 rounded-md object-cover"
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">{itinerary.destination}</TableCell>
+                  <TableCell>
+                    {itinerary.startDate} to {itinerary.endDate}
+                  </TableCell>
+                  <TableCell>₹{itinerary.totalBudget?.toLocaleString()}</TableCell>
+                  <TableCell>{itinerary.travellersCount}</TableCell>
+                  <TableCell>{itinerary.category}</TableCell>
+                  <TableCell>
+                    <CompleteStatusButton
+                      itineraryId={itinerary._id}
+                      initialStatus={itinerary.status}
+                      onStatusChange={loadItineraries}
+                    />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Link href={`/itinerary/${itinerary._id}`} passHref>
+                        <Button variant="outline" size="icon" className="h-8 w-8 bg-transparent">
+                          <Eye className="h-4 w-4" />
+                          <span className="sr-only">View</span>
+                        </Button>
+                      </Link>
+                      <Link href={`/admin/itinerary/${itinerary._id}`} passHref>
+                        <Button variant="outline" size="icon" className="h-8 w-8 bg-transparent">
+                          <ListChecks className="h-4 w-4" />
+                          <span className="sr-only">Manage Details</span>
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 bg-transparent"
+                        onClick={() => openEditDialog(itinerary)}
+                      >
+                        <Edit className="h-4 w-4" />
+                        <span className="sr-only">Edit</span>
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleDeleteItinerary(itinerary._id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Delete</span>
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  No itineraries found. Add a new one to get started!
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
     </div>
   )

@@ -3,23 +3,28 @@ export interface Itinerary {
   destination: string
   startDate: string
   endDate: string
-  duration: string // e.g., "9 Days / 8 Nights"
-  category: string // e.g., "Adventure", "Relaxation"
-  season: string // e.g., "Summer", "Winter"
-  image: string
-  description: string
+  image?: string
+  description?: string
+  status: "online" | "completed"
+  season?: string
+  locations?: string[]
+  rating?: number
+  reviewsCount?: number
   totalBudget: number
-  travellersCount?: number // New field for group trips
-  travelRecommendation?: string // New field for solo/friends/family
-  reviewsCount?: number // New field for dynamic review counts
+  travellersCount: number
+  category: string
   days: ItineraryDay[]
-  preTripChecklist?: PreTripChecklistItem[] // Array of checklist items
-  tips?: Tip[] // Array of tips
+  accommodations?: Accommodation[]
+  preTripChecklist?: ChecklistItem[]
+  tips?: Tip[]
+  travelRecommendation?: string
 }
 
 export interface ItineraryDay {
+  _id: string
   dayNumber: number
-  date?: string // Optional date for the day
+  date: string
+  location: string
   activities: Activity[]
 }
 
@@ -29,12 +34,48 @@ export interface Activity {
   time: string
   location?: string
   description?: string
-  expense?: number // Optional expense for the activity
+  type: "sightseeing" | "food" | "adventure" | "relaxation" | "must-visit" | string
+  expense?: {
+    amount: number
+    currency: string
+  }
+  image?: string
   notes?: string
-  type?: string // e.g., "Must visit place", "Restaurant", "Activity"
+  mustVisit?: boolean
 }
 
-export interface PreTripChecklistItem {
+export interface Accommodation {
+  _id: string
+  name: string
+  location: string
+  dates: string
+  itineraryId: string
+}
+
+export interface Companion {
+  _id: string
+  name: string
+  relation: string
+  image?: string
+  instagramId?: string
+}
+
+export interface Comment {
+  _id: string
+  itineraryId: string
+  author: string
+  date: string
+  text: string
+}
+
+export interface Location {
+  _id: string
+  name: string
+  description?: string
+  itineraryId?: string
+}
+
+export interface ChecklistItem {
   _id: string
   item: string
   completed: boolean
@@ -42,15 +83,5 @@ export interface PreTripChecklistItem {
 
 export interface Tip {
   _id: string
-  title: string
-  content: string
-  category: string // e.g., "money", "safety", "culture"
-}
-
-export interface Companion {
-  _id: string
-  name: string
-  title: string
-  image: string
-  instagramId?: string // Changed to Instagram ID
+  tip: string
 }

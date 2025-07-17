@@ -140,12 +140,17 @@ export function TipInformationBlock({ itineraryId, initialTips, isAdmin }: TipIn
     return cat ? cat.color : "bg-gray-500"
   }
 
+  if (tips.length === 0) {
+    return null
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Travel Tips</CardTitle>
+    <Card className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-950 dark:border-yellow-800 dark:text-yellow-200 shadow-sm">
+      <CardHeader className="flex flex-row items-center gap-3 space-y-0 p-4">
+        <Lightbulb className="h-6 w-6 flex-shrink-0" />
+        <CardTitle className="text-lg font-semibold">Travel Tips</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="p-4 pt-0">
         {isAdmin && (
           <div className="space-y-4 border-b pb-4">
             <h3 className="text-lg font-semibold">Add New Tip</h3>
@@ -180,13 +185,11 @@ export function TipInformationBlock({ itineraryId, initialTips, isAdmin }: TipIn
           </div>
         )}
 
-        {tips.length === 0 && <p className="text-muted-foreground">No tips added yet.</p>}
-
-        <div className="grid gap-4">
+        <ul className="list-disc pl-5 space-y-2 text-sm">
           {tips.map((tip) => (
-            <Card key={tip._id} className="relative overflow-hidden">
+            <li key={tip._id} className="relative overflow-hidden">
               <div className={cn("absolute inset-y-0 left-0 w-2", getCategoryColor(tip.category))}></div>
-              <CardContent className="p-4 pl-6">
+              <div className="p-4 pl-6">
                 {isAdmin && (
                   <div className="absolute top-2 right-2 flex space-x-1">
                     <Button
@@ -237,10 +240,10 @@ export function TipInformationBlock({ itineraryId, initialTips, isAdmin }: TipIn
                 ) : (
                   <p className="text-sm text-muted-foreground">{tip.content}</p>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </li>
           ))}
-        </div>
+        </ul>
       </CardContent>
     </Card>
   )

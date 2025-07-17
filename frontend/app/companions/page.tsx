@@ -1,299 +1,254 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Instagram, X } from "lucide-react"
-import { fetchCompanions, createCompanion, updateCompanion, deleteCompanion } from "@/lib/data"
-import type { Companion } from "@/lib/models"
-import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
+import { Plus, Instagram, X } from "lucide-react"
+import { fetchCompanions, createCompanion, updateCompanion, deleteCompanion } from "@/lib/data"
 import { useToast } from "@/hooks/use-toast"
 import { SafeImage } from "@/components/safe-image"
+import type { Companion } from "@/lib/models"
 
 export default function CompanionsPage() {
   const [companions, setCompanions] = useState<Companion[]>([])
-  const [selectedCompanion, setSelectedCompanion] = useState<Companion | null>(null)
-  const [newCompanion, setNewCompanion] = useState({ name: "", title: "", image: "", instagramId: "" })
-  const [isAdding, setIsAdding] = useState(false)
-  const [isEditing, setIsEditing] = useState(false)
+  const [newCompanion, setNewCompanion] = useState<Partial<Companion>>({
+    name: "",
+    relation: "",
+    image: "",
+    instagramId: "",
+  })
+  const [editingCompanion, setEditingCompanion] = useState<Companion | null>(null)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
-    const getCompanions = async () => {
-      const data = await fetchCompanions()
-      setCompanions(data)
-      if (data.length > 0) {
-        setSelectedCompanion(data[0])
-      }
-    }
-    getCompanions()
+    loadCompanions()
   }, [])
 
-  const handleAddCompanion = async () => {
-    if (!newCompanion.name || !newCompanion.title) {
-      toast({
-        title: "Error",
-        description: "Name and Title are required.",
-        variant: "destructive",
-      })
-      return
-    }
-
+  const loadCompanions = async () => {
     try {
-      const createdCompanion = await createCompanion(newCompanion)
-      if (createdCompanion) {
-        setCompanions([...companions, createdCompanion])
-        setNewCompanion({ name: "", title: "", image: "", instagramId: "" })
-        setIsAdding(false)
-        toast({
-          title: "Success",
-          description: "Companion added successfully.",
-        })
-      } else {
-        throw new Error("Failed to create companion")
-      }
+      const data = await fetchCompanions()
+      setCompanions(data)
     } catch (error) {
-      console.error("Error adding companion:", error)
+      console.error("Failed to fetch companions:", error)
       toast({
         title: "Error",
-        description: "Failed to add companion. Please try again.",
+        description: "Failed to load companions. Please try again.",
         variant: "destructive",
       })
     }
   }
 
-  const handleUpdateCompanion = async () => {
-    if (!selectedCompanion) return
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    if (editingCompanion) {
+      setEditingCompanion({ ...editingCompanion, [name]: value })
+    } else {
+      setNewCompanion({ ...newCompanion, [name]: value })
+    }
+  }
 
+  const handleSaveCompanion = async () => {
     try {
-      const updated = await updateCompanion(selectedCompanion._id, selectedCompanion)
-      if (updated) {
-        setCompanions(companions.map((c) => (c._id === updated._id ? updated : c)))
-        setIsEditing(false)
-        toast({
-          title: "Success",
-          description: "Companion updated successfully.",
-        })
+      if (editingCompanion) {
+        const updated = await updateCompanion(editingCompanion._id, editingCompanion)
+        if (updated) {
+          setCompanions(companions.map((c) => (c._id === updated._id ? updated : c)))
+          toast({
+            title: "Success",
+            description: "Companion updated successfully!",
+          })
+        }
       } else {
-        throw new Error("Failed to update companion")
+        const created = await createCompanion(newCompanion)
+        if (created) {
+          setCompanions([...companions, created])
+          toast({
+            title: "Success",
+            description: "Companion added successfully!",
+          })
+        }
       }
+      setIsDialogOpen(false)
+      setNewCompanion({ name: "", relation: "", image: "", instagramId: "" })
+      setEditingCompanion(null)
     } catch (error) {
-      console.error("Error updating companion:", error)
+      console.error("Failed to save companion:", error)
       toast({
         title: "Error",
-        description: "Failed to update companion. Please try again.",
+        description: "Failed to save companion. Please try again.",
         variant: "destructive",
       })
     }
   }
 
   const handleDeleteCompanion = async (id: string) => {
-    try {
-      const success = await deleteCompanion(id)
-      if (success) {
-        setCompanions(companions.filter((c) => c._id !== id))
-        if (selectedCompanion?._id === id) {
-          setSelectedCompanion(companions.length > 1 ? companions[0] : null)
+    if (window.confirm("Are you sure you want to delete this companion?")) {
+      try {
+        const success = await deleteCompanion(id)
+        if (success) {
+          setCompanions(companions.filter((c) => c._id !== id))
+          toast({
+            title: "Success",
+            description: "Companion deleted successfully!",
+          })
+        } else {
+          throw new Error("Failed to delete companion")
         }
+      } catch (error) {
+        console.error("Failed to delete companion:", error)
         toast({
-          title: "Success",
-          description: "Companion deleted successfully.",
+          title: "Error",
+          description: "Failed to delete companion. Please try again.",
+          variant: "destructive",
         })
-      } else {
-        throw new Error("Failed to delete companion")
       }
-    } catch (error) {
-      console.error("Error deleting companion:", error)
-      toast({
-        title: "Error",
-        description: "Failed to delete companion. Please try again.",
-        variant: "destructive",
-      })
     }
   }
 
+  const openEditDialog = (companion: Companion) => {
+    setEditingCompanion(companion)
+    setIsDialogOpen(true)
+  }
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false)
+    setNewCompanion({ name: "", relation: "", image: "", instagramId: "" })
+    setEditingCompanion(null)
+  }
+
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-black text-white flex flex-col lg:flex-row">
-      {/* Left Sidebar - Companion List */}
-      <div className="w-full lg:w-1/3 border-r border-gray-800 flex flex-col">
-        <div className="p-6 border-b border-gray-800">
-          <h2 className="text-2xl font-bold">Our Travel Fam</h2>
-        </div>
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
-          {companions.map((companion) => (
-            <div
-              key={companion._id}
-              className={`p-6 border-b border-gray-800 cursor-pointer transition-colors duration-200 ${
-                selectedCompanion?._id === companion._id ? "bg-gray-800" : "hover:bg-gray-900"
-              }`}
-              onClick={() => {
-                setSelectedCompanion(companion)
-                setIsAdding(false)
-                setIsEditing(false)
-              }}
-            >
-              <h3 className="text-lg font-semibold uppercase">{companion.name}</h3>
-              {selectedCompanion?._id === companion._id && (
-                <div className="text-sm text-gray-400">
-                  <p>{companion.title}</p>
-                  <div className="flex items-center mt-2 space-x-2">
-                    {companion.instagramId && (
-                      <a
-                        href={`https://instagram.com/${companion.instagramId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-gray-400 hover:text-white"
-                      >
-                        <Instagram className="h-5 w-5" />
-                      </a>
-                    )}
-                    {/* Admin controls for delete */}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation() // Prevent selecting companion when deleting
-                        handleDeleteCompanion(companion._id)
-                      }}
-                      className="text-gray-400 hover:text-red-500"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-        <div className="p-6 border-t border-gray-800">
-          <Button
-            onClick={() => {
-              setIsAdding(true)
-              setIsEditing(false)
-              setSelectedCompanion(null)
-              setNewCompanion({ name: "", title: "", image: "", instagramId: "" })
-            }}
-            className="w-full bg-gray-700 hover:bg-gray-600 text-white"
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold">Travel Companions</h1>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={() => setIsDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> Add Companion
+            </Button>
+          </DialogTrigger>
+          <DialogContent
+            className="sm:max-w-[425px]"
+            onEscapeKeyDown={handleDialogClose}
+            onPointerDownOutside={handleDialogClose}
           >
-            Add New Companion
-          </Button>
-        </div>
+            <DialogHeader>
+              <DialogTitle>{editingCompanion ? "Edit Companion" : "Add New Companion"}</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">
+                  Name
+                </Label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={editingCompanion ? editingCompanion.name : newCompanion.name}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="relation" className="text-right">
+                  Relation
+                </Label>
+                <Input
+                  id="relation"
+                  name="relation"
+                  value={editingCompanion ? editingCompanion.relation : newCompanion.relation}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="image" className="text-right">
+                  Image URL
+                </Label>
+                <Input
+                  id="image"
+                  name="image"
+                  value={editingCompanion ? editingCompanion.image || "" : newCompanion.image || ""}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="instagramId" className="text-right">
+                  Instagram ID
+                </Label>
+                <Input
+                  id="instagramId"
+                  name="instagramId"
+                  value={editingCompanion ? editingCompanion.instagramId || "" : newCompanion.instagramId || ""}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={handleDialogClose}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveCompanion}>Save changes</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {/* Right Content - Companion Details / Add/Edit Form */}
-      <div className="w-full lg:w-2/3 p-6 flex flex-col items-center justify-center bg-gray-950">
-        {isAdding ? (
-          <Card className="w-full max-w-md bg-gray-900 border-gray-700 text-white">
-            <CardContent className="p-6 space-y-4">
-              <h3 className="text-xl font-bold mb-4">Add New Companion</h3>
-              <Input
-                placeholder="Name"
-                value={newCompanion.name}
-                onChange={(e) => setNewCompanion({ ...newCompanion, name: e.target.value })}
-                className="bg-gray-800 border-gray-700 text-white"
-              />
-              <Input
-                placeholder="Title (e.g., CEO, Vercel)"
-                value={newCompanion.title}
-                onChange={(e) => setNewCompanion({ ...newCompanion, title: e.target.value })}
-                className="bg-gray-800 border-gray-700 text-white"
-              />
-              <Input
-                placeholder="Image URL (optional)"
-                value={newCompanion.image}
-                onChange={(e) => setNewCompanion({ ...newCompanion, image: e.target.value })}
-                className="bg-gray-800 border-gray-700 text-white"
-              />
-              <Input
-                placeholder="Instagram ID (optional)"
-                value={newCompanion.instagramId}
-                onChange={(e) => setNewCompanion({ ...newCompanion, instagramId: e.target.value })}
-                className="bg-gray-800 border-gray-700 text-white"
-              />
-              <Button onClick={handleAddCompanion} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                Save Companion
-              </Button>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {companions.length > 0 ? (
+          companions.map((companion) => (
+            <Card key={companion._id} className="relative overflow-hidden rounded-lg shadow-md">
               <Button
-                variant="outline"
-                onClick={() => setIsAdding(false)}
-                className="w-full text-gray-300 border-gray-700 hover:bg-gray-800"
+                variant="ghost"
+                size="icon"
+                className="absolute top-2 right-2 z-10 text-red-500 hover:bg-red-100"
+                onClick={() => handleDeleteCompanion(companion._id)}
               >
-                Cancel
+                <X className="h-5 w-5" />
+                <span className="sr-only">Delete companion</span>
               </Button>
-            </CardContent>
-          </Card>
-        ) : selectedCompanion ? (
-          <div className="flex flex-col items-center space-y-6 w-full max-w-lg">
-            <div className="relative w-64 h-64 rounded-full overflow-hidden border-2 border-gray-700">
-              <SafeImage
-                src={selectedCompanion.image || "/placeholder.svg?height=256&width=256"}
-                alt={selectedCompanion.name}
-                className="object-cover grayscale hover:grayscale-0 transition-all duration-300"
-                fill
-              />
-            </div>
-            <h2 className="text-4xl font-bold uppercase text-center">{selectedCompanion.name}</h2>
-            <p className="text-xl text-gray-400 text-center">{selectedCompanion.title}</p>
-            <div className="flex space-x-4">
-              {selectedCompanion.instagramId && (
-                <a
-                  href={`https://instagram.com/${selectedCompanion.instagramId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
-                >
-                  <Instagram className="h-8 w-8" />
-                </a>
-              )}
-            </div>
-            <Button onClick={() => setIsEditing(true)} className="bg-gray-700 hover:bg-gray-600 text-white">
-              Edit Companion
-            </Button>
-          </div>
+              <CardContent className="p-0">
+                <div className="relative h-48 w-full">
+                  <SafeImage
+                    src={companion.image || "/placeholder.svg?height=200&width=200"}
+                    alt={companion.name}
+                    className="object-cover"
+                    fill
+                  />
+                </div>
+                <div className="p-4">
+                  <CardTitle className="text-xl font-semibold mb-1">{companion.name}</CardTitle>
+                  <p className="text-sm text-muted-foreground mb-3">{companion.relation}</p>
+                  {companion.instagramId && (
+                    <a
+                      href={`https://instagram.com/${companion.instagramId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center text-blue-500 hover:underline text-sm"
+                    >
+                      <Instagram className="h-4 w-4 mr-1" />@{companion.instagramId}
+                    </a>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-4 w-full bg-transparent"
+                    onClick={() => openEditDialog(companion)}
+                  >
+                    Edit
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))
         ) : (
-          <p className="text-gray-400">Select a companion or add a new one.</p>
-        )}
-
-        {isEditing && selectedCompanion && (
-          <Card className="w-full max-w-md bg-gray-900 border-gray-700 text-white mt-6">
-            <CardContent className="p-6 space-y-4">
-              <h3 className="text-xl font-bold mb-4">Edit Companion</h3>
-              <Input
-                placeholder="Name"
-                value={selectedCompanion.name}
-                onChange={(e) => setSelectedCompanion({ ...selectedCompanion, name: e.target.value })}
-                className="bg-gray-800 border-gray-700 text-white"
-              />
-              <Input
-                placeholder="Title (e.g., CEO, Vercel)"
-                value={selectedCompanion.title}
-                onChange={(e) => setSelectedCompanion({ ...selectedCompanion, title: e.target.value })}
-                className="bg-gray-800 border-gray-700 text-white"
-              />
-              <Input
-                placeholder="Image URL (optional)"
-                value={selectedCompanion.image}
-                onChange={(e) => setSelectedCompanion({ ...selectedCompanion, image: e.target.value })}
-                className="bg-gray-800 border-gray-700 text-white"
-              />
-              <Input
-                placeholder="Instagram ID (optional)"
-                value={selectedCompanion.instagramId}
-                onChange={(e) => setSelectedCompanion({ ...selectedCompanion, instagramId: e.target.value })}
-                className="bg-gray-800 border-gray-700 text-white"
-              />
-              <Button onClick={handleUpdateCompanion} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                Save Changes
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setIsEditing(false)}
-                className="w-full text-gray-300 border-gray-700 hover:bg-gray-800"
-              >
-                Cancel
-              </Button>
-            </CardContent>
-          </Card>
+          <p className="col-span-full text-center text-muted-foreground">No companions added yet.</p>
         )}
       </div>
     </div>

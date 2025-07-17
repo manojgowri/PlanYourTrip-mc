@@ -57,7 +57,7 @@ export function TravelCard({ itinerary }: TravelCardProps) {
           {itinerary.totalBudget !== undefined && (
             <div className="flex items-center text-sm text-muted-foreground">
               <DollarSign className="mr-2 h-4 w-4" />
-              <span>Total Budget: ${itinerary.totalBudget.toLocaleString()}</span>
+              <span>Total Budget: ₹{itinerary.totalBudget.toLocaleString()}</span>
             </div>
           )}
           {itinerary.totalBudget !== undefined &&
@@ -65,7 +65,7 @@ export function TravelCard({ itinerary }: TravelCardProps) {
             itinerary.travellersCount > 0 && (
               <div className="flex items-center text-sm text-muted-foreground">
                 <DollarSign className="mr-2 h-4 w-4" />
-                <span>Per Person: ${perPersonCost}</span>
+                <span>Per Person: ₹{perPersonCost}</span>
               </div>
             )}
           {travelRecommendation && (
