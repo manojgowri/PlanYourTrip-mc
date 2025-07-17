@@ -1,18 +1,26 @@
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
+import ModeToggle from "./mode-toggle"
+import SaveChangesButton from "./save-changes-button"
+import CompleteStatusButton from "./complete-status-button"
 
-export function AdminNav() {
+const AdminNav = () => {
   return (
-    <div className="flex flex-wrap gap-2 mb-6">
-      <Button asChild variant="outline">
-        <Link href="/admin">Dashboard</Link>
-      </Button>
-      <Button asChild variant="outline">
-        <Link href="/admin/db-test">Test Database</Link>
-      </Button>
-      <Button asChild variant="outline">
-        <Link href="/">Back to Site</Link>
-      </Button>
-    </div>
+    <nav className="bg-gray-100 p-4 flex justify-between items-center">
+      <div>
+        <Link href="/admin" className="text-blue-500 hover:text-blue-700">
+          Admin Home
+        </Link>
+        <Link href="/admin/db-test" className="ml-4 text-blue-500 hover:text-blue-700">
+          DB Test
+        </Link>
+      </div>
+      <div className="flex items-center">
+        <ModeToggle />
+        <SaveChangesButton />
+        <CompleteStatusButton />
+      </div>
+    </nav>
   )
 }
+
+export default AdminNav

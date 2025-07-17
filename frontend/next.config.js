@@ -11,6 +11,18 @@ const nextConfig = {
   images: {
     domains: ["placeholder.com", "placehold.co"],
     unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**",
+      },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        port: "",
+        pathname: "/your-cloud-name/**", // Replace with your Cloudinary cloud name
+      },
+    ],
   },
   async headers() {
     return [

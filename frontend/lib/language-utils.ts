@@ -1,7 +1,7 @@
 // Available languages
 export const languages = {
   en: { code: "en", name: "English", flag: "🇺🇸" },
-  vi: { code: "vi", name: "Vietnamese", flag: "🇻🇳" },
+  vi: { code: "vi", name: "Tiếng Việt", flag: "🇻🇳" },
   es: { code: "es", name: "Spanish", flag: "🇪🇸" },
   fr: { code: "fr", name: "French", flag: "🇫🇷" },
   de: { code: "de", name: "German", flag: "🇩🇪" },
@@ -95,4 +95,16 @@ export function translate(key: string, language = getPreferredLanguage()): strin
 // Language selector component props
 export interface LanguageSelectorProps {
   onChange?: (langCode: string) => void
+}
+
+// Get language name
+export const getLanguageName = (code: string): string => {
+  switch (code) {
+    case "en":
+      return "English"
+    case "vi":
+      return "Tiếng Việt"
+    default:
+      return "Unknown"
+  }
 }

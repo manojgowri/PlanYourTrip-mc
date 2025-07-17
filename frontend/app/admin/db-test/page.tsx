@@ -1,10 +1,21 @@
-import { DbConnectionTest } from "@/components/db-connection-test"
+"use client"
 
-export default function DbTestPage() {
+import { useState, useEffect } from "react"
+import DbConnectionTest from "@/components/db-connection-test"
+
+const AdminDBTestPage = () => {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-6">Database Connection Testing</h1>
-      <DbConnectionTest />
+    <div>
+      <h1>Admin - DB Connection Test</h1>
+      {mounted && <DbConnectionTest />}
     </div>
   )
 }
+
+export default AdminDBTestPage
