@@ -1,31 +1,41 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { WifiOff } from "lucide-react"
-import { isOffline, registerConnectivityListeners } from "@/lib/offline-utils"
+import { WifiOff, Wifi } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 export function OfflineIndicator() {
-  const [offline, setOffline] = useState(false)
+  const [isOffline, setIsOffline] = useState(false)
 
   useEffect(() => {
-    // Set initial state
-    setOffline(isOffline())
+    const handleOnline = () => setIsOffline(false)
+    const handleOffline = () => setIsOffline(true)
 
-    // Register listeners for online/offline events
-    const cleanup = registerConnectivityListeners(
-      () => setOffline(true),
-      () => setOffline(false),
-    )
+    window.addEventListener("online", handleOnline)
+    window.addEventListener("offline", handleOffline)
 
-    return cleanup
+    // Initial check
+    setIsOffline(!navigator.onLine)
+
+    return () => {
+      window.removeEventListener("online", handleOnline)
+      window.removeEventListener("offline", handleOffline)
+    }
   }, [])
 
-  if (!offline) return null
+  if (!isOffline) {
+    return null
+  }
 
   return (
-    <div className="fixed bottom-4 left-4 z-50 flex items-center gap-2 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-100 px-4 py-2 rounded-md shadow-md">
-      <WifiOff size={16} />
-      <span className="text-sm font-medium">You are offline. Some features may be limited.</span>
+    <div
+      className={cn(
+        "fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium shadow-lg",
+        isOffline ? "bg-red-500 text-white" : "bg-green-500 text-white",
+      )}
+    >
+      {isOffline ? <WifiOff className="h-4 w-4" /> : <Wifi className="h-4 w-4" />}
+      {isOffline ? "You are offline" : "You are online"}
     </div>
   )
 }

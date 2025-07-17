@@ -185,62 +185,59 @@ export function TipInformationBlock({ itineraryId, initialTips, isAdmin }: TipIn
           </div>
         )}
 
-        <ul className="list-disc pl-5 space-y-2 text-sm">
+        <ul className="space-y-3">
           {tips.map((tip) => (
-            <li key={tip._id} className="relative overflow-hidden">
-              <div className={cn("absolute inset-y-0 left-0 w-2", getCategoryColor(tip.category))}></div>
-              <div className="p-4 pl-6">
-                {isAdmin && (
-                  <div className="absolute top-2 right-2 flex space-x-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        if (editingTipId === tip._id) {
-                          handleUpdateTip(tip._id)
-                        } else {
-                          setEditingTipId(tip._id)
-                          setNewTip({ title: tip.title, content: tip.content, category: tip.category })
-                        }
-                      }}
-                      className="text-muted-foreground hover:text-primary"
-                    >
-                      {editingTipId === tip._id ? "Save" : "Edit"}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteTip(tip._id)}
-                      className="text-muted-foreground hover:text-destructive"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-                <div className="flex items-center mb-2">
-                  <div className={cn("p-2 rounded-full mr-3 text-white", getCategoryColor(tip.category))}>
-                    {getCategoryIcon(tip.category)}
-                  </div>
-                  {editingTipId === tip._id ? (
-                    <Input
-                      value={newTip.title}
-                      onChange={(e) => setNewTip({ ...newTip, title: e.target.value })}
-                      className="text-lg font-semibold"
-                    />
-                  ) : (
-                    <h3 className="text-lg font-semibold">{tip.title}</h3>
-                  )}
+            <li key={tip._id} className="text-sm">
+              {isAdmin && (
+                <div className="absolute top-2 right-2 flex space-x-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (editingTipId === tip._id) {
+                        handleUpdateTip(tip._id)
+                      } else {
+                        setEditingTipId(tip._id)
+                        setNewTip({ title: tip.title, content: tip.content, category: tip.category })
+                      }
+                    }}
+                    className="text-muted-foreground hover:text-primary"
+                  >
+                    {editingTipId === tip._id ? "Save" : "Edit"}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteTip(tip._id)}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+              <div className="flex items-center mb-2">
+                <div className={cn("p-2 rounded-full mr-3 text-white", getCategoryColor(tip.category))}>
+                  {getCategoryIcon(tip.category)}
                 </div>
                 {editingTipId === tip._id ? (
-                  <Textarea
-                    value={newTip.content}
-                    onChange={(e) => setNewTip({ ...newTip, content: e.target.value })}
-                    className="text-sm text-muted-foreground"
+                  <Input
+                    value={newTip.title}
+                    onChange={(e) => setNewTip({ ...newTip, title: e.target.value })}
+                    className="text-lg font-semibold"
                   />
                 ) : (
-                  <p className="text-sm text-muted-foreground">{tip.content}</p>
+                  <h3 className="text-lg font-semibold">{tip.title}</h3>
                 )}
               </div>
+              {editingTipId === tip._id ? (
+                <Textarea
+                  value={newTip.content}
+                  onChange={(e) => setNewTip({ ...newTip, content: e.target.value })}
+                  className="text-sm text-muted-foreground"
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground">{tip.content}</p>
+              )}
             </li>
           ))}
         </ul>

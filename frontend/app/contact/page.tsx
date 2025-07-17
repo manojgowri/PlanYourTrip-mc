@@ -1,148 +1,139 @@
-import Link from "next/link"
-import { ArrowLeft, Mail, Instagram, Youtube, Compass, Code, Video, Edit } from "lucide-react"
-import { SafeImage } from "@/components/safe-image"
+"use client"
+
+import type React from "react"
+
+import { useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/ui/button"
+import { useToast } from "@/hooks/use-toast"
+import { Mail, Phone, MapPin } from "lucide-react"
 
 export default function ContactPage() {
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [message, setMessage] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { toast } = useToast()
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+
+    if (!name || !email || !message) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all fields.",
+        variant: "destructive",
+      })
+      setIsSubmitting(false)
+      return
+    }
+
+    try {
+      // Simulate API call for sending contact form
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+
+      console.log("Contact form submitted:", { name, email, message })
+
+      toast({
+        title: "Message Sent!",
+        description: "Thank you for contacting us. We will get back to you soon.",
+        variant: "default",
+      })
+      setName("")
+      setEmail("")
+      setMessage("")
+    } catch (error) {
+      console.error("Contact form submission error:", error)
+      toast({
+        title: "Submission Failed",
+        description: "There was an error sending your message. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <Link href="/" className="mb-6 flex items-center gap-2 text-emerald-600 hover:underline dark:text-emerald-400">
-        <ArrowLeft className="h-4 w-4" />
-        Back to Home
-      </Link>
+      <h1 className="text-4xl font-bold text-center mb-8">Contact Us</h1>
 
-      <div className="mx-auto max-w-3xl">
-        <h1 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">Contact Me</h1>
-
-        <div className="mb-8 rounded-lg bg-white p-6 shadow-md dark:bg-gray-800">
-          <div className="mb-6 flex flex-col md:flex-row items-center gap-6">
-            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-emerald-100 dark:border-emerald-900">
-              <SafeImage src="/images/developer-photo.jpg" alt="Manoj V" className="w-full h-full object-cover" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Manoj V</h2>
-              <p className="text-muted-foreground">Travel Enthusiast & Creator</p>
-              <div className="mt-2 flex items-center gap-3">
-                <div className="rounded-full bg-emerald-100 p-3 dark:bg-emerald-900">
-                  <Compass className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <p className="text-sm text-gray-600 dark:text-gray-300">
-                  Passionate about exploring the world and sharing budget-friendly travel experiences.
-                </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">Get in Touch</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <p className="text-muted-foreground">
+              Have questions, feedback, or need assistance? Reach out to us using the form below or through our contact
+              details.
+            </p>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Mail className="h-5 w-5 text-primary" />
+                <span className="text-lg">info@travelamigos.com</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Phone className="h-5 w-5 text-primary" />
+                <span className="text-lg">+1 (555) 123-4567</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <MapPin className="h-5 w-5 text-primary mt-1" />
+                <span className="text-lg">123 Adventure Lane, Wanderlust City, TRV 98765</span>
               </div>
             </div>
-          </div>
+          </CardContent>
+        </Card>
 
-          <div className="mb-6 space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="mt-1 rounded-full bg-blue-100 p-2 dark:bg-blue-900">
-                <Mail className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">Send us a Message</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Your Name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
               </div>
               <div>
-                <h3 className="font-medium text-gray-900 dark:text-white">Email</h3>
-                <a href="mailto:mvvibez@gmail.com" className="text-blue-600 hover:underline dark:text-blue-400">
-                  mvvibez@gmail.com
-                </a>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="mt-1 rounded-full bg-purple-100 p-2 dark:bg-purple-900">
-                <Instagram className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <h3 className="font-medium text-gray-900 dark:text-white">Instagram</h3>
-                <div className="space-y-1">
-                  <a
-                    href="https://www.instagram.com/_iam_mv/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block text-purple-600 hover:underline dark:text-purple-400"
-                  >
-                    Personal: @_iam_mv
-                  </a>
-                  <a
-                    href="https://www.instagram.com/shotsbymanojv/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block text-purple-600 hover:underline dark:text-purple-400"
-                  >
-                    Photography: @shotsbymanojv
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="mt-1 rounded-full bg-red-100 p-2 dark:bg-red-900">
-                <Youtube className="h-4 w-4 text-red-600 dark:text-red-400" />
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="your@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
               </div>
               <div>
-                <h3 className="font-medium text-gray-900 dark:text-white">YouTube</h3>
-                <a
-                  href="https://www.youtube.com/@MVVibez"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-red-600 hover:underline dark:text-red-400"
-                >
-                  @MVVibez
-                </a>
-                <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                  Subscribe to my channel for travel vlogs and adventures around the world!
-                </p>
-                <a
-                  href="https://www.youtube.com/@MVVibez?sub_confirmation=1"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 inline-flex items-center gap-2 rounded bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
-                >
-                  <Youtube className="h-4 w-4" />
-                  Subscribe Now
-                </a>
+                <Label htmlFor="message">Message</Label>
+                <Textarea
+                  id="message"
+                  placeholder="Your message..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  rows={5}
+                  required
+                />
               </div>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Professional Skills</h3>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="flex items-center gap-2 rounded-md border p-3 dark:border-gray-700">
-                <Code className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                <span className="text-gray-900 dark:text-white">Software Developer</span>
-              </div>
-              <div className="flex items-center gap-2 rounded-md border p-3 dark:border-gray-700">
-                <Compass className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                <span className="text-gray-900 dark:text-white">Site Developer</span>
-              </div>
-              <div className="flex items-center gap-2 rounded-md border p-3 dark:border-gray-700">
-                <Video className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                <span className="text-gray-900 dark:text-white">Videographer</span>
-              </div>
-              <div className="flex items-center gap-2 rounded-md border p-3 dark:border-gray-700">
-                <Edit className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                <span className="text-gray-900 dark:text-white">Video Editor</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-lg bg-emerald-50 p-6 dark:bg-emerald-900/20">
-          <h2 className="mb-4 text-xl font-bold text-gray-900 dark:text-white">About My Travel Channel</h2>
-          <p className="mb-4 text-gray-700 dark:text-gray-300">
-            I'm passionate about exploring the world and sharing budget-friendly travel experiences. Through my YouTube
-            channel, I document my adventures and provide tips for fellow travelers.
-          </p>
-          <div className="aspect-video overflow-hidden rounded-lg">
-            <iframe
-              width="100%"
-              height="100%"
-              src="https://www.youtube.com/embed/videoseries?list=UU-_your_channel_id"
-              title="MV Vibez YouTube Channel"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
-          </div>
-        </div>
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? "Sending..." : "Send Message"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

@@ -1,447 +1,233 @@
-import type { Itinerary, Companion, Activity, Accommodation, Comment, Location } from "./models"
+import type { Itinerary, Companion, Activity } from "./models"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://planyourtrip-mc.onrender.com/api"
-console.log("API URL:", API_URL)
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
 
-export function generateId(): string {
-  if (typeof window === "undefined") {
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
-  }
-  return Date.now().toString(36) + Math.random().toString(36).substring(2)
-}
-
-export function getAuthToken(): string | null {
-  if (typeof window === "undefined") return null
-  return localStorage.getItem("auth_token")
-}
-
-async function apiRequest(endpoint: string, options: RequestInit = {}) {
-  const token = getAuthToken()
-  console.log(`API Request: ${options.method || "GET"} ${endpoint}`, {
-    hasToken: !!token,
-    bodyLength: options.body ? (options.body as string).length : 0,
-  })
-
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    ...options.headers,
-  }
-
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`
-  }
-
-  try {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      ...options,
-      headers,
-      credentials: "include",
-    })
-
-    console.log(`API Response: ${options.method || "GET"} ${endpoint}`, {
-      status: response.status,
-      ok: response.ok,
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: "Unknown error" }))
-      console.error(`API Error: ${options.method || "GET"} ${endpoint}`, {
-        status: response.status,
-        error: errorData,
-      })
-      throw new Error(errorData.message || "API request failed")
-    }
-
-    const data = await response.json()
-    return data
-  } catch (error) {
-    console.error(`API Request Failed: ${options.method || "GET"} ${endpoint}`, error)
-    throw error
-  }
-}
-
+// Itinerary Functions
 export async function getItineraries(): Promise<Itinerary[]> {
   try {
-    console.log("Fetching all itineraries")
-    const data = await apiRequest("/itineraries")
-    console.log(`Fetched ${data.length} itineraries`)
+    const res = await fetch(`${API_BASE_URL}/api/itineraries`, {
+      next: { revalidate: 0 }, // Ensure no caching for fresh data
+    })
+    if (!res.ok) {
+      throw new Error(`Failed to fetch itineraries: ${res.statusText}`)
+    }
+    const data = await res.json()
     return data
   } catch (error) {
-    console.error("Error fetching itineraries:", error)
+    console.error("Error in getItineraries:", error)
     return []
   }
 }
 
-export async function getItinerary(id: string): Promise<Itinerary | undefined> {
+export async function getItineraryById(id: string): Promise<Itinerary | null> {
   try {
-    console.log(`Fetching itinerary: ${id}`)
-    const data = await apiRequest(`/itineraries/${id}`)
-    console.log(`Fetched itinerary: ${data.destination}`)
+    const res = await fetch(`${API_BASE_URL}/api/itineraries/${id}`, {
+      next: { revalidate: 0 }, // Ensure no caching for fresh data
+    })
+    if (!res.ok) {
+      if (res.status === 404) {
+        console.warn(`Itinerary with ID ${id} not found.`)
+        return null
+      }
+      throw new Error(`Failed to fetch itinerary by ID: ${res.statusText}`)
+    }
+    const data = await res.json()
     return data
   } catch (error) {
-    console.error(`Error fetching itinerary ${id}:`, error)
-    return undefined
+    console.error(`Error in getItineraryById for ID ${id}:`, error)
+    return null
   }
 }
 
-export async function saveItinerary(itinerary: Itinerary): Promise<Itinerary | undefined> {
+export async function saveItinerary(itinerary: Itinerary): Promise<Itinerary | null> {
   try {
-    console.log(`Saving itinerary: ${itinerary.destination}`, { id: itinerary._id })
+    const method = itinerary._id ? "PUT" : "POST"
+    const url = itinerary._id ? `${API_BASE_URL}/api/itineraries/${itinerary._id}` : `${API_BASE_URL}/api/itineraries`
 
-    if (itinerary._id) {
-      console.log(`Updating existing itinerary: ${itinerary._id}`)
-      return await apiRequest(`/itineraries/${itinerary._id}`, {
-        method: "PUT",
-        body: JSON.stringify(itinerary),
-      })
-    } else {
-      console.log(`Creating new itinerary`)
-      return await apiRequest("/itineraries", {
-        method: "POST",
-        body: JSON.stringify(itinerary),
-      })
+    const res = await fetch(url, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(itinerary),
+    })
+
+    if (!res.ok) {
+      const errorData = await res.json()
+      throw new Error(`Failed to save itinerary: ${res.statusText} - ${errorData.message}`)
     }
+    const data = await res.json()
+    return data
   } catch (error) {
-    console.error("Error saving itinerary:", error)
-    return undefined
-  }
-}
-
-export async function testDatabaseConnection(): Promise<any> {
-  try {
-    console.log("Testing database connection")
-    return await apiRequest("/test-db")
-  } catch (error) {
-    console.error("Database connection test failed:", error)
-    throw error
-  }
-}
-
-export async function checkServerHealth(): Promise<any> {
-  try {
-    console.log("Checking server health")
-    return await apiRequest("/health")
-  } catch (error) {
-    console.error("Server health check failed:", error)
-    throw error
+    console.error("Error in saveItinerary:", error)
+    return null
   }
 }
 
 export async function deleteItinerary(id: string): Promise<boolean> {
   try {
-    await apiRequest(`/itineraries/${id}`, {
+    const res = await fetch(`${API_BASE_URL}/api/itineraries/${id}`, {
       method: "DELETE",
     })
-    return true
-  } catch (error) {
-    console.error(`Error deleting itinerary ${id}:`, error)
-    return false
-  }
-}
-
-export async function getAccommodations(destinationId?: string): Promise<Accommodation[]> {
-  try {
-    const endpoint = destinationId ? `/accommodations?destinationId=${destinationId}` : "/accommodations"
-    return await apiRequest(endpoint)
-  } catch (error) {
-    console.error("Error fetching accommodations:", error)
-    return []
-  }
-}
-
-export async function saveAccommodation(accommodation: Accommodation): Promise<Accommodation | undefined> {
-  try {
-    console.log("Saving accommodation:", accommodation)
-
-    if (accommodation._id) {
-      return await apiRequest(`/accommodations/${accommodation._id}`, {
-        method: "PUT",
-        body: JSON.stringify(accommodation),
-      })
-    } else {
-      const savedAccommodation = await apiRequest("/accommodations", {
-        method: "POST",
-        body: JSON.stringify(accommodation),
-      })
-
-      console.log("Accommodation saved successfully:", savedAccommodation)
-      return savedAccommodation
+    if (!res.ok) {
+      throw new Error(`Failed to delete itinerary: ${res.statusText}`)
     }
-  } catch (error) {
-    console.error("Error saving accommodation:", error)
-    return undefined
-  }
-}
-
-export async function deleteAccommodation(id: string): Promise<boolean> {
-  try {
-    await apiRequest(`/accommodations/${id}`, {
-      method: "DELETE",
-    })
     return true
   } catch (error) {
-    console.error(`Error deleting accommodation ${id}:`, error)
+    console.error("Error in deleteItinerary:", error)
     return false
   }
 }
 
-export async function getLocations(destinationId?: string): Promise<Location[]> {
+export async function markItineraryAsComplete(id: string): Promise<Itinerary | null> {
   try {
-    const endpoint = destinationId ? `/locations?destinationId=${destinationId}` : "/locations"
-    return await apiRequest(endpoint)
-  } catch (error) {
-    console.error("Error fetching locations:", error)
-    return []
-  }
-}
-
-export async function saveLocation(location: Location): Promise<Location | undefined> {
-  try {
-    console.log("Saving location:", location)
-
-    if (location._id) {
-      const updatedLocation = await apiRequest(`/locations/${location._id}`, {
-        method: "PUT",
-        body: JSON.stringify(location),
-      })
-      return updatedLocation
-    } else {
-      const savedLocation = await apiRequest("/locations", {
-        method: "POST",
-        body: JSON.stringify(location),
-      })
-      return savedLocation
+    const res = await fetch(`${API_BASE_URL}/api/itineraries/${id}/complete`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status: "completed" }),
+    })
+    if (!res.ok) {
+      throw new Error(`Failed to mark itinerary as complete: ${res.statusText}`)
     }
+    const data = await res.json()
+    return data
   } catch (error) {
-    console.error("Error saving location:", error)
-    return undefined
+    console.error("Error in markItineraryAsComplete:", error)
+    return null
   }
 }
 
-export async function deleteLocation(id: string): Promise<boolean> {
-  try {
-    await apiRequest(`/locations/${id}`, {
-      method: "DELETE",
-    })
-    return true
-  } catch (error) {
-    console.error(`Error deleting location ${id}:`, error)
-    return false
-  }
-}
-
+// Companion Functions
 export async function getCompanions(): Promise<Companion[]> {
   try {
-    return await apiRequest("/companions")
+    const res = await fetch(`${API_BASE_URL}/api/companions`, {
+      next: { revalidate: 0 },
+    })
+    if (!res.ok) {
+      throw new Error(`Failed to fetch companions: ${res.statusText}`)
+    }
+    const data = await res.json()
+    return data
   } catch (error) {
-    console.error("Error fetching companions:", error)
+    console.error("Error in getCompanions:", error)
     return []
   }
 }
 
-export async function saveCompanion(companion: Companion): Promise<Companion | undefined> {
+export async function saveCompanion(companion: Companion): Promise<Companion | null> {
   try {
-    if (companion._id) {
-      return await apiRequest(`/companions/${companion._id}`, {
-        method: "PUT",
-        body: JSON.stringify(companion),
-      })
-    } else {
-      return await apiRequest("/companions", {
-        method: "POST",
-        body: JSON.stringify(companion),
-      })
+    const method = companion._id ? "PUT" : "POST"
+    const url = companion._id ? `${API_BASE_URL}/api/companions/${companion._id}` : `${API_BASE_URL}/api/companions`
+
+    const res = await fetch(url, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(companion),
+    })
+
+    if (!res.ok) {
+      const errorData = await res.json()
+      throw new Error(`Failed to save companion: ${res.statusText} - ${errorData.message}`)
     }
+    const data = await res.json()
+    return data
   } catch (error) {
-    console.error("Error saving companion:", error)
-    return undefined
+    console.error("Error in saveCompanion:", error)
+    return null
   }
 }
 
 export async function deleteCompanion(id: string): Promise<boolean> {
   try {
-    await apiRequest(`/companions/${id}`, {
+    const res = await fetch(`${API_BASE_URL}/api/companions/${id}`, {
       method: "DELETE",
     })
+    if (!res.ok) {
+      throw new Error(`Failed to delete companion: ${res.statusText}`)
+    }
     return true
   } catch (error) {
-    console.error(`Error deleting companion ${id}:`, error)
+    console.error("Error in deleteCompanion:", error)
     return false
   }
 }
 
-export async function addDayToItinerary(
-  itineraryId: string,
-  day: Itinerary["days"][0],
-): Promise<Itinerary | undefined> {
+// Activity Functions
+export async function saveActivity(itineraryId: string, dayId: string, activity: Activity): Promise<Activity | null> {
   try {
-    console.log(`Adding day to itinerary ${itineraryId}:`, day)
+    const method = activity._id ? "PUT" : "POST"
+    const url = activity._id
+      ? `${API_BASE_URL}/api/itineraries/${itineraryId}/days/${dayId}/activities/${activity._id}`
+      : `${API_BASE_URL}/api/itineraries/${itineraryId}/days/${dayId}/activities`
 
-    const updatedItinerary = await apiRequest(`/itineraries/${itineraryId}/days`, {
-      method: "POST",
-      body: JSON.stringify(day),
-    })
-
-    console.log("Day added successfully, updated itinerary:", updatedItinerary)
-    return updatedItinerary
-  } catch (error) {
-    console.error("Error adding day to itinerary:", error)
-    return undefined
-  }
-}
-
-export async function deleteDay(itineraryId: string, dayId: string): Promise<Itinerary | undefined> {
-  try {
-    return await apiRequest(`/itineraries/${itineraryId}/days/${dayId}`, {
-      method: "DELETE",
-    })
-  } catch (error) {
-    console.error(`Error deleting day ${dayId}:`, error)
-    return undefined
-  }
-}
-
-export async function addActivityToDay(
-  itineraryId: string,
-  dayId: string,
-  activity: Activity,
-): Promise<Itinerary | undefined> {
-  try {
-    return await apiRequest(`/itineraries/${itineraryId}/days/${dayId}/activities`, {
-      method: "POST",
+    const res = await fetch(url, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(activity),
     })
-  } catch (error) {
-    console.error("Error adding activity to day:", error)
-    return undefined
-  }
-}
 
-export async function updateActivity(
-  itineraryId: string,
-  dayId: string,
-  activityId: string,
-  activity: Activity,
-): Promise<Itinerary | undefined> {
-  try {
-    return await apiRequest(`/itineraries/${itineraryId}/days/${dayId}/activities/${activityId}`, {
-      method: "PUT",
-      body: JSON.stringify(activity),
-    })
-  } catch (error) {
-    console.error("Error updating activity:", error)
-    return undefined
-  }
-}
-
-export async function deleteActivity(
-  itineraryId: string,
-  dayId: string,
-  activityId: string,
-): Promise<Itinerary | undefined> {
-  try {
-    return await apiRequest(`/itineraries/${itineraryId}/days/${dayId}/activities/${activityId}`, {
-      method: "DELETE",
-    })
-  } catch (error) {
-    console.error(`Error deleting activity ${activityId}:`, error)
-    return undefined
-  }
-}
-
-export async function markItineraryAsComplete(id: string): Promise<Itinerary | undefined> {
-  try {
-    return await apiRequest(`/itineraries/${id}/complete`, {
-      method: "PUT",
-    })
-  } catch (error) {
-    console.error(`Error marking itinerary ${id} as complete:`, error)
-    return undefined
-  }
-}
-
-export async function getComments(itineraryId: string): Promise<Comment[]> {
-  try {
-    return await apiRequest(`/comments?itineraryId=${itineraryId}`)
-  } catch (error) {
-    console.error("Error fetching comments:", error)
-    return []
-  }
-}
-
-export async function addComment(comment: Comment): Promise<Comment | undefined> {
-  try {
-    const commentWithDate = {
-      ...comment,
-      date: new Date().toISOString(),
+    if (!res.ok) {
+      const errorData = await res.json()
+      throw new Error(`Failed to save activity: ${res.statusText} - ${errorData.message}`)
     }
-
-    return await apiRequest("/comments", {
-      method: "POST",
-      body: JSON.stringify(commentWithDate),
-    })
+    const data = await res.json()
+    return data
   } catch (error) {
-    console.error("Error adding comment:", error)
-    return undefined
+    console.error("Error in saveActivity:", error)
+    return null
   }
 }
 
-export async function login(username: string, password: string): Promise<{ token: string; user: any } | undefined> {
+export async function deleteActivity(itineraryId: string, dayId: string, activityId: string): Promise<boolean> {
   try {
-    return await apiRequest("/login", {
-      method: "POST",
-      body: JSON.stringify({ username, password }),
+    const res = await fetch(`${API_BASE_URL}/api/itineraries/${itineraryId}/days/${dayId}/activities/${activityId}`, {
+      method: "DELETE",
     })
+    if (!res.ok) {
+      throw new Error(`Failed to delete activity: ${res.statusText}`)
+    }
+    return true
   } catch (error) {
-    console.error("Login error:", error)
-    throw error
+    console.error("Error in deleteActivity:", error)
+    return false
   }
 }
 
-export function calculateTotalExpenses(itinerary: Itinerary): {
-  amount: number
-  currency: string
-  breakdown: Record<string, number>
-} {
-  let totalAmount = 0
-  const breakdown: Record<string, number> = {}
-
-  const currency = "INR"
-
-  itinerary.days.forEach((day) => {
-    day.activities.forEach((activity) => {
-      if (activity.expense && activity.expense.amount) {
-        let amount = activity.expense.amount
-        if (activity.expense.currency !== currency) {
-          amount = activity.expense.amount
-        }
-
-        totalAmount += amount
-
-        const type = activity.type
-        if (!breakdown[type]) {
-          breakdown[type] = 0
-        }
-        breakdown[type] += amount
-      }
+// Health Checks
+export async function testDatabaseConnection(): Promise<{ message: string }> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/db-test`, {
+      next: { revalidate: 0 },
     })
-  })
-
-  return { amount: totalAmount, currency, breakdown }
+    if (!res.ok) {
+      throw new Error(`Database connection test failed: ${res.statusText}`)
+    }
+    const data = await res.json()
+    return data
+  } catch (error) {
+    console.error("Error in testDatabaseConnection:", error)
+    return { message: "Failed to connect to database" }
+  }
 }
 
-export async function updateChecklistItem(
-  itineraryId: string,
-  itemId: string,
-  completed: boolean,
-): Promise<Itinerary | undefined> {
+export async function checkServerHealth(): Promise<{ message: string }> {
   try {
-    return await apiRequest(`/itineraries/${itineraryId}/checklist/${itemId}`, {
-      method: "PUT",
-      body: JSON.stringify({ completed }),
+    const res = await fetch(`${API_BASE_URL}/api/health`, {
+      next: { revalidate: 0 },
     })
+    if (!res.ok) {
+      throw new Error(`Server health check failed: ${res.statusText}`)
+    }
+    const data = await res.json()
+    return data
   } catch (error) {
-    console.error(`Error updating checklist item ${itemId}:`, error)
-    return undefined
+    console.error("Error in checkServerHealth:", error)
+    return { message: "Server unhealthy" }
   }
 }

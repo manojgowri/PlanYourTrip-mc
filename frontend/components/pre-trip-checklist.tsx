@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { updateChecklistItem } from "@/lib/data"
 import { useToast } from "@/hooks/use-toast"
 import type { ChecklistItem } from "@/lib/models"
@@ -69,30 +69,29 @@ export function PreTripChecklist({ itineraryId, initialChecklist, isAdmin }: Pre
 
   return (
     <Card className="shadow-sm">
+      <CardHeader>
+        <CardTitle>Pre-Trip Checklist</CardTitle>
+      </CardHeader>
       <CardContent className="p-4">
-        <div className="grid gap-3">
-          {checklist.length > 0 ? (
-            checklist.map((item) => (
-              <div key={item._id} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`item-${item._id}`}
-                  checked={item.completed}
-                  onCheckedChange={() => handleToggleItem(item._id, item.completed)}
-                  disabled={isAdmin}
-                  className="data-[state=checked]:bg-emerald-600 data-[state=checked]:text-white"
-                />
-                <Label
-                  htmlFor={`item-${item._id}`}
-                  className={`text-base font-medium ${item.completed ? "line-through text-muted-foreground" : ""}`}
-                >
-                  {item.item}
-                </Label>
-              </div>
-            ))
-          ) : (
-            <p className="text-muted-foreground text-center">No checklist items available.</p>
-          )}
-        </div>
+        <ul className="space-y-2">
+          {checklist.map((item) => (
+            <li key={item._id} className="flex items-center gap-2">
+              <Checkbox
+                id={`checklist-item-${item._id}`}
+                checked={item.completed}
+                onCheckedChange={() => handleToggleItem(item._id, item.completed)}
+                disabled={isAdmin}
+                className="data-[state=checked]:bg-emerald-600 data-[state=checked]:text-white"
+              />
+              <Label
+                htmlFor={`checklist-item-${item._id}`}
+                className={`text-sm font-medium leading-none ${item.completed ? "line-through text-muted-foreground" : ""}`}
+              >
+                {item.item}
+              </Label>
+            </li>
+          ))}
+        </ul>
         {totalItems > 0 && (
           <div className="mt-4 space-y-2">
             <div className="flex justify-between text-sm text-muted-foreground">

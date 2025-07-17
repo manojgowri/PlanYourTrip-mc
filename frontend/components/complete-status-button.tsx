@@ -2,50 +2,58 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Check } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { CheckCircle, XCircle } from "lucide-react"
 import { markItineraryAsComplete } from "@/lib/data"
+import { useToast } from "@/hooks/use-toast"
 
 interface CompleteStatusButtonProps {
   itineraryId: string
-  itineraryName: string
-  onComplete?: () => void
+  initialStatus: "online" | "completed" | "draft"
+  onStatusChange?: () => void // Callback to refresh data
 }
 
-export function CompleteStatusButton({ itineraryId, itineraryName, onComplete }: CompleteStatusButtonProps) {
+export function CompleteStatusButton({ itineraryId, initialStatus, onStatusChange }: CompleteStatusButtonProps) {
+  const [status, setStatus] = useState(initialStatus)
   const { toast } = useToast()
-  const [isLoading, setIsLoading] = useState(false)
 
-  const handleComplete = async () => {
-    setIsLoading(true)
-
+  const handleMarkComplete = async () => {
     try {
-      await markItineraryAsComplete(itineraryId)
-
-      toast({
-        title: "Trip marked as complete",
-        description: `${itineraryName} has been marked as completed.`,
-      })
-
-      if (onComplete) {
-        onComplete()
+      const updatedItinerary = await markItineraryAsComplete(itineraryId)
+      if (updatedItinerary) {
+        setStatus(updatedItinerary.status)
+        toast({
+          title: "Success",
+          description: `Itinerary marked as ${updatedItinerary.status}!`,
+        })
+        if (onStatusChange) {
+          onStatusChange()
+        }
+      } else {
+        throw new Error("Failed to mark itinerary as complete")
       }
     } catch (error) {
-      console.error("Error marking trip as complete:", error)
+      console.error("Failed to mark itinerary complete:", error)
       toast({
         title: "Error",
-        description: "There was a problem updating the trip status. Please try again.",
+        description: "Failed to mark itinerary as complete. Please try again.",
         variant: "destructive",
       })
-    } finally {
-      setIsLoading(false)
     }
   }
 
+  const isCompleted = status === "completed"
+
   return (
-    <Button variant="outline" size="sm" className="gap-1" onClick={handleComplete} disabled={isLoading}>
-      <Check className="h-4 w-4" />
-      {isLoading ? "Updating..." : "Complete"}
+    <Button variant={isCompleted ? "secondary" : "default"} onClick={handleMarkComplete} disabled={isCompleted}>
+      {isCompleted ? (
+        <>
+          <CheckCircle className="mr-2 h-4 w-4" /> Completed
+        </>
+      ) : (
+        <>
+          <XCircle className="mr-2 h-4 w-4" /> Mark as Complete
+        </>
+      )}
     </Button>
   )
 }

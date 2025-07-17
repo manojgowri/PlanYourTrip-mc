@@ -1,52 +1,37 @@
 "use client"
 
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Save } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { useState } from "react"
 
 interface SaveChangesButtonProps {
-  onSave: () => Promise<boolean>
-  disabled?: boolean
+  onClick: () => Promise<void> | void
+  label?: string
 }
 
-export function SaveChangesButton({ onSave, disabled = false }: SaveChangesButtonProps) {
+export function SaveChangesButton({ onClick, label = "Save Changes" }: SaveChangesButtonProps) {
   const [isSaving, setIsSaving] = useState(false)
-  const { toast } = useToast()
 
-  const handleSave = async () => {
-    if (disabled || isSaving) return
-
+  const handleClick = async () => {
     setIsSaving(true)
     try {
-      const success = await onSave()
-      if (success) {
-        toast({
-          title: "Changes saved successfully",
-          variant: "success",
-        })
-      } else {
-        toast({
-          title: "Failed to save changes",
-          description: "Please try again later",
-          variant: "error",
-        })
-      }
-    } catch (error) {
-      toast({
-        title: "Error saving changes",
-        description: error instanceof Error ? error.message : "An unknown error occurred",
-        variant: "error",
-      })
+      await onClick()
     } finally {
       setIsSaving(false)
     }
   }
 
   return (
-    <Button onClick={handleSave} disabled={disabled || isSaving} className="flex items-center gap-2" variant="default">
-      <Save size={16} />
-      {isSaving ? "Saving..." : "Save Changes"}
+    <Button onClick={handleClick} disabled={isSaving}>
+      {isSaving ? (
+        <>
+          <span className="animate-spin mr-2">⚙️</span> Saving...
+        </>
+      ) : (
+        <>
+          <Save className="mr-2 h-4 w-4" /> {label}
+        </>
+      )}
     </Button>
   )
 }

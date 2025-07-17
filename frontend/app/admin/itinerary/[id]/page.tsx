@@ -1,244 +1,532 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ItineraryActivitiesManager } from "@/components/itinerary-activities-manager"
-import { PreTripChecklist, type ChecklistItem } from "@/components/pre-trip-checklist"
-import { BackToTravelButton } from "@/components/back-to-travel-button"
-import { getItinerary, saveItinerary, getAuthToken } from "@/lib/data"
-import { ArrowLeft, Save, LogOut } from "lucide-react"
-import type { Itinerary } from "@/lib/models"
+import { Plus, Trash2 } from "lucide-react"
+import { getItineraryById, saveItinerary } from "@/lib/data"
 import { useToast } from "@/hooks/use-toast"
+import { SaveChangesButton } from "@/components/admin/save-changes-button"
+import { SafeImage } from "@/components/safe-image"
+import { ItineraryActivitiesManager } from "@/components/itinerary-activities-manager"
+import { BackToTravelButton } from "@/components/back-to-travel-button"
+import type { Itinerary, Day, Accommodation, ChecklistItem, Tip } from "@/lib/models"
 
-interface ItineraryEditPageProps {
-  params: {
-    id: string
-  }
-}
-
-export default function ItineraryEditPage({ params }: ItineraryEditPageProps) {
-  const router = useRouter()
-  const { toast } = useToast()
+export default function AdminItineraryDetailPage() {
+  const params = useParams()
+  const itineraryId = params.id as string
   const [itinerary, setItinerary] = useState<Itinerary | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState("activities")
-  const [checklist, setChecklist] = useState<ChecklistItem[]>([])
-  const [originalChecklist, setOriginalChecklist] = useState<ChecklistItem[]>([])
-  const [checklistChanged, setChecklistChanged] = useState(false)
+  const [activeTab, setActiveTab] = useState("details")
+  const { toast } = useToast()
 
   useEffect(() => {
-    const token = getAuthToken()
-    if (!token) {
-      router.push("/login")
-      return
+    if (itineraryId) {
+      loadItinerary()
     }
+  }, [itineraryId])
 
-    const fetchItinerary = async () => {
-      try {
-        setLoading(true)
-        const data = await getItinerary(params.id)
-        if (data) {
-          setItinerary(data)
-
-          // Extract checklist from itinerary metadata if it exists
-          if (data.metadata?.checklist && data.metadata.checklist.length > 0) {
-            console.log("Found checklist in metadata:", data.metadata.checklist)
-            setChecklist(data.metadata.checklist)
-            setOriginalChecklist(JSON.parse(JSON.stringify(data.metadata.checklist))) // Deep copy
-          } else {
-            console.log("No checklist found in metadata, using default items")
-            // Default checklist items
-            const defaultChecklist = [
-              { id: "rooms", title: "Rooms Booked", completed: false, notes: "" },
-              { id: "flights", title: "Flight Tickets Booked", completed: false, notes: "" },
-              { id: "trains", title: "Train Bookings", completed: false, notes: "" },
-              { id: "car", title: "Car Rentals", completed: false, notes: "" },
-              { id: "visa", title: "Visa Requirements", completed: false, notes: "" },
-              { id: "insurance", title: "Travel Insurance", completed: false, notes: "" },
-            ]
-            setChecklist(defaultChecklist)
-            setOriginalChecklist(JSON.parse(JSON.stringify(defaultChecklist))) // Deep copy
-          }
-        } else {
-          setError("Itinerary not found")
-        }
-      } catch (err) {
-        console.error("Error fetching itinerary:", err)
-        setError("Failed to load itinerary. Please try again.")
-      } finally {
-        setLoading(false)
+  const loadItinerary = async () => {
+    try {
+      const data = await getItineraryById(itineraryId)
+      if (data) {
+        setItinerary(data)
+      } else {
+        toast({
+          title: "Error",
+          description: "Itinerary not found.",
+          variant: "destructive",
+        })
       }
+    } catch (error) {
+      console.error("Failed to fetch itinerary:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load itinerary details. Please try again.",
+        variant: "destructive",
+      })
     }
+  }
 
-    fetchItinerary()
-  }, [params.id, router])
+  const handleItineraryInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setItinerary((prev) => (prev ? { ...prev, [name]: value } : null))
+  }
 
-  // Check if checklist has changed
-  useEffect(() => {
-    if (originalChecklist.length === 0 && checklist.length === 0) {
-      setChecklistChanged(false)
-      return
-    }
+  const handleItineraryNumberInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setItinerary((prev) => (prev ? { ...prev, [name]: Number.parseFloat(value) } : null))
+  }
 
-    // Compare current checklist with original
-    const checklistStr = JSON.stringify(checklist)
-    const originalStr = JSON.stringify(originalChecklist)
-    setChecklistChanged(checklistStr !== originalStr)
-  }, [checklist, originalChecklist])
-
-  const handleSave = async () => {
+  const handleSaveItineraryDetails = async () => {
     if (!itinerary) return
 
     try {
-      setSaving(true)
-      setError(null)
-
-      // Add checklist to metadata
-      const updatedItinerary: Itinerary = {
-        ...itinerary,
-        metadata: {
-          ...itinerary.metadata,
-          checklist,
-        },
-      }
-
-      console.log("Saving itinerary with checklist:", updatedItinerary.metadata.checklist)
-
-      const savedItinerary = await saveItinerary(updatedItinerary)
-
-      if (savedItinerary) {
-        // Update the original checklist to match the current state
-        setOriginalChecklist(JSON.parse(JSON.stringify(checklist)))
-        setChecklistChanged(false)
-
+      const saved = await saveItinerary(itinerary)
+      if (saved) {
         toast({
           title: "Success",
-          description: "Itinerary saved successfully!",
+          description: "Itinerary details saved successfully!",
         })
+        setItinerary(saved) // Update with potentially new data from server
       } else {
-        throw new Error("Failed to save itinerary")
+        throw new Error("Failed to save itinerary details")
       }
-    } catch (err) {
-      console.error("Error saving itinerary:", err)
-      setError("Failed to save itinerary. Please try again.")
-
-      // Only show toast error if there's actually an error
-      // If the data was saved successfully despite the error, don't show the error toast
-      if (!itinerary || !itinerary.id) {
-        toast({
-          title: "Error",
-          description: "Failed to save itinerary. Please try again.",
-          variant: "destructive",
-        })
-      } else {
-        // If we have an itinerary ID, it probably saved successfully despite the error
-        toast({
-          title: "Success",
-          description: "Itinerary saved successfully!",
-        })
-      }
-    } finally {
-      setSaving(false)
+    } catch (error) {
+      console.error("Failed to save itinerary details:", error)
+      toast({
+        title: "Error",
+        description: "Failed to save itinerary details. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 
-  const handleUpdateDays = (updatedDays: Itinerary["days"]) => {
+  const handleAddDay = async () => {
     if (!itinerary) return
-    setItinerary({
-      ...itinerary,
-      days: updatedDays,
-    })
+    const newDayNumber = (itinerary.days?.length || 0) + 1
+    const newDay: Day = {
+      _id: `new-day-${Date.now()}`, // Temporary ID
+      dayNumber: newDayNumber,
+      date: new Date().toISOString().split("T")[0], // Default to today
+      activities: [],
+    }
+    const updatedItinerary = { ...itinerary, days: [...(itinerary.days || []), newDay] }
+    setItinerary(updatedItinerary)
+    // In a real app, you'd save this to the backend immediately or on overall save
+    toast({ title: "Day Added", description: `Day ${newDayNumber} added. Remember to save changes!` })
   }
 
-  const handleUpdateChecklist = (updatedChecklist: ChecklistItem[]) => {
-    console.log("Updating checklist:", updatedChecklist)
-    setChecklist(updatedChecklist)
+  const handleDeleteDay = async (dayId: string) => {
+    if (!itinerary || !window.confirm("Are you sure you want to delete this day and all its activities?")) return
+
+    const updatedDays = itinerary.days?.filter((day) => day._id !== dayId) || []
+    const renumberedDays = updatedDays.map((day, index) => ({ ...day, dayNumber: index + 1 }))
+
+    const updatedItinerary = { ...itinerary, days: renumberedDays }
+    setItinerary(updatedItinerary)
+    // In a real app, you'd save this to the backend
+    toast({ title: "Day Deleted", description: "Day deleted. Remember to save changes!" })
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem("auth_token")
-    router.push("/")
-  }
-
-  if (loading) {
-    return (
-      <div className="container mx-auto py-8">
-        <h1 className="text-2xl font-bold mb-6">Loading itinerary...</h1>
-      </div>
+  const handleAddAccommodation = () => {
+    if (!itinerary) return
+    const newAccommodation: Accommodation = {
+      _id: `new-acc-${Date.now()}`,
+      name: "",
+      type: "",
+      checkInDate: "",
+      checkOutDate: "",
+      cost: 0,
+    }
+    setItinerary((prev) =>
+      prev ? { ...prev, accommodations: [...(prev.accommodations || []), newAccommodation] } : null,
     )
   }
 
-  if (error || !itinerary) {
-    return (
-      <div className="container mx-auto py-8">
-        <h1 className="text-2xl font-bold mb-6">Error</h1>
-        <p className="text-red-500">{error || "Itinerary not found"}</p>
-        <Button className="mt-4" onClick={() => router.push("/admin")}>
-          Back to Admin
-        </Button>
-      </div>
+  const handleAccommodationChange = (index: number, field: keyof Accommodation, value: string | number) => {
+    if (!itinerary) return
+    const updatedAccommodations = [...(itinerary.accommodations || [])]
+    if (field === "cost") {
+      updatedAccommodations[index] = { ...updatedAccommodations[index], [field]: Number(value) }
+    } else {
+      updatedAccommodations[index] = { ...updatedAccommodations[index], [field]: value as string }
+    }
+    setItinerary((prev) => (prev ? { ...prev, accommodations: updatedAccommodations } : null))
+  }
+
+  const handleDeleteAccommodation = (id: string) => {
+    if (!itinerary || !window.confirm("Are you sure you want to delete this accommodation?")) return
+    setItinerary((prev) =>
+      prev ? { ...prev, accommodations: prev.accommodations?.filter((acc) => acc._id !== id) } : null,
     )
+  }
+
+  const handleAddChecklistItem = () => {
+    if (!itinerary) return
+    const newItem: ChecklistItem = {
+      _id: `new-item-${Date.now()}`,
+      item: "",
+      isCompleted: false,
+    }
+    setItinerary((prev) => (prev ? { ...prev, preTripChecklist: [...(prev.preTripChecklist || []), newItem] } : null))
+  }
+
+  const handleChecklistItemChange = (index: number, field: keyof ChecklistItem, value: string | boolean) => {
+    if (!itinerary) return
+    const updatedChecklist = [...(itinerary.preTripChecklist || [])]
+    updatedChecklist[index] = { ...updatedChecklist[index], [field]: value }
+    setItinerary((prev) => (prev ? { ...prev, preTripChecklist: updatedChecklist } : null))
+  }
+
+  const handleDeleteChecklistItem = (id: string) => {
+    if (!itinerary || !window.confirm("Are you sure you want to delete this checklist item?")) return
+    setItinerary((prev) =>
+      prev ? { ...prev, preTripChecklist: prev.preTripChecklist?.filter((item) => item._id !== id) } : null,
+    )
+  }
+
+  const handleAddTip = () => {
+    if (!itinerary) return
+    const newTip: Tip = {
+      _id: `new-tip-${Date.now()}`,
+      title: "",
+      description: "",
+    }
+    setItinerary((prev) => (prev ? { ...prev, tips: [...(prev.tips || []), newTip] } : null))
+  }
+
+  const handleTipChange = (index: number, field: keyof Tip, value: string) => {
+    if (!itinerary) return
+    const updatedTips = [...(itinerary.tips || [])]
+    updatedTips[index] = { ...updatedTips[index], [field]: value }
+    setItinerary((prev) => (prev ? { ...prev, tips: updatedTips } : null))
+  }
+
+  const handleDeleteTip = (id: string) => {
+    if (!itinerary || !window.confirm("Are you sure you want to delete this tip?")) return
+    setItinerary((prev) => (prev ? { ...prev, tips: prev.tips?.filter((tip) => tip._id !== id) } : null))
+  }
+
+  if (!itinerary) {
+    return <div className="container mx-auto px-4 py-8 text-center">Loading itinerary...</div>
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <div>
-          <Button variant="ghost" onClick={() => router.push("/admin")} className="mb-2">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Admin
-          </Button>
-          <h1 className="text-3xl font-bold">{itinerary.destination} Itinerary</h1>
-          <p className="text-muted-foreground">
-            {new Date(itinerary.startDate).toLocaleDateString()} - {new Date(itinerary.endDate).toLocaleDateString()}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <BackToTravelButton />
-          <Button
-            onClick={handleSave}
-            disabled={saving || (!checklistChanged && !itinerary.days.length)}
-            variant={checklistChanged ? "default" : "outline"}
-          >
-            <Save className="mr-2 h-4 w-4" />
-            {saving ? "Saving..." : "Save Changes"}
-          </Button>
-          <Button variant="outline" onClick={handleLogout}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Logout
-          </Button>
-        </div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-6">
+        <BackToTravelButton />
+        <h1 className="text-3xl font-bold">Manage {itinerary.destination} Itinerary</h1>
+        <SaveChangesButton onClick={handleSaveItineraryDetails} />
       </div>
 
-      {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">{error}</div>}
-
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="activities">Activities</TabsTrigger>
-          <TabsTrigger value="checklist">Pre-Trip Checklist</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="days">Daily Itinerary</TabsTrigger>
+          <TabsTrigger value="accommodations">Accommodations</TabsTrigger>
+          <TabsTrigger value="checklist">Checklist</TabsTrigger>
+          <TabsTrigger value="tips">Tips</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="activities">
-          <ItineraryActivitiesManager itineraryId={itinerary.id} days={itinerary.days} onUpdate={handleUpdateDays} />
+        <TabsContent value="details" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Itinerary Details</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="destination">Destination</Label>
+                  <Input
+                    id="destination"
+                    name="destination"
+                    value={itinerary.destination}
+                    onChange={handleItineraryInputChange}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="image">Image URL</Label>
+                  <Input id="image" name="image" value={itinerary.image} onChange={handleItineraryInputChange} />
+                  {itinerary.image && (
+                    <SafeImage
+                      src={itinerary.image}
+                      alt="Itinerary Image"
+                      className="mt-2 w-full h-32 object-cover rounded-md"
+                    />
+                  )}
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  value={itinerary.description}
+                  onChange={handleItineraryInputChange}
+                  rows={4}
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="startDate">Start Date</Label>
+                  <Input
+                    id="startDate"
+                    name="startDate"
+                    type="date"
+                    value={itinerary.startDate}
+                    onChange={handleItineraryInputChange}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="endDate">End Date</Label>
+                  <Input
+                    id="endDate"
+                    name="endDate"
+                    type="date"
+                    value={itinerary.endDate}
+                    onChange={handleItineraryInputChange}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="totalBudget">Total Budget (₹)</Label>
+                  <Input
+                    id="totalBudget"
+                    name="totalBudget"
+                    type="number"
+                    value={itinerary.totalBudget}
+                    onChange={handleItineraryNumberInputChange}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="travellersCount">Travellers Count</Label>
+                  <Input
+                    id="travellersCount"
+                    name="travellersCount"
+                    type="number"
+                    value={itinerary.travellersCount}
+                    onChange={handleItineraryNumberInputChange}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="category">Category</Label>
+                  <Input
+                    id="category"
+                    name="category"
+                    value={itinerary.category}
+                    onChange={handleItineraryInputChange}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="season">Season</Label>
+                  <Input id="season" name="season" value={itinerary.season} onChange={handleItineraryInputChange} />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="locations">Locations (comma-separated)</Label>
+                <Input
+                  id="locations"
+                  name="locations"
+                  value={itinerary.locations?.join(", ") || ""}
+                  onChange={(e) =>
+                    setItinerary((prev) =>
+                      prev ? { ...prev, locations: e.target.value.split(",").map((loc) => loc.trim()) } : null,
+                    )
+                  }
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="rating">Rating (0-5)</Label>
+                  <Input
+                    id="rating"
+                    name="rating"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="5"
+                    value={itinerary.rating}
+                    onChange={handleItineraryNumberInputChange}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="reviewsCount">Reviews Count</Label>
+                  <Input
+                    id="reviewsCount"
+                    name="reviewsCount"
+                    type="number"
+                    value={itinerary.reviewsCount}
+                    onChange={handleItineraryNumberInputChange}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        <TabsContent value="checklist">
-          <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-md">
-            <p className="text-amber-800 text-sm">
-              <strong>Note:</strong> Changes to the checklist will only be saved when you click the "Save Changes"
-              button above.
-            </p>
-          </div>
-          <PreTripChecklist
-            items={checklist}
-            onUpdateItems={handleUpdateChecklist}
-            isAdmin={true}
-            destination={itinerary.destination}
-          />
+        <TabsContent value="days" className="mt-6">
+          <h2 className="text-2xl font-semibold mb-4">Daily Itinerary</h2>
+          <Button onClick={handleAddDay} className="mb-4">
+            <Plus className="mr-2 h-4 w-4" /> Add New Day
+          </Button>
+          {itinerary.days?.length > 0 ? (
+            <div className="space-y-6">
+              {itinerary.days.map((day) => (
+                <Card key={day._id}>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>
+                      Day {day.dayNumber}: {day.date}
+                    </CardTitle>
+                    <Button variant="destructive" size="icon" onClick={() => handleDeleteDay(day._id)}>
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Delete Day</span>
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <ItineraryActivitiesManager
+                      itineraryId={itinerary._id}
+                      day={day}
+                      onActivityChange={loadItinerary} // Reload itinerary after activity changes
+                    />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">No days added yet. Click "Add New Day" to start planning!</p>
+          )}
+        </TabsContent>
+
+        <TabsContent value="accommodations" className="mt-6">
+          <h2 className="text-2xl font-semibold mb-4">Accommodations</h2>
+          <Button onClick={handleAddAccommodation} className="mb-4">
+            <Plus className="mr-2 h-4 w-4" /> Add New Accommodation
+          </Button>
+          {itinerary.accommodations?.length > 0 ? (
+            <div className="space-y-4">
+              {itinerary.accommodations.map((acc, index) => (
+                <Card key={acc._id}>
+                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+                    <div>
+                      <Label htmlFor={`acc-name-${index}`}>Name</Label>
+                      <Input
+                        id={`acc-name-${index}`}
+                        value={acc.name}
+                        onChange={(e) => handleAccommodationChange(index, "name", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor={`acc-type-${index}`}>Type</Label>
+                      <Input
+                        id={`acc-type-${index}`}
+                        value={acc.type}
+                        onChange={(e) => handleAccommodationChange(index, "type", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor={`acc-checkin-${index}`}>Check-in Date</Label>
+                      <Input
+                        id={`acc-checkin-${index}`}
+                        type="date"
+                        value={acc.checkInDate}
+                        onChange={(e) => handleAccommodationChange(index, "checkInDate", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor={`acc-checkout-${index}`}>Check-out Date</Label>
+                      <Input
+                        id={`acc-checkout-${index}`}
+                        type="date"
+                        value={acc.checkOutDate}
+                        onChange={(e) => handleAccommodationChange(index, "checkOutDate", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor={`acc-cost-${index}`}>Cost (₹)</Label>
+                      <Input
+                        id={`acc-cost-${index}`}
+                        type="number"
+                        value={acc.cost}
+                        onChange={(e) => handleAccommodationChange(index, "cost", e.target.value)}
+                      />
+                    </div>
+                    <div className="flex items-end justify-end">
+                      <Button variant="destructive" onClick={() => handleDeleteAccommodation(acc._id)}>
+                        <Trash2 className="h-4 w-4 mr-2" /> Delete
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">No accommodations added yet.</p>
+          )}
+        </TabsContent>
+
+        <TabsContent value="checklist" className="mt-6">
+          <h2 className="text-2xl font-semibold mb-4">Pre-Trip Checklist</h2>
+          <Button onClick={handleAddChecklistItem} className="mb-4">
+            <Plus className="mr-2 h-4 w-4" /> Add New Item
+          </Button>
+          {itinerary.preTripChecklist?.length > 0 ? (
+            <div className="space-y-4">
+              {itinerary.preTripChecklist.map((item, index) => (
+                <Card key={item._id}>
+                  <CardContent className="flex items-center gap-4 py-4">
+                    <Input
+                      value={item.item}
+                      onChange={(e) => handleChecklistItemChange(index, "item", e.target.value)}
+                      className="flex-grow"
+                    />
+                    <input
+                      type="checkbox"
+                      checked={item.isCompleted}
+                      onChange={(e) => handleChecklistItemChange(index, "isCompleted", e.target.checked)}
+                      className="h-5 w-5"
+                    />
+                    <Button variant="destructive" size="icon" onClick={() => handleDeleteChecklistItem(item._id)}>
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Delete Item</span>
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">No checklist items added yet.</p>
+          )}
+        </TabsContent>
+
+        <TabsContent value="tips" className="mt-6">
+          <h2 className="text-2xl font-semibold mb-4">Travel Tips</h2>
+          <Button onClick={handleAddTip} className="mb-4">
+            <Plus className="mr-2 h-4 w-4" /> Add New Tip
+          </Button>
+          {itinerary.tips?.length > 0 ? (
+            <div className="space-y-4">
+              {itinerary.tips.map((tip, index) => (
+                <Card key={tip._id}>
+                  <CardContent className="grid gap-2 py-4">
+                    <div>
+                      <Label htmlFor={`tip-title-${index}`}>Title</Label>
+                      <Input
+                        id={`tip-title-${index}`}
+                        value={tip.title}
+                        onChange={(e) => handleTipChange(index, "title", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor={`tip-description-${index}`}>Description</Label>
+                      <Textarea
+                        id={`tip-description-${index}`}
+                        value={tip.description}
+                        onChange={(e) => handleTipChange(index, "description", e.target.value)}
+                        rows={3}
+                      />
+                    </div>
+                    <div className="flex justify-end">
+                      <Button variant="destructive" onClick={() => handleDeleteTip(tip._id)}>
+                        <Trash2 className="h-4 w-4 mr-2" /> Delete
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">No tips added yet.</p>
+          )}
         </TabsContent>
       </Tabs>
     </div>

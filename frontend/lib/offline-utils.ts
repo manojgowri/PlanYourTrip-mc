@@ -1,87 +1,37 @@
-// Offline mode utilities
+// This is a placeholder for offline utility functions.
+// In a real application, you would implement service workers,
+// IndexedDB, or other caching strategies for offline support.
 
-// Check if the app is currently offline
-export function isOffline(): boolean {
-  return typeof navigator !== "undefined" && !navigator.onLine
+export function checkOfflineStatus(): boolean {
+  // In a real app, you'd check navigator.onLine or more sophisticated methods
+  return !navigator.onLine
 }
 
-// Register a callback for when the app goes online/offline
-export function registerConnectivityListeners(onOffline: () => void, onOnline: () => void): () => void {
-  if (typeof window === "undefined") return () => {}
+export function checkLanguagePreference(): string {
+  // In a real app, you'd get this from user settings or browser locale
+  return "en" // Default to English
+}
 
-  window.addEventListener("offline", onOffline)
-  window.addEventListener("online", onOnline)
-
-  return () => {
-    window.removeEventListener("offline", onOffline)
-    window.removeEventListener("online", onOnline)
+export function saveToOfflineCache(key: string, data: any): void {
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(key, JSON.stringify(data))
+      console.log(`Data for ${key} saved to local storage.`)
+    } catch (error) {
+      console.error(`Failed to save ${key} to local storage:`, error)
+    }
   }
 }
 
-// Local storage key for cached data
-const CACHE_PREFIX = "travel_app_cache_"
-
-// Save data to local cache
-export function saveToCache<T>(key: string, data: T): void {
-  try {
-    localStorage.setItem(
-      `${CACHE_PREFIX}${key}`,
-      JSON.stringify({
-        timestamp: Date.now(),
-        data,
-      }),
-    )
-  } catch (error) {
-    console.error("Error saving to cache:", error)
-  }
-}
-
-// Get data from local cache
-export function getFromCache<T>(key: string, maxAgeMs = 3600000): T | null {
-  try {
-    const cached = localStorage.getItem(`${CACHE_PREFIX}${key}`)
-    if (!cached) return null
-
-    const { timestamp, data } = JSON.parse(cached)
-
-    // Check if cache is expired
-    if (Date.now() - timestamp > maxAgeMs) {
-      localStorage.removeItem(`${CACHE_PREFIX}${key}`)
+export function getFromOfflineCache(key: string): any | null {
+  if (typeof window !== "undefined") {
+    try {
+      const data = localStorage.getItem(key)
+      return data ? JSON.parse(data) : null
+    } catch (error) {
+      console.error(`Failed to retrieve ${key} from local storage:`, error)
       return null
     }
-
-    return data as T
-  } catch (error) {
-    console.error("Error retrieving from cache:", error)
-    return null
   }
-}
-
-// Clear all cached data
-export function clearCache(): void {
-  try {
-    Object.keys(localStorage).forEach((key) => {
-      if (key.startsWith(CACHE_PREFIX)) {
-        localStorage.removeItem(key)
-      }
-    })
-  } catch (error) {
-    console.error("Error clearing cache:", error)
-  }
-}
-
-// Sync pending changes when back online
-export function syncPendingChanges(syncFunction: () => Promise<void>): void {
-  if (isOffline()) {
-    // Register to sync when back online
-    const handleOnline = () => {
-      syncFunction()
-      window.removeEventListener("online", handleOnline)
-    }
-
-    window.addEventListener("online", handleOnline)
-  } else {
-    // If online, sync immediately
-    syncFunction()
-  }
+  return null
 }

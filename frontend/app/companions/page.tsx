@@ -3,12 +3,13 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Plus, Instagram, X } from "lucide-react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Plus, Edit, Trash2 } from "lucide-react"
 import { getCompanions, saveCompanion, deleteCompanion } from "@/lib/data"
 import { useToast } from "@/hooks/use-toast"
 import { SafeImage } from "@/components/safe-image"
@@ -16,14 +17,15 @@ import type { Companion } from "@/lib/models"
 
 export default function CompanionsPage() {
   const [companions, setCompanions] = useState<Companion[]>([])
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [editingCompanion, setEditingCompanion] = useState<Companion | null>(null)
   const [newCompanion, setNewCompanion] = useState<Partial<Companion>>({
     name: "",
     relation: "",
+    contact: "",
     image: "",
-    instagramId: "",
+    notes: "",
   })
-  const [editingCompanion, setEditingCompanion] = useState<Companion | null>(null)
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -44,7 +46,7 @@ export default function CompanionsPage() {
     }
   }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     if (editingCompanion) {
       setEditingCompanion({ ...editingCompanion, [name]: value })
@@ -55,28 +57,35 @@ export default function CompanionsPage() {
 
   const handleSaveCompanion = async () => {
     try {
-      if (editingCompanion) {
-        const updated = await saveCompanion(editingCompanion)
-        if (updated) {
-          setCompanions(companions.map((c) => (c._id === updated._id ? updated : c)))
-          toast({
-            title: "Success",
-            description: "Companion updated successfully!",
-          })
-        }
-      } else {
-        const created = await saveCompanion(newCompanion as Companion)
-        if (created) {
-          setCompanions([...companions, created])
-          toast({
-            title: "Success",
-            description: "Companion added successfully!",
-          })
-        }
+      const companionToSave = editingCompanion || newCompanion
+      if (!companionToSave.name || !companionToSave.relation || !companionToSave.contact) {
+        toast({
+          title: "Error",
+          description: "Name, relation, and contact are required.",
+          variant: "destructive",
+        })
+        return
       }
-      setIsDialogOpen(false)
-      setNewCompanion({ name: "", relation: "", image: "", instagramId: "" })
-      setEditingCompanion(null)
+
+      const saved = await saveCompanion(companionToSave as Companion)
+      if (saved) {
+        toast({
+          title: "Success",
+          description: "Companion saved successfully!",
+        })
+        setIsDialogOpen(false)
+        setEditingCompanion(null)
+        setNewCompanion({
+          name: "",
+          relation: "",
+          contact: "",
+          image: "",
+          notes: "",
+        })
+        loadCompanions() // Reload list to show changes
+      } else {
+        throw new Error("Failed to save companion")
+      }
     } catch (error) {
       console.error("Failed to save companion:", error)
       toast({
@@ -92,11 +101,11 @@ export default function CompanionsPage() {
       try {
         const success = await deleteCompanion(id)
         if (success) {
-          setCompanions(companions.filter((c) => c._id !== id))
           toast({
             title: "Success",
             description: "Companion deleted successfully!",
           })
+          loadCompanions() // Reload list
         } else {
           throw new Error("Failed to delete companion")
         }
@@ -118,22 +127,30 @@ export default function CompanionsPage() {
 
   const handleDialogClose = () => {
     setIsDialogOpen(false)
-    setNewCompanion({ name: "", relation: "", image: "", instagramId: "" })
     setEditingCompanion(null)
+    setNewCompanion({
+      name: "",
+      relation: "",
+      contact: "",
+      image: "",
+      notes: "",
+    })
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-6">Travel Companions</h1>
+
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Travel Companions</h1>
+        <h2 className="text-2xl font-semibold">Manage Companions</h2>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => setIsDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" /> Add Companion
+              <Plus className="mr-2 h-4 w-4" /> Add New Companion
             </Button>
           </DialogTrigger>
           <DialogContent
-            className="sm:max-w-[425px]"
+            className="sm:max-w-[600px]"
             onEscapeKeyDown={handleDialogClose}
             onPointerDownOutside={handleDialogClose}
           >
@@ -148,7 +165,7 @@ export default function CompanionsPage() {
                 <Input
                   id="name"
                   name="name"
-                  value={editingCompanion ? editingCompanion.name : newCompanion.name}
+                  value={editingCompanion?.name || newCompanion.name || ""}
                   onChange={handleInputChange}
                   className="col-span-3"
                 />
@@ -160,7 +177,19 @@ export default function CompanionsPage() {
                 <Input
                   id="relation"
                   name="relation"
-                  value={editingCompanion ? editingCompanion.relation : newCompanion.relation}
+                  value={editingCompanion?.relation || newCompanion.relation || ""}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="contact" className="text-right">
+                  Contact
+                </Label>
+                <Input
+                  id="contact"
+                  name="contact"
+                  value={editingCompanion?.contact || newCompanion.contact || ""}
                   onChange={handleInputChange}
                   className="col-span-3"
                 />
@@ -172,19 +201,19 @@ export default function CompanionsPage() {
                 <Input
                   id="image"
                   name="image"
-                  value={editingCompanion ? editingCompanion.image || "" : newCompanion.image || ""}
+                  value={editingCompanion?.image || newCompanion.image || ""}
                   onChange={handleInputChange}
                   className="col-span-3"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="instagramId" className="text-right">
-                  Instagram ID
+                <Label htmlFor="notes" className="text-right">
+                  Notes
                 </Label>
-                <Input
-                  id="instagramId"
-                  name="instagramId"
-                  value={editingCompanion ? editingCompanion.instagramId || "" : newCompanion.instagramId || ""}
+                <Textarea
+                  id="notes"
+                  name="notes"
+                  value={editingCompanion?.notes || newCompanion.notes || ""}
                   onChange={handleInputChange}
                   className="col-span-3"
                 />
@@ -194,62 +223,72 @@ export default function CompanionsPage() {
               <Button variant="outline" onClick={handleDialogClose}>
                 Cancel
               </Button>
-              <Button onClick={handleSaveCompanion}>Save changes</Button>
+              <Button onClick={handleSaveCompanion}>{editingCompanion ? "Save Changes" : "Add Companion"}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {companions.length > 0 ? (
-          companions.map((companion) => (
-            <Card key={companion._id} className="relative overflow-hidden rounded-lg shadow-md">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-2 right-2 z-10 text-red-500 hover:bg-red-100"
-                onClick={() => handleDeleteCompanion(companion._id)}
-              >
-                <X className="h-5 w-5" />
-                <span className="sr-only">Delete companion</span>
-              </Button>
-              <CardContent className="p-0">
-                <div className="relative h-48 w-full">
-                  <SafeImage
-                    src={companion.image || "/placeholder.svg?height=200&width=200"}
-                    alt={companion.name}
-                    className="object-cover"
-                    fill
-                  />
-                </div>
-                <div className="p-4">
-                  <CardTitle className="text-xl font-semibold mb-1">{companion.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground mb-3">{companion.relation}</p>
-                  {companion.instagramId && (
-                    <a
-                      href={`https://instagram.com/${companion.instagramId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center text-blue-500 hover:underline text-sm"
-                    >
-                      <Instagram className="h-4 w-4 mr-1" />@{companion.instagramId}
-                    </a>
-                  )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-4 w-full bg-transparent"
-                    onClick={() => openEditDialog(companion)}
-                  >
-                    Edit
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        ) : (
-          <p className="col-span-full text-center text-muted-foreground">No companions added yet.</p>
-        )}
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Image</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Relation</TableHead>
+              <TableHead>Contact</TableHead>
+              <TableHead>Notes</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {companions.length > 0 ? (
+              companions.map((companion) => (
+                <TableRow key={companion._id}>
+                  <TableCell>
+                    <SafeImage
+                      src={companion.image || "/placeholder.svg?height=50&width=50"}
+                      alt={companion.name}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">{companion.name}</TableCell>
+                  <TableCell>{companion.relation}</TableCell>
+                  <TableCell>{companion.contact}</TableCell>
+                  <TableCell className="max-w-[200px] truncate">{companion.notes}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 bg-transparent"
+                        onClick={() => openEditDialog(companion)}
+                      >
+                        <Edit className="h-4 w-4" />
+                        <span className="sr-only">Edit</span>
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleDeleteCompanion(companion._id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Delete</span>
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  No companions found. Add a new one to get started!
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
     </div>
   )

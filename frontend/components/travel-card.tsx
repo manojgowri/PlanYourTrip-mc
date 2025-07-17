@@ -1,92 +1,139 @@
-"use client"
-
+import type React from "react"
 import Link from "next/link"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { CalendarDays, Users, DollarSign, Star } from "lucide-react"
+import { SafeImage } from "@/components/safe-image"
 import type { Itinerary } from "@/lib/models"
-import { calculateDuration, getTravelRecommendation } from "@/lib/utils"
-import { SafeImage } from "./safe-image"
 
 interface TravelCardProps {
   itinerary: Itinerary
 }
 
 export function TravelCard({ itinerary }: TravelCardProps) {
-  const duration = calculateDuration(itinerary.startDate, itinerary.endDate)
-  const perPersonCost =
-    itinerary.totalBudget && itinerary.travellersCount && itinerary.travellersCount > 0
-      ? (itinerary.totalBudget / itinerary.travellersCount).toLocaleString()
-      : "N/A"
-  const travelRecommendation = getTravelRecommendation(itinerary.travellersCount)
-
   return (
-    <Link href={`/itinerary/${itinerary._id}`}>
-      <Card className="w-full overflow-hidden rounded-lg shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
-        <div className="relative h-48 w-full">
+    <Link href={`/itinerary/${itinerary._id}`} passHref>
+      <Card className="overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out cursor-pointer h-full flex flex-col">
+        <div className="relative w-full h-48">
           <SafeImage
             src={itinerary.image || "/placeholder.svg?height=200&width=300"}
-            alt={`Image of ${itinerary.destination}`}
-            className="object-cover"
-            fill
+            alt={itinerary.destination}
+            className="w-full h-full object-cover"
           />
-          <Badge
-            className="absolute right-3 top-3 px-3 py-1 text-sm font-semibold"
-            style={{
-              backgroundColor: "hsl(var(--primary))",
-              color: "hsl(var(--primary-foreground))",
-            }}
-          >
-            {itinerary.season}
-          </Badge>
+          <Badge className="absolute top-3 left-3 text-xs px-2 py-1">{itinerary.category}</Badge>
+          {itinerary.status === "completed" && (
+            <Badge className="absolute top-3 right-3 bg-green-500 text-white text-xs px-2 py-1">Completed</Badge>
+          )}
         </div>
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-primary-foreground">{itinerary.destination}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center text-sm text-muted-foreground">
-            <CalendarDays className="mr-2 h-4 w-4" />
-            <span>{duration}</span>
-          </div>
-          {itinerary.travellersCount !== undefined && (
-            <div className="flex items-center text-sm text-muted-foreground">
-              <Users className="mr-2 h-4 w-4" />
+        <CardContent className="p-4 flex-grow flex flex-col">
+          <h3 className="text-xl font-semibold mb-2 leading-tight">{itinerary.destination}</h3>
+          <p className="text-sm text-muted-foreground mb-3 line-clamp-2 flex-grow">{itinerary.description}</p>
+          <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 dark:text-gray-400 mt-auto">
+            <div className="flex items-center">
+              <CalendarIcon className="w-4 h-4 mr-1" />
+              <span>
+                {itinerary.startDate} - {itinerary.endDate}
+              </span>
+            </div>
+            <div className="flex items-center justify-end">
+              <UsersIcon className="w-4 h-4 mr-1" />
               <span>{itinerary.travellersCount} Travellers</span>
             </div>
-          )}
-          {itinerary.totalBudget !== undefined && (
-            <div className="flex items-center text-sm text-muted-foreground">
-              <DollarSign className="mr-2 h-4 w-4" />
-              <span>Total Budget: ₹{itinerary.totalBudget.toLocaleString()}</span>
+            <div className="flex items-center">
+              <DollarSignIcon className="w-4 h-4 mr-1" />
+              <span>₹{itinerary.totalBudget?.toLocaleString()}</span>
             </div>
-          )}
-          {itinerary.totalBudget !== undefined &&
-            itinerary.travellersCount !== undefined &&
-            itinerary.travellersCount > 0 && (
-              <div className="flex items-center text-sm text-muted-foreground">
-                <DollarSign className="mr-2 h-4 w-4" />
-                <span>Per Person: ₹{perPersonCost}</span>
-              </div>
-            )}
-          {travelRecommendation && (
-            <div className="flex items-center text-sm text-muted-foreground">
-              <Star className="mr-2 h-4 w-4" />
-              <span>Recommended: {travelRecommendation}</span>
+            <div className="flex items-center justify-end">
+              <StarIcon className="w-4 h-4 mr-1 text-yellow-400" />
+              <span>
+                {itinerary.rating?.toFixed(1)} ({itinerary.reviewsCount})
+              </span>
             </div>
-          )}
+          </div>
         </CardContent>
-        <CardFooter className="flex justify-between">
-          <Badge variant="secondary" className="px-3 py-1 text-sm font-semibold">
-            {itinerary.category}
-          </Badge>
-          {itinerary.reviewsCount !== undefined && (
-            <div className="flex items-center text-sm text-muted-foreground">
-              <Star className="mr-1 h-4 w-4 fill-yellow-400 text-yellow-400" />
-              <span>{itinerary.reviewsCount} Reviews</span>
-            </div>
-          )}
-        </CardFooter>
       </Card>
     </Link>
+  )
+}
+
+function CalendarIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M8 2v4" />
+      <path d="M16 2v4" />
+      <rect width="18" height="18" x="3" y="4" rx="2" />
+      <path d="M3 10h18" />
+    </svg>
+  )
+}
+
+function UsersIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  )
+}
+
+function DollarSignIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="12" x2="12" y1="2" y2="22" />
+      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+    </svg>
+  )
+}
+
+function StarIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
   )
 }

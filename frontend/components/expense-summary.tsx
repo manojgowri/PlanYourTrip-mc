@@ -1,76 +1,47 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { CurrencySelector } from "@/components/currency-selector"
-import { convertAndFormatCurrency } from "@/lib/currency-utils"
+import { formatCurrency } from "@/lib/currency-utils"
+import type { Activity } from "@/lib/models"
 
 interface ExpenseSummaryProps {
-  expenses: {
-    category: string
-    amount: number
-    currency: string
-  }[]
-  defaultCurrency?: string
+  activities: Activity[]
 }
 
-const CATEGORY_LABELS: Record<string, string> = {
-  general: "General",
-  food: "Food & Drinks",
-  transportation: "Transportation",
-  accommodation: "Accommodation",
-  activities: "Activities",
-  shopping: "Shopping",
-}
+export function ExpenseSummary({ activities }: ExpenseSummaryProps) {
+  const [totalExpenses, setTotalExpenses] = useState(0)
+  const [currency, setCurrency] = useState("INR") // Default currency
 
-export function ExpenseSummary({ expenses, defaultCurrency = "INR" }: ExpenseSummaryProps) {
-  const [displayCurrency, setDisplayCurrency] = useState(defaultCurrency)
+  useEffect(() => {
+    const calculatedTotal = activities.reduce((sum, activity) => sum + (activity.cost || 0), 0)
+    setTotalExpenses(calculatedTotal)
+  }, [activities])
 
-  // Group expenses by category and convert to display currency
-  const expensesByCategory = expenses.reduce(
-    (acc, expense) => {
-      const category = expense.category || "general"
-      const { value } = convertAndFormatCurrency(expense.amount, expense.currency, displayCurrency)
-
-      if (!acc[category]) {
-        acc[category] = 0
-      }
-
-      acc[category] += value
-      return acc
-    },
-    {} as Record<string, number>,
-  )
-
-  // Calculate total
-  const total = Object.values(expensesByCategory).reduce((sum, amount) => sum + amount, 0)
+  // In a real app, you'd likely have a context or prop to get the selected currency
+  // For now, we'll just use INR as the base for calculation and display.
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Expense Summary</CardTitle>
-        <CurrencySelector value={displayCurrency} onChange={setDisplayCurrency} />
+    <Card className="mt-4">
+      <CardHeader>
+        <CardTitle className="text-lg">Activity Expenses</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="mb-4 text-center">
-          <p className="text-sm text-muted-foreground">Total Expenses</p>
-          <p className="text-3xl font-bold">
-            {convertAndFormatCurrency(total, displayCurrency, displayCurrency).formatted}
-          </p>
-        </div>
-
-        <div className="mt-4 space-y-2">
-          {Object.entries(expensesByCategory).map(([category, amount], index) => (
-            <div key={index} className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-emerald-500 opacity-80" />
-                <span>{CATEGORY_LABELS[category] || category}</span>
+        <div className="space-y-2">
+          {activities.length > 0 ? (
+            activities.map((activity) => (
+              <div key={activity._id} className="flex justify-between text-sm">
+                <span>{activity.name}</span>
+                <span>{formatCurrency(activity.cost || 0, currency)}</span>
               </div>
-              <span className="font-medium">
-                {convertAndFormatCurrency(amount, displayCurrency, displayCurrency).formatted}
-              </span>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className="text-muted-foreground text-sm">No expenses recorded for activities.</p>
+          )}
+        </div>
+        <div className="border-t pt-2 mt-4 flex justify-between font-semibold">
+          <span>Total Activity Expenses:</span>
+          <span>{formatCurrency(totalExpenses, currency)}</span>
         </div>
       </CardContent>
     </Card>

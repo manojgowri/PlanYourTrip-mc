@@ -3,28 +3,27 @@ export interface Itinerary {
   destination: string
   startDate: string
   endDate: string
-  image?: string
-  description?: string
-  status: "online" | "completed"
-  season?: string
-  locations?: string[]
-  rating?: number
-  reviewsCount?: number
   totalBudget: number
   travellersCount: number
   category: string
-  days: ItineraryDay[]
-  accommodations?: Accommodation[]
-  preTripChecklist?: ChecklistItem[]
-  tips?: Tip[]
-  travelRecommendation?: string
+  status: "online" | "completed" | "draft"
+  image: string
+  description: string
+  season: string
+  locations: string[]
+  rating: number
+  reviewsCount: number
+  days: Day[]
+  accommodations: Accommodation[]
+  preTripChecklist: ChecklistItem[]
+  tips: Tip[]
+  comments: Comment[]
 }
 
-export interface ItineraryDay {
+export interface Day {
   _id: string
   dayNumber: number
   date: string
-  location: string
   activities: Activity[]
 }
 
@@ -32,58 +31,46 @@ export interface Activity {
   _id: string
   name: string
   time: string
-  location?: string
-  description?: string
-  type: "sightseeing" | "food" | "adventure" | "relaxation" | "must-visit" | string
-  expense?: {
-    amount: number
-    currency: string
-  }
+  location: string
+  description: string
   image?: string
-  notes?: string
-  mustVisit?: boolean
+  cost: number
+  type?: "Must visit place" | "Other" // Added type field
 }
 
 export interface Accommodation {
   _id: string
   name: string
-  location: string
-  dates: string
-  itineraryId: string
+  type: string
+  checkInDate: string
+  checkOutDate: string
+  cost: number
+}
+
+export interface ChecklistItem {
+  _id: string
+  item: string
+  isCompleted: boolean
+}
+
+export interface Tip {
+  _id: string
+  title: string
+  description: string
+}
+
+export interface Comment {
+  _id: string
+  author: string
+  text: string
+  createdAt: string
 }
 
 export interface Companion {
   _id: string
   name: string
   relation: string
+  contact: string
   image?: string
-  instagramId?: string
-}
-
-export interface Comment {
-  _id: string
-  itineraryId: string
-  author: string
-  date: string
-  text: string
-}
-
-export interface Location {
-  _id: string
-  name: string
-  description?: string
-  itineraryId?: string
-}
-
-export interface ChecklistItem {
-  _id: string
-  item: string
-  completed: boolean
-}
-
-export interface Tip {
-  _id: string
-  title: string
-  content: string
-  category: string // e.g., "money", "safety", "culture"
+  notes?: string
 }

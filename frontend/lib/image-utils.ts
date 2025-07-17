@@ -1,25 +1,38 @@
-/**
- * Utility functions for handling images
- */
+// This is a placeholder for image upload utility functions.
+// In a real application, you would integrate with a cloud storage service
+// like Vercel Blob, AWS S3, Cloudinary, etc.
 
-// Get a placeholder image with specified dimensions
-export function getPlaceholderImage(width: number, height: number): string {
-  return `/placeholder.svg?width=${width}&height=${height}`
+export async function uploadImage(file: File): Promise<string> {
+  // Simulate an API call to upload the image
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (file) {
+        // In a real scenario, you'd get a URL from your storage service
+        // For now, we'll create a dummy URL or use a placeholder
+        const dummyUrl = URL.createObjectURL(file) // This is a temporary client-side URL
+        console.log("Simulated image upload. Returning dummy URL:", dummyUrl)
+        resolve(dummyUrl)
+      } else {
+        reject(new Error("No file provided for upload."))
+      }
+    }, 1500) // Simulate network delay
+  })
 }
 
-// Process image URL to ensure it's valid
-export function getImageUrl(url?: string): string {
-  if (!url) return getPlaceholderImage(400, 300)
+export function getOptimizedImageUrl(originalUrl: string, width?: number, height?: number): string {
+  // This is a placeholder for image optimization.
+  // In a real application, you would use a service like Next.js Image Optimization,
+  // Cloudinary, Imgix, etc., to generate optimized URLs.
 
-  // If it's already a data URL or an absolute URL, return it
-  if (url.startsWith("data:") || url.startsWith("http")) {
-    return url
+  if (!originalUrl || originalUrl.startsWith("/placeholder.svg")) {
+    // If it's a placeholder, return it as is or with specified dimensions
+    const defaultWidth = width || 300
+    const defaultHeight = height || 200
+    return `/placeholder.svg?width=${defaultWidth}&height=${defaultHeight}`
   }
 
-  // If it's a relative URL, ensure it starts with /
-  if (!url.startsWith("/")) {
-    return `/${url}`
-  }
-
-  return url
+  // For actual images, you might append query parameters for a CDN or image service
+  // Example: return `https://your-cdn.com/optimize?url=${encodeURIComponent(originalUrl)}&w=${width}&h=${height}`;
+  // For now, just return the original URL
+  return originalUrl
 }

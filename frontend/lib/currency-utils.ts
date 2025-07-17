@@ -1,38 +1,60 @@
-import { currencyRates, currencies, type CurrencyInfo } from "./models"
+// This is a placeholder for currency conversion logic.
+// In a real application, you would integrate with a currency exchange API.
 
-// Get all available currencies
-export function getAvailableCurrencies(): CurrencyInfo[] {
-  return Object.values(currencies)
+const EXCHANGE_RATES: { [key: string]: { [key: string]: number } } = {
+  INR: {
+    USD: 0.012,
+    EUR: 0.011,
+    GBP: 0.0095,
+    INR: 1,
+  },
+  USD: {
+    INR: 83.33,
+    EUR: 0.92,
+    GBP: 0.79,
+    USD: 1,
+  },
+  EUR: {
+    INR: 90.5,
+    USD: 1.08,
+    GBP: 0.86,
+    EUR: 1,
+  },
+  GBP: {
+    INR: 105.0,
+    USD: 1.27,
+    EUR: 1.16,
+    GBP: 1,
+  },
 }
 
-// Convert currency with proper formatting
-export function convertAndFormatCurrency(
-  amount: number,
-  fromCurrency: string,
-  toCurrency = "INR",
-): { value: number; formatted: string } {
-  if (!amount) return { value: 0, formatted: formatCurrency(0, toCurrency) }
-
-  const convertedValue = convertCurrency(amount, fromCurrency, toCurrency)
-  return {
-    value: convertedValue,
-    formatted: formatCurrency(convertedValue, toCurrency),
+export function convertCurrency(amount: number, fromCurrency: string, toCurrency: string): number {
+  if (fromCurrency === toCurrency) {
+    return amount
   }
+
+  const rateFrom = EXCHANGE_RATES[fromCurrency]?.[toCurrency]
+  if (rateFrom) {
+    return amount * rateFrom
+  }
+
+  // If direct conversion not found, try via a common base (e.g., USD)
+  const amountInUSD = amount * (EXCHANGE_RATES[fromCurrency]?.["USD"] || 0)
+  const rateTo = EXCHANGE_RATES["USD"]?.[toCurrency]
+  if (amountInUSD && rateTo) {
+    return amountInUSD * rateTo
+  }
+
+  console.warn(`Conversion rate not found for ${fromCurrency} to ${toCurrency}. Returning original amount.`)
+  return amount
 }
 
-// Convert currency
-export function convertCurrency(amount: number, fromCurrency: string, toCurrency = "INR"): number {
-  if (fromCurrency === toCurrency) return amount
-  if (fromCurrency === "INR") return amount / (currencyRates[toCurrency] || 1)
-  if (toCurrency === "INR") return amount * (currencyRates[fromCurrency] || 1)
-
-  // Convert from source to INR, then INR to target
-  const amountInINR = amount * (currencyRates[fromCurrency] || 1)
-  return amountInINR / (currencyRates[toCurrency] || 1)
-}
-
-// Format currency with symbol
-export function formatCurrency(amount: number, currency = "INR"): string {
-  const currencyInfo = currencies[currency] || currencies.INR
-  return `${currencyInfo.symbol}${amount.toFixed(2)}`
+export function formatCurrency(amount: number, currencyCode: string): string {
+  const formatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currencyCode,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+  return formatter.format(amount)
 }
