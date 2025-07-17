@@ -209,30 +209,6 @@ const nextConfig = {
         protocol: "https",
         hostname: "www.heygen.com",
       },
-      {
-        protocol: "https",
-        hostname: "www.synthesia.io",
-      },
-      {
-        protocol: "https",
-        hostname: "www.descript.com",
-      },
-      {
-        protocol: "https",
-        hostname: "www.elevenlabs.io",
-      },
-      {
-        protocol: "https",
-        hostname: "www.play.ht",
-      },
-      {
-        protocol: "https",
-        hostname: "www.lovo.ai",
-      },
-      {
-        protocol: "https",
-        hostname: "www.murf.ai",
-      },
     ],
   },
 }
