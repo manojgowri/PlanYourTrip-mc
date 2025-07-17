@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { updateChecklistItem } from "@/lib/data"
 import { useToast } from "@/hooks/use-toast"
 import type { ChecklistItem } from "@/lib/models"
+import { Progress } from "@/components/ui/progress"
 
 interface PreTripChecklistProps {
   itineraryId: string
@@ -62,6 +63,10 @@ export function PreTripChecklist({ itineraryId, initialChecklist, isAdmin }: Pre
     }
   }
 
+  const completedItems = checklist.filter((item) => item.completed).length
+  const totalItems = checklist.length
+  const progress = totalItems > 0 ? (completedItems / totalItems) * 100 : 0
+
   return (
     <Card className="shadow-sm">
       <CardContent className="p-4">
@@ -88,6 +93,17 @@ export function PreTripChecklist({ itineraryId, initialChecklist, isAdmin }: Pre
             <p className="text-muted-foreground text-center">No checklist items available.</p>
           )}
         </div>
+        {totalItems > 0 && (
+          <div className="mt-4 space-y-2">
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>Progress:</span>
+              <span>
+                {completedItems}/{totalItems} items completed
+              </span>
+            </div>
+            <Progress value={progress} className="w-full" />
+          </div>
+        )}
       </CardContent>
     </Card>
   )

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Plus, Instagram, X } from "lucide-react"
-import { fetchCompanions, createCompanion, updateCompanion, deleteCompanion } from "@/lib/data"
+import { getCompanions, saveCompanion, deleteCompanion } from "@/lib/data"
 import { useToast } from "@/hooks/use-toast"
 import { SafeImage } from "@/components/safe-image"
 import type { Companion } from "@/lib/models"
@@ -32,7 +32,7 @@ export default function CompanionsPage() {
 
   const loadCompanions = async () => {
     try {
-      const data = await fetchCompanions()
+      const data = await getCompanions()
       setCompanions(data)
     } catch (error) {
       console.error("Failed to fetch companions:", error)
@@ -56,7 +56,7 @@ export default function CompanionsPage() {
   const handleSaveCompanion = async () => {
     try {
       if (editingCompanion) {
-        const updated = await updateCompanion(editingCompanion._id, editingCompanion)
+        const updated = await saveCompanion(editingCompanion)
         if (updated) {
           setCompanions(companions.map((c) => (c._id === updated._id ? updated : c)))
           toast({
@@ -65,7 +65,7 @@ export default function CompanionsPage() {
           })
         }
       } else {
-        const created = await createCompanion(newCompanion)
+        const created = await saveCompanion(newCompanion as Companion)
         if (created) {
           setCompanions([...companions, created])
           toast({

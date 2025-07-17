@@ -83,5 +83,7 @@ export interface ChecklistItem {
 
 export interface Tip {
   _id: string
-  tip: string
+  title: string
+  content: string
+  category: string // e.g., "money", "safety", "culture"
 }
