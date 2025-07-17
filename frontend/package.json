@@ -26,7 +26,8 @@
     "react-dom": "^18",
     "autoprefixer": "^10.0.1",
     "tailwind-merge": "^1.14.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "next-themes": "^0.3.0"
   },
   "devDependencies": {
     "@types/node": "^20",
