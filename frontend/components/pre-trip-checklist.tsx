@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Check, X, Trash2, Edit, Save, Plus } from "lucide-react"
+import { Check, X, Trash2, Edit, Save, Plus, Circle, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -28,7 +28,9 @@ export function PreTripChecklist({
   const [editingTitle, setEditingTitle] = useState("")
   const [editingNotes, setEditingNotes] = useState("")
   const [newItemTitle, setNewItemTitle] = useState("")
-  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set(items.map((item) => item.id)))
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(
+    () => new Set(items.filter((item) => item.completed).map((item) => item.id)),
+  )
 
   const handleToggle = (id: string) => {
     if (readOnly) return
@@ -173,9 +175,9 @@ export function PreTripChecklist({
                           <X className="h-4 w-4" />
                         )
                       ) : item.completed ? (
-                        <Check className="h-4 w-4" />
+                        <CheckCircle className="h-4 w-4" />
                       ) : (
-                        <X className="h-4 w-4" />
+                        <Circle className="h-4 w-4" />
                       )}
                     </div>
                     <div>

@@ -13,7 +13,7 @@ interface ItineraryDayProps {
 }
 
 export function ItineraryDay({ day, date, location, activities }: ItineraryDayProps) {
-  const [isExpanded, setIsExpanded] = useState(true)
+  const [isExpanded, setIsExpanded] = useState(false)
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded)
