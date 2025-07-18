@@ -52,10 +52,10 @@ export default function CompanionsPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="flex">
+      <div className="flex flex-col md:flex-row">
         {/* Left sidebar - Companion list */}
-        <div className="w-1/2 border-r border-gray-800">
-          <div className="h-screen overflow-y-auto">
+        <div className="w-full md:w-1/2 border-b md:border-b-0 md:border-r border-gray-800">
+          <div className="h-[50vh] md:h-screen overflow-y-auto">
             {companions.length === 0 ? (
               <div className="flex items-center justify-center h-full">
                 <p className="text-gray-400">No travel companions available</p>
@@ -95,14 +95,14 @@ export default function CompanionsPage() {
         </div>
 
         {/* Right side - Companion image */}
-        <div className="w-1/2 bg-black">
-          <div className="h-screen flex items-center justify-center p-8">
+        <div className="w-full md:w-1/2 bg-black">
+          <div className="h-[50vh] md:h-screen flex items-center justify-center p-8">
             {activeCompanion && companions.length > 0 ? (
               <div className="w-full h-full flex items-center justify-center">
                 <SafeImage
                   src={companions.find((c) => c.id === activeCompanion)?.image || getPlaceholderImage(600, 800)}
                   alt={companions.find((c) => c.id === activeCompanion)?.name || "Companion"}
-                  className="max-w-full max-h-full object-cover rounded-lg filter grayscale hover:grayscale-0 transition-all duration-500"
+                  className="max-w-full max-h-full object-contain rounded-lg filter grayscale hover:grayscale-0 transition-all duration-500"
                 />
               </div>
             ) : (
