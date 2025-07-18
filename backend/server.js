@@ -189,6 +189,7 @@ const companionSchema = new mongoose.Schema({
   relationship: String,
   bio: String,
   image: String,
+  instagramUrl: String,
 })
 
 const commentSchema = new mongoose.Schema({
